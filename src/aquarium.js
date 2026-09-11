@@ -79,12 +79,62 @@ for (let i = 0; i < 90; i++) {
   });
 }
 
+/* enhanced bubbles — more count, varied sizes, with glow */
 const bubbles = [];
-for (let i = 0; i < 24; i++) {
+for (let i = 0; i < 40; i++) {
   bubbles.push({
     x: Math.random() * 2000, y: Math.random() * 1200,
-    v: 13 + Math.random() * 24, r: 1.5 + Math.random() * 4,
-    drift: (Math.random() - 0.5) * 14, a: 0.16 + Math.random() * 0.26,
+    v: 10 + Math.random() * 30, r: 1.2 + Math.random() * 5.5,
+    drift: (Math.random() - 0.5) * 18, a: 0.12 + Math.random() * 0.32,
+    wobblePhase: Math.random() * TAU,
+    wobbleAmp: 0.4 + Math.random() * 1.2,
+    wobbleFreq: 1.5 + Math.random() * 2.5,
+  });
+}
+
+/* seaweed config — lush multi-segment kelp */
+const seaweeds = [];
+for (let i = 0; i < 18; i++) {
+  const baseX = 16 + i * ((typeof W !== 'undefined' ? Math.max(W, 800) : 800) - 32) / 17;
+  seaweeds.push({
+    x: baseX,
+    segments: 5 + Math.floor(Math.random() * 4),
+    segLen: 14 + Math.random() * 12,
+    width: 4 + Math.random() * 6,
+    phase: Math.random() * TAU,
+    speed: 0.7 + Math.random() * 0.6,
+    hue: 100 + Math.random() * 50,  // green to teal
+    sat: 55 + Math.random() * 30,
+    lit: 18 + Math.random() * 16,
+    leafFreq: 0.3 + Math.random() * 0.4,
+  });
+}
+
+/* god-ray config */
+const godRays = [];
+for (let i = 0; i < 8; i++) {
+  godRays.push({
+    xNorm: 0.06 + i * 0.12 + (Math.random() - 0.5) * 0.06,
+    topW: 30 + Math.random() * 50,
+    bottomW: 80 + Math.random() * 160,
+    alpha: 0.015 + Math.random() * 0.03,
+    speed: 0.003 + Math.random() * 0.006,
+    phase: Math.random() * TAU,
+    alphaPhase: Math.random() * TAU,
+    alphaSpeed: 0.15 + Math.random() * 0.25,
+  });
+}
+
+/* caustic pattern config */
+const caustics = [];
+for (let i = 0; i < 14; i++) {
+  caustics.push({
+    xNorm: Math.random(),
+    yNorm: 0.82 + Math.random() * 0.18,
+    size: 20 + Math.random() * 50,
+    phase: Math.random() * TAU,
+    speed: 0.3 + Math.random() * 0.5,
+    alpha: 0.02 + Math.random() * 0.04,
   });
 }
 
@@ -133,38 +183,168 @@ function frame(now) {
   if (ordT > 0.25) { ordEl.textContent = localOrder().toFixed(2); ordT = 0; }
 
   /* ---- draw ---- */
-  const bg = g.createRadialGradient(W * 0.5, H * 0.2, 20, W * 0.5, H * 0.54, Math.max(W, H) * 0.8);
-  bg.addColorStop(0, '#1c7392'); bg.addColorStop(0.32, '#0b4165'); bg.addColorStop(0.74, '#06233f'); bg.addColorStop(1, '#031329');
+
+  /* 1. Deep ocean background gradient */
+  const bg = g.createRadialGradient(W * 0.5, H * 0.12, 20, W * 0.5, H * 0.6, Math.max(W, H) * 0.85);
+  bg.addColorStop(0, '#1a8aaa');
+  bg.addColorStop(0.18, '#0e5f82');
+  bg.addColorStop(0.45, '#08375a');
+  bg.addColorStop(0.75, '#041e3a');
+  bg.addColorStop(1, '#020c1e');
   g.fillStyle = bg; g.fillRect(0, 0, W, H);
 
-  const surface = g.createLinearGradient(0, 0, 0, 58);
-  surface.addColorStop(0, 'rgba(168,239,255,.42)'); surface.addColorStop(1, 'rgba(57,185,215,0)');
-  g.fillStyle = surface; g.fillRect(0, 0, W, 58);
-  g.strokeStyle = 'rgba(213,251,255,.34)'; g.lineWidth = 2; g.beginPath();
-  for (let x = 0; x <= W + 70; x += 70) {
-    const y = 23 + Math.sin(t * 0.9 + x * 0.04) * 6;
-    if (x === 0) g.moveTo(x, y); else g.quadraticCurveTo(x - 35, 23 - (y - 23), x, y);
+  /* 2. God rays — volumetric light shafts from above */
+  g.save();
+  for (let i = 0; i < godRays.length; i++) {
+    const ray = godRays[i];
+    const x = (ray.xNorm + Math.sin(t * ray.speed + ray.phase) * 0.04) * W;
+    const alphaOsc = ray.alpha * (0.6 + 0.4 * Math.sin(t * ray.alphaSpeed + ray.alphaPhase));
+    const grd = g.createLinearGradient(x, 0, x + (ray.bottomW - ray.topW) * 0.3, H);
+    grd.addColorStop(0, 'rgba(180,235,255,' + (alphaOsc * 2.2) + ')');
+    grd.addColorStop(0.15, 'rgba(120,210,240,' + (alphaOsc * 1.5) + ')');
+    grd.addColorStop(0.5, 'rgba(70,170,220,' + (alphaOsc * 0.8) + ')');
+    grd.addColorStop(1, 'rgba(30,100,160,0)');
+    g.fillStyle = grd;
+    g.beginPath();
+    g.moveTo(x - ray.topW / 2, 0);
+    g.lineTo(x + ray.topW / 2, 0);
+    g.lineTo(x + ray.bottomW / 2, H);
+    g.lineTo(x - ray.bottomW / 2, H);
+    g.closePath();
+    g.fill();
   }
-  g.stroke();
+  g.restore();
 
-  g.fillStyle = '#b8f4ff';
-  for (let i = 0; i < 6; i++) {
-    const x = ((i * 0.19 + t * 0.01) % 1.2 - 0.1) * W;
-    g.globalAlpha = 0.045 + Math.sin(t * 0.4 + i) * 0.025;
-    g.beginPath(); g.moveTo(x, 0); g.lineTo(x + 60, 0);
-    g.lineTo(x + 170, H); g.lineTo(x + 30, H); g.closePath(); g.fill();
+  /* 3. Bright water surface */
+  const surfH = 70;
+  const surface = g.createLinearGradient(0, 0, 0, surfH);
+  surface.addColorStop(0, 'rgba(200,248,255,.55)');
+  surface.addColorStop(0.3, 'rgba(130,225,245,.32)');
+  surface.addColorStop(0.7, 'rgba(60,180,215,.12)');
+  surface.addColorStop(1, 'rgba(30,120,170,0)');
+  g.fillStyle = surface; g.fillRect(0, 0, W, surfH);
+
+  /* Surface ripple wave lines */
+  g.save();
+  for (let wave = 0; wave < 3; wave++) {
+    g.strokeStyle = 'rgba(213,251,255,' + (0.38 - wave * 0.1) + ')';
+    g.lineWidth = 2.5 - wave * 0.6;
+    g.beginPath();
+    const yBase = 14 + wave * 12;
+    const freq = 0.035 + wave * 0.008;
+    const amp = 5 + wave * 2;
+    const spd = 0.8 + wave * 0.3;
+    for (let x = 0; x <= W + 70; x += 4) {
+      const y = yBase + Math.sin(t * spd + x * freq) * amp
+                      + Math.sin(t * 0.6 + x * 0.018 + wave) * (amp * 0.5);
+      if (x === 0) g.moveTo(x, y); else g.lineTo(x, y);
+    }
+    g.stroke();
   }
-  g.globalAlpha = 1;
-
-  g.fillStyle = '#0a5449';
-  for (let i = 0; i < 12; i++) {
-    const x = 24 + i * (W - 48) / 11;
-    const h = 45 + (i % 5) * 14;
-    const bend = Math.sin(t * (1.1 + i % 3 * 0.16) + i * 1.7) * (9 + i % 3 * 4);
-    g.beginPath(); g.moveTo(x - 5, H); g.quadraticCurveTo(x + bend - 12, H - h * 0.35, x + bend, H - h);
-    g.quadraticCurveTo(x + bend + 15, H - h * 0.42, x + 6, H); g.closePath(); g.fill();
+  /* Bright shimmer highlights on surface */
+  for (let i = 0; i < 20; i++) {
+    const sx = ((i * 0.053 + t * 0.008 + Math.sin(i * 3.7) * 0.02) % 1.1) * W;
+    const sy = 6 + Math.sin(t * 1.2 + i * 2.3) * 4;
+    const shimAlpha = 0.12 + 0.1 * Math.sin(t * 2.5 + i * 1.9);
+    g.fillStyle = 'rgba(255,255,255,' + Math.max(0, shimAlpha) + ')';
+    g.beginPath();
+    g.ellipse(sx, sy, 8 + Math.sin(i) * 4, 1.5, 0, 0, TAU);
+    g.fill();
   }
+  g.restore();
 
+  /* 4. Caustic light patterns on the sandy floor */
+  g.save();
+  for (let i = 0; i < caustics.length; i++) {
+    const c = caustics[i];
+    const cx = (c.xNorm + Math.sin(t * c.speed * 0.3 + c.phase) * 0.03) * W;
+    const cy = c.yNorm * H;
+    const sz = c.size * (0.8 + 0.2 * Math.sin(t * c.speed + c.phase));
+    const ca = c.alpha * (0.5 + 0.5 * Math.sin(t * c.speed * 0.7 + c.phase));
+    const cGrd = g.createRadialGradient(cx, cy, 0, cx, cy, sz);
+    cGrd.addColorStop(0, 'rgba(180,240,255,' + ca + ')');
+    cGrd.addColorStop(0.6, 'rgba(100,200,230,' + (ca * 0.4) + ')');
+    cGrd.addColorStop(1, 'rgba(50,150,200,0)');
+    g.fillStyle = cGrd;
+    g.fillRect(cx - sz, cy - sz, sz * 2, sz * 2);
+  }
+  g.restore();
+
+  /* 5. Sandy floor gradient */
+  const floorH = H * 0.12;
+  const floor = g.createLinearGradient(0, H - floorH, 0, H);
+  floor.addColorStop(0, 'rgba(20,60,80,0)');
+  floor.addColorStop(0.3, 'rgba(18,50,65,.15)');
+  floor.addColorStop(1, 'rgba(12,35,50,.3)');
+  g.fillStyle = floor; g.fillRect(0, H - floorH, W, floorH);
+
+  /* 6. Seaweed — lush swaying kelp */
+  g.save();
+  for (let si = 0; si < seaweeds.length; si++) {
+    const sw2 = seaweeds[si];
+    const baseX = 16 + si * (W - 32) / (seaweeds.length - 1);
+    const baseY = H;
+    g.lineWidth = sw2.width;
+    g.lineCap = 'round';
+    g.lineJoin = 'round';
+
+    /* draw main stem */
+    const pts = [{ x: baseX, y: baseY }];
+    for (let s = 1; s <= sw2.segments; s++) {
+      const frac = s / sw2.segments;
+      const sway = Math.sin(t * sw2.speed + sw2.phase + s * 0.8) * (9 + s * 3)
+                  + Math.sin(t * sw2.speed * 0.6 + s * 1.3) * (4 + s * 1.5);
+      pts.push({
+        x: baseX + sway,
+        y: baseY - s * sw2.segLen,
+      });
+    }
+
+    /* stem stroke gradient */
+    const stemGrd = g.createLinearGradient(baseX, baseY, baseX, baseY - sw2.segments * sw2.segLen);
+    stemGrd.addColorStop(0, 'hsl(' + sw2.hue + ',' + sw2.sat + '%,' + (sw2.lit + 5) + '%)');
+    stemGrd.addColorStop(0.5, 'hsl(' + sw2.hue + ',' + (sw2.sat + 10) + '%,' + (sw2.lit + 10) + '%)');
+    stemGrd.addColorStop(1, 'hsl(' + (sw2.hue + 15) + ',' + (sw2.sat + 15) + '%,' + (sw2.lit + 20) + '%)');
+    g.strokeStyle = stemGrd;
+
+    g.beginPath();
+    g.moveTo(pts[0].x, pts[0].y);
+    for (let s = 1; s < pts.length; s++) {
+      const prev = pts[s - 1], cur = pts[s];
+      const cpx = (prev.x + cur.x) / 2;
+      const cpy = (prev.y + cur.y) / 2;
+      g.quadraticCurveTo(prev.x, prev.y, cpx, cpy);
+    }
+    const lastPt = pts[pts.length - 1];
+    g.lineTo(lastPt.x, lastPt.y);
+    g.stroke();
+
+    /* draw leaf-like shapes along stem */
+    for (let s = 2; s < pts.length; s++) {
+      if (Math.sin(s * 7.1 + si * 3.3) < sw2.leafFreq) continue;
+      const pt = pts[s];
+      const side = (s % 2 === 0) ? 1 : -1;
+      const leafLen = (sw2.width * 1.8 + Math.sin(t * sw2.speed * 0.8 + s) * 3) * (1 - (s / pts.length) * 0.3);
+      const leafSway = Math.sin(t * sw2.speed * 1.2 + s * 1.5 + sw2.phase) * 4;
+
+      g.fillStyle = 'hsla(' + (sw2.hue + 10) + ',' + (sw2.sat + 20) + '%,' + (sw2.lit + 15) + '%,0.7)';
+      g.beginPath();
+      g.moveTo(pt.x, pt.y);
+      g.quadraticCurveTo(
+        pt.x + side * leafLen * 0.6 + leafSway, pt.y - sw2.segLen * 0.3,
+        pt.x + side * leafLen + leafSway, pt.y - sw2.segLen * 0.15
+      );
+      g.quadraticCurveTo(
+        pt.x + side * leafLen * 0.5 + leafSway, pt.y + sw2.segLen * 0.15,
+        pt.x, pt.y + 3
+      );
+      g.closePath();
+      g.fill();
+    }
+  }
+  g.restore();
+
+  /* 7. Marine snow (falling particles) */
   for (const s of snow) {
     s.y += s.v * dt; s.x += s.drift * dt;
     if (s.y > H + 10) { s.y = -10; s.x = Math.random() * W; }
@@ -173,16 +353,44 @@ function frame(now) {
     g.beginPath(); g.arc(s.x, s.y, s.r, 0, TAU); g.fill();
   }
 
+  /* 8. Bubbles — enhanced with gradient fill and highlight */
   g.lineWidth = 1;
   for (const bubble of bubbles) {
-    bubble.y -= bubble.v * dt; bubble.x += bubble.drift * dt;
+    bubble.wobblePhase += dt * bubble.wobbleFreq;
+    bubble.y -= bubble.v * dt;
+    bubble.x += bubble.drift * dt + Math.sin(bubble.wobblePhase) * bubble.wobbleAmp;
     if (bubble.y < -bubble.r - 4) { bubble.y = H + bubble.r + 4; bubble.x = Math.random() * W; }
     if (bubble.x > W + 12) bubble.x = -12; if (bubble.x < -12) bubble.x = W + 12;
-    g.globalAlpha = bubble.a;
-    g.strokeStyle = '#d8faff'; g.beginPath(); g.arc(bubble.x, bubble.y, bubble.r, 0, TAU); g.stroke();
+
+    const br = bubble.r;
+
+    /* bubble body: transparent with edge highlight */
+    g.globalAlpha = bubble.a * 0.6;
+    const bGrd = g.createRadialGradient(
+      bubble.x - br * 0.25, bubble.y - br * 0.25, br * 0.1,
+      bubble.x, bubble.y, br
+    );
+    bGrd.addColorStop(0, 'rgba(220,250,255,0.35)');
+    bGrd.addColorStop(0.7, 'rgba(150,220,240,0.1)');
+    bGrd.addColorStop(1, 'rgba(120,200,230,0.02)');
+    g.fillStyle = bGrd;
+    g.beginPath(); g.arc(bubble.x, bubble.y, br, 0, TAU); g.fill();
+
+    /* bubble outline */
+    g.globalAlpha = bubble.a * 0.8;
+    g.strokeStyle = 'rgba(200,245,255,0.5)';
+    g.beginPath(); g.arc(bubble.x, bubble.y, br, 0, TAU); g.stroke();
+
+    /* highlight spot */
+    g.globalAlpha = bubble.a * 0.9;
+    g.fillStyle = 'rgba(255,255,255,0.6)';
+    g.beginPath();
+    g.arc(bubble.x - br * 0.3, bubble.y - br * 0.3, br * 0.18, 0, TAU);
+    g.fill();
   }
   g.globalAlpha = 1;
 
+  /* 9. Water ripples from pointer interaction */
   for (let i = 0; i < RIPPLE_COUNT; i++) {
     const ripple = world.ripples[i];
     if (!ripple.active) continue;
@@ -192,6 +400,7 @@ function frame(now) {
   }
   g.globalAlpha = 1;
 
+  /* 10. Fish rendering */
   let hoverIdx = -1, hoverD = 1e9;
   for (let i = 0; i < sw.n; i++) {
     const f = FISH_DATA[i]; if (!f) continue;
@@ -228,6 +437,13 @@ function frame(now) {
     g.fill();
     g.globalAlpha = 1;
   }
+
+  /* 11. Vignette overlay for depth */
+  const vig = g.createRadialGradient(W * 0.5, H * 0.4, Math.min(W, H) * 0.25, W * 0.5, H * 0.5, Math.max(W, H) * 0.75);
+  vig.addColorStop(0, 'rgba(0,0,0,0)');
+  vig.addColorStop(0.7, 'rgba(2,8,20,0.08)');
+  vig.addColorStop(1, 'rgba(2,6,16,0.25)');
+  g.fillStyle = vig; g.fillRect(0, 0, W, H);
 
   if (hoverIdx >= 0) {
     const f = FISH_DATA[hoverIdx];

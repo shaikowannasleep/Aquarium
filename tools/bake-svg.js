@@ -178,16 +178,45 @@ function buildSvg(data, tracks) {
              esc(data.name) + ' GitHub aquarium">');
 
   parts.push('<defs>');
-  parts.push('<radialGradient id="bg" cx="50%" cy="34%" r="78%">' +
-             '<stop offset="0%" stop-color="#1c7392"/>' +
-             '<stop offset="32%" stop-color="#0b4165"/>' +
-             '<stop offset="74%" stop-color="#06233f"/>' +
-             '<stop offset="100%" stop-color="#031329"/></radialGradient>');
+  /* Enhanced deep ocean gradient — brighter top center */
+  parts.push('<radialGradient id="bg" cx="50%" cy="18%" r="82%">' +
+             '<stop offset="0%" stop-color="#1a8aaa"/>' +
+             '<stop offset="18%" stop-color="#0e5f82"/>' +
+             '<stop offset="45%" stop-color="#08375a"/>' +
+             '<stop offset="75%" stop-color="#041e3a"/>' +
+             '<stop offset="100%" stop-color="#020c1e"/></radialGradient>');
+  /* Bright surface gradient */
   parts.push('<linearGradient id="surface" x1="0" x2="0" y1="0" y2="1">' +
-             '<stop stop-color="#a8efff" stop-opacity=".42"/>' +
-             '<stop offset="1" stop-color="#39b9d7" stop-opacity="0"/></linearGradient>');
-  parts.push('<linearGradient id="weed" x1="0" x2="0" y1="1" y2="0">' +
-             '<stop stop-color="#063c3a"/><stop offset="1" stop-color="#32ad80"/></linearGradient>');
+             '<stop offset="0%" stop-color="#c8f8ff" stop-opacity=".55"/>' +
+             '<stop offset="30%" stop-color="#82e1f5" stop-opacity=".32"/>' +
+             '<stop offset="70%" stop-color="#3cb4d7" stop-opacity=".12"/>' +
+             '<stop offset="100%" stop-color="#1e78aa" stop-opacity="0"/></linearGradient>');
+  /* Seaweed gradients — multiple shades */
+  parts.push('<linearGradient id="weed1" x1="0" x2="0" y1="1" y2="0">' +
+             '<stop stop-color="#0a4a3a"/><stop offset=".5" stop-color="#1a7a50"/>' +
+             '<stop offset="1" stop-color="#38c488"/></linearGradient>');
+  parts.push('<linearGradient id="weed2" x1="0" x2="0" y1="1" y2="0">' +
+             '<stop stop-color="#083a40"/><stop offset=".5" stop-color="#167060"/>' +
+             '<stop offset="1" stop-color="#2aaa7a"/></linearGradient>');
+  parts.push('<linearGradient id="weed3" x1="0" x2="0" y1="1" y2="0">' +
+             '<stop stop-color="#064535"/><stop offset=".5" stop-color="#12804e"/>' +
+             '<stop offset="1" stop-color="#30d890"/></linearGradient>');
+  /* God ray gradient */
+  parts.push('<linearGradient id="ray" x1="0" x2="0" y1="0" y2="1">' +
+             '<stop offset="0%" stop-color="#b4ebff" stop-opacity=".08"/>' +
+             '<stop offset="15%" stop-color="#78d2f0" stop-opacity=".05"/>' +
+             '<stop offset="50%" stop-color="#46aae0" stop-opacity=".025"/>' +
+             '<stop offset="100%" stop-color="#1e64a0" stop-opacity="0"/></linearGradient>');
+  /* Floor caustic radial gradient */
+  parts.push('<radialGradient id="caustic" cx="50%" cy="50%" r="50%">' +
+             '<stop offset="0%" stop-color="#b4f0ff" stop-opacity=".06"/>' +
+             '<stop offset="60%" stop-color="#64c8e6" stop-opacity=".02"/>' +
+             '<stop offset="100%" stop-color="#3296c8" stop-opacity="0"/></radialGradient>');
+  /* Floor gradient */
+  parts.push('<linearGradient id="floor" x1="0" x2="0" y1="0" y2="1">' +
+             '<stop offset="0%" stop-color="#143c50" stop-opacity="0"/>' +
+             '<stop offset="30%" stop-color="#123241" stop-opacity=".15"/>' +
+             '<stop offset="100%" stop-color="#0c2332" stop-opacity=".3"/></linearGradient>');
   parts.push('<filter id="glow" x="-70%" y="-70%" width="240%" height="240%">' +
              '<feGaussianBlur stdDeviation="3.2" result="b"/>' +
              '<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>' +
@@ -198,51 +227,139 @@ function buildSvg(data, tracks) {
              '</filter>');
   parts.push('</defs>');
 
+  /* Background */
   parts.push('<rect width="' + W + '" height="' + H + '" fill="url(#bg)"/>');
-  parts.push('<rect width="' + W + '" height="42" fill="url(#surface)"/>');
-  parts.push('<path d="M0,23 Q55,13 110,23 T220,23 T330,23 T440,23 T550,23 T660,23 T770,23 T880,23" ' +
-             'fill="none" stroke="#d5fbff" stroke-opacity=".34" stroke-width="2">' +
-             '<animate attributeName="d" dur="7s" repeatCount="indefinite" values="' +
-             'M0,23 Q55,13 110,23 T220,23 T330,23 T440,23 T550,23 T660,23 T770,23 T880,23;' +
-             'M0,23 Q55,31 110,23 T220,23 T330,23 T440,23 T550,23 T660,23 T770,23 T880,23;' +
-             'M0,23 Q55,13 110,23 T220,23 T330,23 T440,23 T550,23 T660,23 T770,23 T880,23"/>' +
-             '</path>');
 
-  // sunlight shafts from the surface
-  for (let i = 0; i < 5; i++) {
-    const x = 60 + i * 175;
-    parts.push('<polygon points="' + x + ',0 ' + (x + 54) + ',0 ' +
-               (x + 150) + ',' + H + ' ' + (x + 28) + ',' + H +
-               '" fill="#b8f4ff" opacity="0.075">' +
-               '<animate attributeName="opacity" values=".04;.10;.04" dur="' + (8 + i) + 's" repeatCount="indefinite"/></polygon>');
+  /* God rays — volumetric light shafts with animated opacity */
+  const rayRnd = mulberry32(4242);
+  for (let i = 0; i < 8; i++) {
+    const x = 40 + i * 108 + Math.floor((rayRnd() - 0.5) * 40);
+    const topW = 25 + Math.floor(rayRnd() * 45);
+    const bottomW = 70 + Math.floor(rayRnd() * 140);
+    const baseAlpha = (0.02 + rayRnd() * 0.04).toFixed(3);
+    const maxAlpha = (parseFloat(baseAlpha) * 2.2).toFixed(3);
+    const animDur = (12 + rayRnd() * 16).toFixed(1);
+    parts.push('<polygon points="' + (x - topW/2) + ',0 ' + (x + topW/2) + ',0 ' +
+               (x + bottomW/2) + ',' + H + ' ' + (x - bottomW/2) + ',' + H +
+               '" fill="url(#ray)">' +
+               '<animate attributeName="opacity" values="' + baseAlpha + ';' + maxAlpha + ';' + baseAlpha +
+               '" dur="' + animDur + 's" repeatCount="indefinite"/></polygon>');
   }
 
-  // seaweed stays behind fish; sway repeats at the same endpoint
+  /* Bright water surface */
+  parts.push('<rect width="' + W + '" height="55" fill="url(#surface)"/>');
+
+  /* Surface wave lines — 3 animated waves */
+  for (let wave = 0; wave < 3; wave++) {
+    const yBase = 12 + wave * 10;
+    const amp = 4 + wave * 2;
+    const opacity = (0.38 - wave * 0.1).toFixed(2);
+    const strokeW = (2.5 - wave * 0.6).toFixed(1);
+    const animDur = (6 + wave * 2) + 's';
+    // Build two wave states for animation
+    let d1 = 'M0,' + yBase;
+    let d2 = 'M0,' + yBase;
+    for (let x = 0; x <= W; x += 55) {
+      const y1 = yBase + Math.sin(x * 0.035) * amp;
+      const y2 = yBase + Math.sin(x * 0.035 + Math.PI) * amp;
+      d1 += ' L' + x + ',' + y1.toFixed(1);
+      d2 += ' L' + x + ',' + y2.toFixed(1);
+    }
+    parts.push('<path d="' + d1 + '" fill="none" stroke="#d5fbff" stroke-opacity="' + opacity +
+               '" stroke-width="' + strokeW + '">' +
+               '<animate attributeName="d" dur="' + animDur + '" repeatCount="indefinite" values="' +
+               d1 + ';' + d2 + ';' + d1 + '"/></path>');
+  }
+
+  /* Surface shimmer highlights */
+  const shimmerRnd = mulberry32(5555);
   for (let i = 0; i < 12; i++) {
-    const x = 24 + i * 76;
-    const h = 35 + (i % 5) * 12;
-    const w = 9 + (i % 3) * 3;
-    parts.push('<path d="M' + x + ',' + H + ' Q' + (x - w) + ',' + (H - h * 0.35) + ' ' + x + ',' + (H - h) +
-               ' Q' + (x + w) + ',' + (H - h * 0.38) + ' ' + x + ',' + H + '" fill="url(#weed)" opacity=".72">' +
-               '<animateTransform attributeName="transform" type="skewX" values="-5;5;-5" dur="' + (4 + i % 4) +
-               's" repeatCount="indefinite"/></path>');
+    const sx = Math.floor(shimmerRnd() * W);
+    const sy = 4 + Math.floor(shimmerRnd() * 14);
+    const rx = 5 + Math.floor(shimmerRnd() * 8);
+    const dur = (3 + shimmerRnd() * 5).toFixed(1);
+    parts.push('<ellipse cx="' + sx + '" cy="' + sy + '" rx="' + rx + '" ry="1.5" fill="#fff" opacity="0">' +
+               '<animate attributeName="opacity" values="0;.15;0" dur="' + dur + 's" repeatCount="indefinite" begin="-' +
+               (shimmerRnd() * 5).toFixed(1) + 's"/></ellipse>');
   }
 
-  // bubbles and marine snow use separate slow drift layers
+  /* Caustic light patches on floor */
+  const causticRnd = mulberry32(7777);
+  for (let i = 0; i < 10; i++) {
+    const cx = Math.floor(causticRnd() * W);
+    const cy = Math.floor(H * 0.82 + causticRnd() * H * 0.18);
+    const r = 15 + Math.floor(causticRnd() * 40);
+    const dur = (6 + causticRnd() * 8).toFixed(1);
+    parts.push('<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="url(#caustic)">' +
+               '<animate attributeName="opacity" values=".3;.8;.3" dur="' + dur + 's" repeatCount="indefinite" begin="-' +
+               (causticRnd() * 6).toFixed(1) + 's"/>' +
+               '<animate attributeName="r" values="' + r + ';' + (r + 8) + ';' + r + '" dur="' + (parseFloat(dur) + 2).toFixed(1) +
+               's" repeatCount="indefinite"/></circle>');
+  }
+
+  /* Sandy floor */
+  parts.push('<rect x="0" y="' + Math.floor(H * 0.88) + '" width="' + W + '" height="' + Math.ceil(H * 0.12) +
+             '" fill="url(#floor)"/>');
+
+  /* Seaweed — lush multi-segment kelp with leaf shapes */
+  for (let i = 0; i < 16; i++) {
+    const x = 18 + i * Math.floor((W - 36) / 15);
+    const h = 35 + (i % 6) * 12;
+    const w = 7 + (i % 4) * 3;
+    const weedGrd = 'weed' + ((i % 3) + 1);
+    const swayAmt = 5 + (i % 3) * 3;
+    const durSway = (3.5 + i % 5 * 0.8).toFixed(1);
+    
+    /* Main stem */
+    parts.push('<path d="M' + x + ',' + H + ' Q' + (x - w * 0.8) + ',' + (H - h * 0.4) + ' ' + x + ',' + (H - h) +
+               ' Q' + (x + w * 0.9) + ',' + (H - h * 0.45) + ' ' + (x + 2) + ',' + H + 'Z" fill="url(#' + weedGrd + ')" opacity=".82">' +
+               '<animateTransform attributeName="transform" type="rotate" values="' +
+               (-swayAmt) + ' ' + x + ' ' + H + ';' + swayAmt + ' ' + x + ' ' + H + ';' + (-swayAmt) + ' ' + x + ' ' + H +
+               '" dur="' + durSway + 's" repeatCount="indefinite"/></path>');
+
+    /* Leaf shapes on alternating sides */
+    if (i % 2 === 0 && h > 40) {
+      const leafY = H - h * 0.55;
+      const leafLen = w * 1.6;
+      const side = (i % 4 === 0) ? -1 : 1;
+      const leafDur = (parseFloat(durSway) + 0.5).toFixed(1);
+      parts.push('<path d="M' + x + ',' + leafY + ' Q' + (x + side * leafLen * 0.6) + ',' + (leafY - 8) + ' ' +
+                 (x + side * leafLen) + ',' + (leafY - 3) + ' Q' + (x + side * leafLen * 0.5) + ',' + (leafY + 6) + ' ' +
+                 x + ',' + (leafY + 3) + 'Z" fill="url(#' + weedGrd + ')" opacity=".65">' +
+                 '<animateTransform attributeName="transform" type="rotate" values="' +
+                 (-swayAmt * 1.2) + ' ' + x + ' ' + H + ';' + (swayAmt * 1.2) + ' ' + x + ' ' + H + ';' +
+                 (-swayAmt * 1.2) + ' ' + x + ' ' + H +
+                 '" dur="' + leafDur + 's" repeatCount="indefinite"/></path>');
+    }
+  }
+
+  /* Enhanced bubbles with gradient-like opacity */
   const bubbleRnd = mulberry32(731);
-  for (let i = 0; i < 18; i++) {
+  for (let i = 0; i < 24; i++) {
     const x = bubbleRnd() * W;
-    const r = 1.8 + bubbleRnd() * 4;
+    const r = 1.5 + bubbleRnd() * 4.5;
     const delay = (bubbleRnd() * 12).toFixed(2);
-    const d = (8 + bubbleRnd() * 8).toFixed(2);
-    parts.push('<circle r="' + r.toFixed(1) + '" fill="none" stroke="#d8faff" stroke-width=".8" opacity=".42">' +
+    const d = (7 + bubbleRnd() * 9).toFixed(2);
+    const wobble = (bubbleRnd() - 0.5) * 30;
+    /* Bubble body */
+    parts.push('<circle r="' + r.toFixed(1) + '" fill="none" stroke="#c8f5ff" stroke-width=".7" opacity="0">' +
                '<animateMotion dur="' + d + 's" repeatCount="indefinite" begin="-' + delay + 's" path="M' +
-               x.toFixed(1) + ',' + (H + 12) + ' C' + (x - 18).toFixed(1) + ',' + (H * 0.64).toFixed(1) + ' ' +
-               (x + 20).toFixed(1) + ',' + (H * 0.28).toFixed(1) + ' ' + (x - 8).toFixed(1) + ',-12"/>' +
-               '<animate attributeName="opacity" values="0;.44;.44;0" dur="' + d + 's" repeatCount="indefinite" begin="-' + delay + 's"/></circle>');
+               x.toFixed(1) + ',' + (H + 12) + ' C' + (x - 18 + wobble * 0.3).toFixed(1) + ',' + (H * 0.64).toFixed(1) + ' ' +
+               (x + 20 + wobble * 0.5).toFixed(1) + ',' + (H * 0.28).toFixed(1) + ' ' + (x - 8 + wobble).toFixed(1) + ',-12"/>' +
+               '<animate attributeName="opacity" values="0;.40;.45;.35;0" dur="' + d + 's" repeatCount="indefinite" begin="-' + delay + 's"/></circle>');
+    /* Highlight dot inside larger bubbles */
+    if (r > 3) {
+      parts.push('<circle r="' + (r * 0.2).toFixed(1) + '" fill="#fff" opacity="0">' +
+                 '<animateMotion dur="' + d + 's" repeatCount="indefinite" begin="-' + delay + 's" path="M' +
+                 (x - r * 0.3).toFixed(1) + ',' + (H + 12 - r * 0.3) + ' C' +
+                 (x - 18 + wobble * 0.3 - r * 0.3).toFixed(1) + ',' + (H * 0.64 - r * 0.3).toFixed(1) + ' ' +
+                 (x + 20 + wobble * 0.5 - r * 0.3).toFixed(1) + ',' + (H * 0.28 - r * 0.3).toFixed(1) + ' ' +
+                 (x - 8 + wobble - r * 0.3).toFixed(1) + ',' + (-12 - r * 0.3) + '"/>' +
+                 '<animate attributeName="opacity" values="0;.50;.55;.40;0" dur="' + d + 's" repeatCount="indefinite" begin="-' + delay + 's"/></circle>');
+    }
   }
 
-  // marine snow: pure drift, no flocking - cheap and sells depth
+  // marine snow: pure drift
   const snowRnd = mulberry32(90210);
   for (let i = 0; i < 46; i++) {
     const x = snowRnd() * W;
@@ -276,7 +393,7 @@ function buildSvg(data, tracks) {
     parts.push('</g>');
   });
 
-  // vignette so the edges fall into darkness
+  /* Vignette overlay */
   parts.push('<rect width="' + W + '" height="' + H + '" fill="none"/>');
 
   // caption
