@@ -147,25 +147,100 @@ function esc(s) {
   ));
 }
 
-function fishSilhouette(f) {
+/* ---------------------------------------------------------------------
+ * 2.5D shading, in vector.
+ *
+ * Bitmap sprites were the obvious idea and the wrong one: GitHub only
+ * renders SVG in a README, animateMotion rotate="auto" would smear a
+ * raster, and one PNG per language colour does not scale. So depth comes
+ * from layering instead - a lit dorsal gradient, a shadowed belly, a
+ * translucent fin over the body, a specular highlight and a contact
+ * shadow underneath. Same trick a 2.5D game uses, no pixels involved.
+ * ------------------------------------------------------------------- */
+
+/* Shift a hex colour toward white or black. Used to derive the lit and
+ * shaded tones from whatever colour the repository's language gave us,
+ * so every fish stays on-palette without a hand-picked ramp. */
+function shade(hex, amt) {
+  const h = hex.replace('#', '');
+  const n = h.length === 3
+    ? h.split('').map(c => parseInt(c + c, 16))
+    : [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+  const mix = amt > 0 ? 255 : 0;
+  const t = Math.abs(amt);
+  return '#' + n.map(v => {
+    const out = Math.round(v + (mix - v) * t);
+    return Math.max(0, Math.min(255, out)).toString(16).padStart(2, '0');
+  }).join('');
+}
+
+/* Per-fish gradients and the soft shadow that sells the volume. */
+function fishDefs(f, id) {
+  const lit = shade(f.color, 0.42);
+  const dark = shade(f.color, -0.45);
+  return '<linearGradient id="fb' + id + '" x1="0" y1="0" x2="0" y2="1">' +
+           '<stop offset="0%" stop-color="' + lit + '"/>' +
+           '<stop offset="42%" stop-color="' + f.color + '"/>' +
+           '<stop offset="100%" stop-color="' + dark + '"/>' +
+         '</linearGradient>' +
+         '<linearGradient id="ff' + id + '" x1="0" y1="0" x2="1" y2="0">' +
+           '<stop offset="0%" stop-color="' + lit + '" stop-opacity=".85"/>' +
+           '<stop offset="100%" stop-color="' + f.color + '" stop-opacity=".35"/>' +
+         '</linearGradient>';
+}
+
+function fishSilhouette(f, id) {
   const body = f.size;
   const tail = body * 0.8;
-  const eye = '<circle cx="' + (body * 0.42).toFixed(1) + '" cy="' + (-body * 0.16).toFixed(1) +
-    '" r="' + Math.max(1.1, body * 0.13).toFixed(1) + '" fill="#04121f" opacity="0.85"/>';
-  const fill = ' fill="' + f.color + '"';
+  const gid = id === undefined ? 0 : id;
+
+  /* An eye with a catchlight reads as wet and alive; a flat dot does not. */
+  const ex = body * 0.42, ey = -body * 0.16;
+  const er = Math.max(1.2, body * 0.15);
+  const eye =
+    '<circle cx="' + ex.toFixed(1) + '" cy="' + ey.toFixed(1) + '" r="' + er.toFixed(1) +
+      '" fill="#f2fbff" opacity=".92"/>' +
+    '<circle cx="' + ex.toFixed(1) + '" cy="' + ey.toFixed(1) + '" r="' + (er * 0.62).toFixed(1) +
+      '" fill="#06131f"/>' +
+    '<circle cx="' + (ex + er * 0.3).toFixed(1) + '" cy="' + (ey - er * 0.32).toFixed(1) +
+      '" r="' + (er * 0.26).toFixed(1) + '" fill="#ffffff" opacity=".95"/>';
+
+  /* Contact shadow: a squashed ellipse under the belly, no blur filter -
+   * filters are expensive when 29 of them animate at once. */
+  const shadow = '<ellipse cx="' + (-body * 0.1).toFixed(1) + '" cy="' + (body * 0.62).toFixed(1) +
+    '" rx="' + (body * 0.85).toFixed(1) + '" ry="' + (body * 0.2).toFixed(1) +
+    '" fill="#010a14" opacity=".22"/>';
+
+  /* Specular streak along the lit dorsal edge. */
+  const gloss = '<ellipse cx="' + (body * 0.1).toFixed(1) + '" cy="' + (-body * 0.42).toFixed(1) +
+    '" rx="' + (body * 0.5).toFixed(1) + '" ry="' + (body * 0.13).toFixed(1) +
+    '" fill="#ffffff" opacity=".26"/>';
+
+  /* Pectoral fin, translucent and slightly ahead of centre: this single
+   * overlapping shape does most of the work of reading as 3D. */
+  const pec = '<path d="M' + (body * 0.05).toFixed(1) + ',' + (body * 0.05).toFixed(1) +
+    ' q' + (-body * 0.5).toFixed(1) + ',' + (body * 0.42).toFixed(1) + ' ' +
+    (-body * 0.08).toFixed(1) + ',' + (body * 0.56).toFixed(1) +
+    ' q' + (body * 0.3).toFixed(1) + ',' + (-body * 0.2).toFixed(1) + ' ' +
+    (body * 0.12).toFixed(1) + ',' + (-body * 0.58).toFixed(1) + 'Z"' +
+    ' fill="url(#ff' + gid + ')" opacity=".75"/>';
+
+  const fill = ' fill="url(#fb' + gid + ')"';
+  const extras = shadow;
+  const overlay = gloss + pec + eye;
   switch (f.sprite) {
     case 'angelfish':
-      return '<path d="M' + (-body) + ',0 Q0,' + (-body * 1.15) + ' ' + body + ',0 Q0,' + body * 1.15 + ' ' + (-body) + ',0 L' + (-body - tail) + ',' + (-tail * 0.6) + ' L' + (-body - tail) + ',' + (tail * 0.6) + 'Z"' + fill + '/>' + eye;
+      return extras + '<path d="M' + (-body) + ',0 Q0,' + (-body * 1.15) + ' ' + body + ',0 Q0,' + body * 1.15 + ' ' + (-body) + ',0 L' + (-body - tail) + ',' + (-tail * 0.6) + ' L' + (-body - tail) + ',' + (tail * 0.6) + 'Z"' + fill + '/>' + overlay;
     case 'butterflyfish':
-      return '<path d="M' + (-body * 0.9) + ',0 Q0,' + (-body * 0.95) + ' ' + body + ',0 Q0,' + body * 0.95 + ' ' + (-body * 0.9) + ',0 L' + (-body - tail) + ',' + (-tail * 0.52) + ' L' + (-body - tail) + ',' + (tail * 0.52) + 'Z"' + fill + '/>' + eye;
+      return extras + '<path d="M' + (-body * 0.9) + ',0 Q0,' + (-body * 0.95) + ' ' + body + ',0 Q0,' + body * 0.95 + ' ' + (-body * 0.9) + ',0 L' + (-body - tail) + ',' + (-tail * 0.52) + ' L' + (-body - tail) + ',' + (tail * 0.52) + 'Z"' + fill + '/>' + overlay;
     case 'seahorse':
-      return '<path d="M' + (body * 0.45) + ',' + (-body * 0.7) + ' q' + (body * 0.7) + ',' + (body * 0.55) + ' 0,' + body + ' q' + (-body * 0.95) + ',' + (body * 1.0) + ' ' + (-body * 0.3) + ',' + (body * 1.65) + ' q' + (body * 0.85) + ',' + (body * 0.65) + ' ' + (-body * 0.22) + ',' + (body * 1.18) + ' q' + (-body * 0.6) + ',' + (body * 0.25) + ' ' + (-body * 0.6) + ',' + (-body * 0.38) + ' q0,' + (-body * 0.55) + ' ' + (body * 0.52) + ',' + (-body * 0.66) + ' q' + (-body * 0.78) + ',' + (-body * 1.0) + ' ' + (-body * 0.15) + ',' + (-body * 1.54) + 'Z"' + fill + '/>' + eye;
+      return extras + '<path d="M' + (body * 0.45) + ',' + (-body * 0.7) + ' q' + (body * 0.7) + ',' + (body * 0.55) + ' 0,' + body + ' q' + (-body * 0.95) + ',' + (body * 1.0) + ' ' + (-body * 0.3) + ',' + (body * 1.65) + ' q' + (body * 0.85) + ',' + (body * 0.65) + ' ' + (-body * 0.22) + ',' + (body * 1.18) + ' q' + (-body * 0.6) + ',' + (body * 0.25) + ' ' + (-body * 0.6) + ',' + (-body * 0.38) + ' q0,' + (-body * 0.55) + ' ' + (body * 0.52) + ',' + (-body * 0.66) + ' q' + (-body * 0.78) + ',' + (-body * 1.0) + ' ' + (-body * 0.15) + ',' + (-body * 1.54) + 'Z"' + fill + '/>' + overlay;
     case 'tang':
-      return '<path d="M' + (-body) + ',0 Q' + (-body * 0.15) + ',' + (-body * 1.05) + ' ' + body + ',0 Q' + (-body * 0.15) + ',' + body * 1.05 + ' ' + (-body) + ',0 L' + (-body - tail) + ',' + (-tail * 0.72) + ' L' + (-body - tail) + ',' + (tail * 0.72) + 'Z"' + fill + '/>' + eye;
+      return extras + '<path d="M' + (-body) + ',0 Q' + (-body * 0.15) + ',' + (-body * 1.05) + ' ' + body + ',0 Q' + (-body * 0.15) + ',' + body * 1.05 + ' ' + (-body) + ',0 L' + (-body - tail) + ',' + (-tail * 0.72) + ' L' + (-body - tail) + ',' + (tail * 0.72) + 'Z"' + fill + '/>' + overlay;
     case 'clownfish':
-      return '<path d="M' + (-body) + ',0 Q0,' + (-body * 0.72) + ' ' + body + ',0 Q0,' + body * 0.72 + ' ' + (-body) + ',0 L' + (-body - tail) + ',' + (-tail * 0.7) + ' L' + (-body - tail) + ',' + (tail * 0.7) + 'Z"' + fill + '/><path d="M' + (-body * 0.15).toFixed(1) + ',' + (-body * 0.61).toFixed(1) + ' L' + (body * 0.1).toFixed(1) + ',' + (-body * 0.55).toFixed(1) + ' L' + (body * 0.1).toFixed(1) + ',' + (body * 0.55).toFixed(1) + ' L' + (-body * 0.15).toFixed(1) + ',' + (body * 0.61).toFixed(1) + 'Z" fill="#f4f1dd" opacity=".84"/>' + eye;
+      return extras + '<path d="M' + (-body) + ',0 Q0,' + (-body * 0.72) + ' ' + body + ',0 Q0,' + body * 0.72 + ' ' + (-body) + ',0 L' + (-body - tail) + ',' + (-tail * 0.7) + ' L' + (-body - tail) + ',' + (tail * 0.7) + 'Z"' + fill + '/><path d="M' + (-body * 0.15).toFixed(1) + ',' + (-body * 0.61).toFixed(1) + ' L' + (body * 0.1).toFixed(1) + ',' + (-body * 0.55).toFixed(1) + ' L' + (body * 0.1).toFixed(1) + ',' + (body * 0.55).toFixed(1) + ' L' + (-body * 0.15).toFixed(1) + ',' + (body * 0.61).toFixed(1) + 'Z" fill="#f4f1dd" opacity=".84"/>' + overlay;
     default:
-      return '<path d="M' + (-body) + ',0 Q0,' + (-body * 0.52) + ' ' + body + ',0 Q0,' + body * 0.52 + ' ' + (-body) + ',0 L' + (-body - tail) + ',' + (-tail * 0.62) + ' L' + (-body - tail) + ',' + (tail * 0.62) + 'Z"' + fill + '/>' + eye;
+      return extras + '<path d="M' + (-body) + ',0 Q0,' + (-body * 0.52) + ' ' + body + ',0 Q0,' + body * 0.52 + ' ' + (-body) + ',0 L' + (-body - tail) + ',' + (-tail * 0.62) + ' L' + (-body - tail) + ',' + (tail * 0.62) + 'Z"' + fill + '/>' + overlay;
   }
 }
 
@@ -225,6 +300,11 @@ function buildSvg(data, tracks) {
              '<feGaussianBlur stdDeviation="6" result="b"/>' +
              '<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>' +
              '</filter>');
+  /* One body gradient and one fin gradient per fish, derived from its
+   * language colour. Declared once here rather than inline, so the same
+   * ramp is reused by every frame of that fish's animation. */
+  data.fish.forEach((f, i) => parts.push(fishDefs(f, i)));
+
   parts.push('</defs>');
 
   /* Background */
@@ -300,6 +380,80 @@ function buildSvg(data, tracks) {
   /* Sandy floor */
   parts.push('<rect x="0" y="' + Math.floor(H * 0.88) + '" width="' + W + '" height="' + Math.ceil(H * 0.12) +
              '" fill="url(#floor)"/>');
+
+  /* Coral, drawn before the weed so the weed reads as nearer the camera.
+   * Depth here comes from the same trick as the fish: a lit crown, a
+   * darker base, and a contact shadow where it meets the floor. */
+  const coralRnd = mulberry32(8899);
+  const coralPalette = [
+    ['#ff7f9c', '#c23f68', '#7d1f42'],
+    ['#ffa864', '#d86a34', '#8c3c1c'],
+    ['#b98cff', '#7b52c8', '#472c7a'],
+    ['#5fe0c8', '#2b9f92', '#145a56'],
+  ];
+  for (let i = 0; i < 7; i++) {
+    const cx = 60 + i * Math.floor((W - 120) / 6) + Math.floor((coralRnd() - 0.5) * 40);
+    const scale = 0.72 + coralRnd() * 0.7;
+    const pal = coralPalette[(coralRnd() * coralPalette.length) | 0];
+    const baseY = H - 4;
+    const gid = 'cor' + i;
+
+    parts.push('<linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1">' +
+               '<stop offset="0%" stop-color="' + pal[0] + '"/>' +
+               '<stop offset="55%" stop-color="' + pal[1] + '"/>' +
+               '<stop offset="100%" stop-color="' + pal[2] + '"/></linearGradient>');
+
+    // contact shadow on the sand
+    parts.push('<ellipse cx="' + cx + '" cy="' + baseY + '" rx="' + (26 * scale).toFixed(1) +
+               '" ry="' + (5 * scale).toFixed(1) + '" fill="#010a14" opacity=".3"/>');
+
+    if (i % 3 === 0) {
+      /* Brain coral: stacked domes with grooves. */
+      const r = 20 * scale;
+      parts.push('<ellipse cx="' + cx + '" cy="' + (baseY - r * 0.55).toFixed(1) +
+                 '" rx="' + r.toFixed(1) + '" ry="' + (r * 0.72).toFixed(1) +
+                 '" fill="url(#' + gid + ')" opacity=".9"/>');
+      for (let k = 0; k < 4; k++) {
+        const gy = baseY - r * 0.95 + k * r * 0.32;
+        parts.push('<path d="M' + (cx - r * 0.78).toFixed(1) + ',' + gy.toFixed(1) +
+                   ' q' + (r * 0.4).toFixed(1) + ',' + (-r * 0.2).toFixed(1) + ' ' +
+                   (r * 0.78).toFixed(1) + ',0 q' + (r * 0.4).toFixed(1) + ',' +
+                   (r * 0.2).toFixed(1) + ' ' + (r * 0.78).toFixed(1) + ',0"' +
+                   ' fill="none" stroke="' + pal[2] + '" stroke-width="1.1" opacity=".45"/>');
+      }
+      parts.push('<ellipse cx="' + (cx - r * 0.28).toFixed(1) + '" cy="' + (baseY - r).toFixed(1) +
+                 '" rx="' + (r * 0.4).toFixed(1) + '" ry="' + (r * 0.2).toFixed(1) +
+                 '" fill="#ffffff" opacity=".2"/>');
+    } else {
+      /* Branching coral: a few tapering arms that drift very slightly. */
+      const arms = 3 + ((coralRnd() * 3) | 0);
+      const sway = (1.2 + coralRnd() * 1.4).toFixed(1);
+      const dur = (5 + coralRnd() * 4).toFixed(1);
+      let d = '';
+      for (let a = 0; a < arms; a++) {
+        const lean = (a - (arms - 1) / 2) * 9 * scale;
+        const hgt = (26 + coralRnd() * 20) * scale;
+        const w0 = 5.5 * scale;
+        d += 'M' + (cx + lean - w0).toFixed(1) + ',' + baseY +
+             ' Q' + (cx + lean * 1.5 - w0 * 0.4).toFixed(1) + ',' + (baseY - hgt * 0.6).toFixed(1) +
+             ' ' + (cx + lean * 1.9).toFixed(1) + ',' + (baseY - hgt).toFixed(1) +
+             ' Q' + (cx + lean * 1.5 + w0 * 0.4).toFixed(1) + ',' + (baseY - hgt * 0.6).toFixed(1) +
+             ' ' + (cx + lean + w0).toFixed(1) + ',' + baseY + 'Z ';
+      }
+      parts.push('<path d="' + d.trim() + '" fill="url(#' + gid + ')" opacity=".88">' +
+                 '<animateTransform attributeName="transform" type="rotate" values="' +
+                 (-sway) + ' ' + cx + ' ' + baseY + ';' + sway + ' ' + cx + ' ' + baseY + ';' +
+                 (-sway) + ' ' + cx + ' ' + baseY +
+                 '" dur="' + dur + 's" repeatCount="indefinite"/></path>');
+      // polyp tips catch the light
+      for (let a = 0; a < arms; a++) {
+        const lean = (a - (arms - 1) / 2) * 9 * scale;
+        parts.push('<circle cx="' + (cx + lean * 1.9).toFixed(1) + '" cy="' +
+                   (baseY - (26 + 10) * scale).toFixed(1) + '" r="' + (2.4 * scale).toFixed(1) +
+                   '" fill="' + pal[0] + '" opacity=".5"/>');
+      }
+    }
+  }
 
   /* Seaweed — lush multi-segment kelp with leaf shapes */
   for (let i = 0; i < 16; i++) {
@@ -383,7 +537,7 @@ function buildSvg(data, tracks) {
 
     parts.push('<g opacity="' + op + '" filter="url(#' + filt + ')">');
     parts.push('<g>');
-    parts.push(fishSilhouette(f));
+    parts.push(fishSilhouette(f, i));
     parts.push('<title>' + esc(f.name) + ' — ' + esc(f.lang) + ' · ' + f.stars +
                '★ · ' + (f.dormant ? 'resting, ' + f.ageDays + 'd since last push' : 'active') +
                '</title>');
