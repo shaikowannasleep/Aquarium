@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>LUMEN — Playable</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="stage"><canvas id="cv"></canvas></div>
+
+<div id="ui">
+  <div id="hud">
+    <div>
+      <div id="beat">RULE 01 — COHESION</div>
+      <div id="obj">Gather the lost school</div>
+      <div id="meter"><div id="meterFill"></div></div>
+    </div>
+    <div id="right">
+      <div id="count">0/60</div>
+      <div id="countLbl">RESCUED</div>
+    </div>
+  </div>
+
+  <div id="toast"><div id="toastT"></div><div id="toastS"></div></div>
+  <div id="hand"></div>
+
+  <div id="end">
+    <div id="logo">LUMEN</div>
+    <div id="tag">EVERY FISH THINKS FOR ITSELF.<br>YOU ONLY BRING THE LIGHT.</div>
+    <div id="stats"></div>
+    <button id="cta">PLAY FREE</button>
+    <div id="replay">REPLAY</div>
+  </div>
+
+  <div id="techBtn">TECH</div>
+  <div id="tech">
+    <div><b>BOIDS — Reynolds 1987</b></div>
+    <div><span class="k">agents</span><b id="tAgents">0</b></div>
+    <div><span class="k">fps</span><b id="tFps">0</b></div>
+    <div><span class="k">sim step</span><b id="tSim">0</b></div>
+    <div><span class="k">grid build</span><b id="tGrid">0</b></div>
+    <hr>
+    <div><span class="k">pair tests</span><b id="tTests">0</b></div>
+    <div><span class="k">naive O(n²)</span><b id="tNaive">0</b></div>
+    <div><span class="k">cells used</span><b id="tCells">0</b></div>
+    <div><span class="k">order φ</span><b id="tPol">0</b></div>
+    <div><span class="k">tracked nbrs</span><b id="tNb">0</b></div>
+    <hr>
+    <div class="sl"><span>sep</span><input type="range" data-p="wSep" min="0" max="6" step="0.05"><i>0</i></div>
+    <div class="sl"><span>ali</span><input type="range" data-p="wAli" min="0" max="6" step="0.05"><i>0</i></div>
+    <div class="sl"><span>coh</span><input type="range" data-p="wCoh" min="0" max="6" step="0.05"><i>0</i></div>
+    <div class="sl"><span>lure</span><input type="range" data-p="wLure" min="0" max="8" step="0.05"><i>0</i></div>
+    <div class="sl"><span>r·coh</span><input type="range" data-p="rCoh" min="20" max="120" step="1"><i>0</i></div>
+    <div class="sl"><span>vmax</span><input type="range" data-p="maxSpeed" min="40" max="260" step="1"><i>0</i></div>
+  </div>
+</div>
+
+<script src="engine.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
