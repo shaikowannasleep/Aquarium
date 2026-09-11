@@ -31,21 +31,42 @@ const p = sw.p;
 p.rCoh = 84; p.rAli = 64; p.rSep = 30;
 p.wCoh = 0.7; p.wAli = 1.2; p.wSep = 2.2;
 p.minSpeed = 18; p.maxSpeed = 62; p.maxForce = 140;
-p.margin = 56; p.maxNeighbours = 6; p.rLure = 240;
+p.margin = 56; p.maxNeighbours = 6;
 
 const world = {
-  predators: [], obstacles: [],
-  lure: { x: W / 2, y: H / 2, power: 0, active: false },
+  predators: [], obstacles: [], ripples: [],
 };
 
-let mx = W / 2, my = H / 2, hovering = false;
-cv.addEventListener('mousemove', e => {
-  mx = e.clientX; my = e.clientY; hovering = true;
-});
-cv.addEventListener('mouseleave', () => { hovering = false; });
+let mx = W / 2, my = H / 2, hovering = false, rippleClock = 0;
+const RIPPLE_COUNT = 12;
+for (let i = 0; i < RIPPLE_COUNT; i++) {
+  world.ripples.push({ x: 0, y: 0, radius: 0, speed: 150, strength: 0,
+    age: 0, lifetime: 1.1, band: 30, active: false });
+}
+
+function addRipple(x, y, strength) {
+  let ripple = null;
+  for (let i = 0; i < RIPPLE_COUNT; i++) {
+    if (!world.ripples[i].active) { ripple = world.ripples[i]; break; }
+  }
+  if (!ripple) ripple = world.ripples[0];
+  ripple.x = x; ripple.y = y; ripple.radius = 8; ripple.speed = 150;
+  ripple.strength = strength; ripple.age = 0; ripple.lifetime = 1.1; ripple.active = true;
+}
+
+function movePointer(x, y) {
+  const distance = Math.hypot(x - mx, y - my);
+  mx = x; my = y; hovering = true;
+  if (distance > 16 || rippleClock > 0.18) { addRipple(x, y, Math.min(1, 0.48 + distance / 180)); rippleClock = 0; }
+}
+
+cv.addEventListener('pointermove', e => movePointer(e.clientX, e.clientY));
+cv.addEventListener('pointerdown', e => { movePointer(e.clientX, e.clientY); addRipple(e.clientX, e.clientY, 1); });
+cv.addEventListener('pointerleave', () => { hovering = false; });
+cv.addEventListener('pointercancel', () => { hovering = false; });
 cv.addEventListener('touchmove', e => {
   e.preventDefault();
-  mx = e.touches[0].clientX; my = e.touches[0].clientY; hovering = true;
+  movePointer(e.touches[0].clientX, e.touches[0].clientY);
 }, { passive: false });
 
 /* marine snow: drift only, independent of the flock */
@@ -79,13 +100,18 @@ let last = performance.now(), acc = 0, fps = 60, fa = 0, fn = 0, t = 0, ordT = 0
 function frame(now) {
   const raw = (now - last) / 1000; last = now;
   const dt = Math.min(raw, 0.05); t += dt;
+  rippleClock += dt;
   fa += raw; fn++;
   if (fa > 0.5) { fps = fn / fa; fa = 0; fn = 0; fpsEl.textContent = fps.toFixed(0); }
 
-  const L = world.lure;
-  L.x += (mx - L.x) * 0.15; L.y += (my - L.y) * 0.15;
-  L.power += ((hovering ? 0.85 : 0) - L.power) * 0.08;
-  L.active = L.power > 0.03;
+  for (let i = 0; i < RIPPLE_COUNT; i++) {
+    const ripple = world.ripples[i];
+    if (!ripple.active) continue;
+    ripple.age += dt;
+    ripple.radius += ripple.speed * dt;
+    ripple.strength = Math.max(0, 1 - ripple.age / ripple.lifetime);
+    if (ripple.age >= ripple.lifetime) ripple.active = false;
+  }
 
   acc += dt;
   let guard = 0;
@@ -118,14 +144,14 @@ function frame(now) {
     g.beginPath(); g.arc(s.x, s.y, s.r, 0, TAU); g.fill();
   }
 
-  if (world.lure.active) {
-    const R = 200 * world.lure.power;
-    const gr = g.createRadialGradient(world.lure.x, world.lure.y, 2, world.lure.x, world.lure.y, R);
-    gr.addColorStop(0, 'rgba(180,240,255,' + (0.16 * world.lure.power).toFixed(3) + ')');
-    gr.addColorStop(1, 'rgba(80,190,255,0)');
-    g.fillStyle = gr;
-    g.beginPath(); g.arc(world.lure.x, world.lure.y, R, 0, TAU); g.fill();
+  for (let i = 0; i < RIPPLE_COUNT; i++) {
+    const ripple = world.ripples[i];
+    if (!ripple.active) continue;
+    g.globalAlpha = ripple.strength * 0.32;
+    g.strokeStyle = '#a8eaff'; g.lineWidth = 1.2;
+    g.beginPath(); g.arc(ripple.x, ripple.y, ripple.radius, 0, TAU); g.stroke();
   }
+  g.globalAlpha = 1;
 
   let hoverIdx = -1, hoverD = 1e9;
   for (let i = 0; i < sw.n; i++) {

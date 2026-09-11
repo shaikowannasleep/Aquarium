@@ -165,7 +165,7 @@ class SwarmEngine {
 
   /* -------------------------------------------------------------------
    * One fixed simulation step.
-   * ctx supplies the world: predators, obstacles, lure, flow field.
+  * ctx supplies the world: predators, obstacles, ripples, lure, flow field.
    * ----------------------------------------------------------------- */
   step(dt, world) {
     const t0 = performance.now();
@@ -286,6 +286,25 @@ class SwarmEngine {
           const t = 1 - d / R;
           fx += (dx / d) * p.maxSpeed * p.wAvoid * t;
           fy += (dy / d) * p.maxSpeed * p.wAvoid * t;
+        }
+      }
+
+      /* ---- ripples : flee the moving wave front, not its centre --- */
+      const ripples = world.ripples || [];
+      for (let q = 0; q < ripples.length; q++) {
+        const R = ripples[q];
+        if (!R.active) continue;
+        const dx = x - R.x, dy = y - R.y;
+        const d = Math.hypot(dx, dy);
+        const band = Math.max(18, R.band || 28);
+        const distance = Math.abs(d - R.radius);
+        if (distance < band && d > 1e-4) {
+          const t = 1 - distance / band;
+          const w = t * t * R.strength;
+          const direction = d < R.radius ? -1 : 1;
+          fx += (dx / d) * direction * p.maxSpeed * p.wFlee * w;
+          fy += (dy / d) * direction * p.maxSpeed * p.wFlee * w;
+          if (w > panic) panic = w;
         }
       }
 

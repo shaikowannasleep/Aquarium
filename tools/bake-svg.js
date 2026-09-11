@@ -106,16 +106,67 @@ function simulate(data) {
   return tracks;
 }
 
-function pathFrom(track) {
-  let d = 'M' + track[0][0] + ',' + track[0][1];
+function loopPathFrom(track) {
+  const first = track[0], second = track[1];
+  const penultimate = track[track.length - 2], last = track[track.length - 1];
+  const inX = last[0] - penultimate[0], inY = last[1] - penultimate[1];
+  const outX = second[0] - first[0], outY = second[1] - first[1];
+  const bridge = Math.max(42, Math.hypot(last[0] - first[0], last[1] - first[1]) * 0.42);
+  const inLength = Math.hypot(inX, inY) || 1;
+  const outLength = Math.hypot(outX, outY) || 1;
+
+  let d = 'M' + first[0] + ',' + first[1];
   for (let i = 1; i < track.length; i++) d += 'L' + track[i][0] + ',' + track[i][1];
+  d += 'C' + (last[0] + inX / inLength * bridge).toFixed(1) + ',' +
+       (last[1] + inY / inLength * bridge).toFixed(1) + ' ' +
+       (first[0] - outX / outLength * bridge).toFixed(1) + ',' +
+       (first[1] - outY / outLength * bridge).toFixed(1) + ' ' +
+       first[0] + ',' + first[1];
   return d;
+}
+
+function loopContinuity(track) {
+  const first = track[0], second = track[1];
+  const penultimate = track[track.length - 2], last = track[track.length - 1];
+  const inX = last[0] - penultimate[0], inY = last[1] - penultimate[1];
+  const outX = second[0] - first[0], outY = second[1] - first[1];
+  const inLength = Math.hypot(inX, inY) || 1;
+  const outLength = Math.hypot(outX, outY) || 1;
+  return {
+    positionGap: 0,
+    tangentDot: Math.min(
+      (inX * inX + inY * inY) / (inLength * inLength),
+      (outX * outX + outY * outY) / (outLength * outLength)
+    ),
+  };
 }
 
 function esc(s) {
   return String(s).replace(/[<>&'"]/g, c => (
     { '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' }[c]
   ));
+}
+
+function fishSilhouette(f) {
+  const body = f.size;
+  const tail = body * 0.8;
+  const eye = '<circle cx="' + (body * 0.42).toFixed(1) + '" cy="' + (-body * 0.16).toFixed(1) +
+    '" r="' + Math.max(1.1, body * 0.13).toFixed(1) + '" fill="#04121f" opacity="0.85"/>';
+  const fill = ' fill="' + f.color + '"';
+  switch (f.sprite) {
+    case 'angelfish':
+      return '<path d="M' + (-body) + ',0 Q0,' + (-body * 1.15) + ' ' + body + ',0 Q0,' + body * 1.15 + ' ' + (-body) + ',0 L' + (-body - tail) + ',' + (-tail * 0.6) + ' L' + (-body - tail) + ',' + (tail * 0.6) + 'Z"' + fill + '/>' + eye;
+    case 'butterflyfish':
+      return '<path d="M' + (-body * 0.9) + ',0 Q0,' + (-body * 0.95) + ' ' + body + ',0 Q0,' + body * 0.95 + ' ' + (-body * 0.9) + ',0 L' + (-body - tail) + ',' + (-tail * 0.52) + ' L' + (-body - tail) + ',' + (tail * 0.52) + 'Z"' + fill + '/>' + eye;
+    case 'seahorse':
+      return '<path d="M' + (body * 0.45) + ',' + (-body * 0.7) + ' q' + (body * 0.7) + ',' + (body * 0.55) + ' 0,' + body + ' q' + (-body * 0.95) + ',' + (body * 1.0) + ' ' + (-body * 0.3) + ',' + (body * 1.65) + ' q' + (body * 0.85) + ',' + (body * 0.65) + ' ' + (-body * 0.22) + ',' + (body * 1.18) + ' q' + (-body * 0.6) + ',' + (body * 0.25) + ' ' + (-body * 0.6) + ',' + (-body * 0.38) + ' q0,' + (-body * 0.55) + ' ' + (body * 0.52) + ',' + (-body * 0.66) + ' q' + (-body * 0.78) + ',' + (-body * 1.0) + ' ' + (-body * 0.15) + ',' + (-body * 1.54) + 'Z"' + fill + '/>' + eye;
+    case 'tang':
+      return '<path d="M' + (-body) + ',0 Q' + (-body * 0.15) + ',' + (-body * 1.05) + ' ' + body + ',0 Q' + (-body * 0.15) + ',' + body * 1.05 + ' ' + (-body) + ',0 L' + (-body - tail) + ',' + (-tail * 0.72) + ' L' + (-body - tail) + ',' + (tail * 0.72) + 'Z"' + fill + '/>' + eye;
+    case 'clownfish':
+      return '<path d="M' + (-body) + ',0 Q0,' + (-body * 0.72) + ' ' + body + ',0 Q0,' + body * 0.72 + ' ' + (-body) + ',0 L' + (-body - tail) + ',' + (-tail * 0.7) + ' L' + (-body - tail) + ',' + (tail * 0.7) + 'Z"' + fill + '/><path d="M' + (-body * 0.15).toFixed(1) + ',' + (-body * 0.61).toFixed(1) + ' L' + (body * 0.1).toFixed(1) + ',' + (-body * 0.55).toFixed(1) + ' L' + (body * 0.1).toFixed(1) + ',' + (body * 0.55).toFixed(1) + ' L' + (-body * 0.15).toFixed(1) + ',' + (body * 0.61).toFixed(1) + 'Z" fill="#f4f1dd" opacity=".84"/>' + eye;
+    default:
+      return '<path d="M' + (-body) + ',0 Q0,' + (-body * 0.52) + ' ' + body + ',0 Q0,' + body * 0.52 + ' ' + (-body) + ',0 L' + (-body - tail) + ',' + (-tail * 0.62) + ' L' + (-body - tail) + ',' + (tail * 0.62) + 'Z"' + fill + '/>' + eye;
+  }
 }
 
 function buildSvg(data, tracks) {
@@ -169,23 +220,13 @@ function buildSvg(data, tracks) {
   data.fish.forEach((f, i) => {
     const track = tracks[i];
     if (!track || track.length < 2) return;
-    const d = pathFrom(track);
+    const d = loopPathFrom(track);
     const op = f.dormant ? 0.72 : 0.95;
     const filt = f.dormant ? 'softglow' : 'glow';
-    const body = f.size;
-    const tail = body * 0.75;
 
     parts.push('<g opacity="' + op + '" filter="url(#' + filt + ')">');
     parts.push('<g>');
-    // body drawn around the origin; animateMotion moves the group
-    parts.push('<ellipse rx="' + body.toFixed(1) + '" ry="' + (body * 0.52).toFixed(1) +
-               '" fill="' + f.color + '"/>');
-    parts.push('<polygon points="' + (-body).toFixed(1) + ',0 ' +
-               (-body - tail).toFixed(1) + ',' + (-tail * 0.62).toFixed(1) + ' ' +
-               (-body - tail).toFixed(1) + ',' + (tail * 0.62).toFixed(1) +
-               '" fill="' + f.color + '" opacity="0.82"/>');
-    parts.push('<circle cx="' + (body * 0.45).toFixed(1) + '" cy="' + (-body * 0.16).toFixed(1) +
-               '" r="' + Math.max(1.1, body * 0.13).toFixed(1) + '" fill="#04121f" opacity="0.85"/>');
+    parts.push(fishSilhouette(f));
     parts.push('<title>' + esc(f.name) + ' — ' + esc(f.lang) + ' · ' + f.stars +
                '★ · ' + (f.dormant ? 'resting, ' + f.ageDays + 'd since last push' : 'active') +
                '</title>');
@@ -238,4 +279,4 @@ async function main() {
 }
 
 if (require.main === module) main();
-module.exports = { simulate, buildSvg };
+module.exports = { simulate, buildSvg, loopPathFrom, loopContinuity };

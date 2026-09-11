@@ -21,6 +21,14 @@ const ok = (name, cond, extra) => {
   if (!cond) fail++;
 };
 
+function seededRandom(seed) {
+  let state = seed >>> 0;
+  return () => {
+    state = (state * 1664525 + 1013904223) >>> 0;
+    return state / 4294967296;
+  };
+}
+
 const W = 800, H = 1200;
 const sw = new SwarmEngine(1200, W, H);
 for (let i = 0; i < 700; i++) sw.spawn(Math.random() * W, Math.random() * H);
@@ -81,7 +89,9 @@ function localOrder(sw) {
 
 /* Run several seeds so a lucky start cannot make this pass. */
 let worst = 1, best = 0;
+const originalRandom = Math.random;
 for (let run = 0; run < 4; run++) {
+  Math.random = seededRandom(100 + run);
   const s2 = new SwarmEngine(400, W, H);
   for (let i = 0; i < 300; i++) s2.spawn(Math.random() * W, Math.random() * H);
   const w2 = { predators: [], obstacles: [], lure: { active: false } };
@@ -92,6 +102,7 @@ for (let run = 0; run < 4; run++) {
   if (l1 > best) best = l1;
   if (run === 0) ok('starts disordered (|local| < 0.15)', Math.abs(l0) < 0.15, l0.toFixed(3));
 }
+Math.random = originalRandom;
 ok('local order rises above 0.6 on every seed', worst > 0.6,
    'worst ' + worst.toFixed(3) + ', best ' + best.toFixed(3));
 
@@ -105,14 +116,25 @@ console.log('        naive O(n^2)      ' + naive.toLocaleString());
 console.log('        reduction         ' + ((1 - tests / naive) * 100).toFixed(1) + '%');
 ok('hash cuts >80% of pair tests', tests < naive * 0.2);
 
-console.log('\n=== 5. deterministic bake ===');
-const { simulate, buildSvg } = require('../tools/bake-svg');
+console.log('\n=== 5. ripple avoidance ===');
+const rippleSwarm = new SwarmEngine(1, 500, 300);
+rippleSwarm.spawn(150, 150, 30);
+rippleSwarm.vx[0] = 30; rippleSwarm.vy[0] = 0;
+rippleSwarm.p.minSpeed = 0; rippleSwarm.p.maxSpeed = 100; rippleSwarm.p.maxForce = 500;
+rippleSwarm.p.wSep = 0; rippleSwarm.p.wAli = 0; rippleSwarm.p.wCoh = 0; rippleSwarm.p.wBounds = 0;
+rippleSwarm.step(1 / 60, { predators: [], obstacles: [], lure: { active: false },
+  ripples: [{ x: 100, y: 150, radius: 50, speed: 150, strength: 1, band: 28, active: true }] });
+ok('ripple pushes fish away from its wave front', rippleSwarm.vx[0] > 30, rippleSwarm.vx[0].toFixed(2));
+
+console.log('\n=== 6. deterministic bake ===');
+const { simulate, buildSvg, loopPathFrom, loopContinuity } = require('../tools/bake-svg');
+const { speciesFor } = require('../tools/fetch-github');
 const sample = {
   user: 'x', name: 'x', followers: 1, publicRepos: 3,
   fish: [
-    { name: 'a', lang: 'C#', color: '#178600', stars: 3, forks: 0, size: 8, pace: 1, dormant: false, ageDays: 5 },
-    { name: 'b', lang: 'Go', color: '#00ADD8', stars: 1, forks: 0, size: 6, pace: 0.45, dormant: true, ageDays: 400 },
-    { name: 'c', lang: 'Lua', color: '#000080', stars: 0, forks: 0, size: 6, pace: 1, dormant: false, ageDays: 20 },
+    { name: 'a', lang: 'C#', color: '#178600', stars: 3, forks: 0, size: 8, pace: 1, dormant: false, ageDays: 5, species: 'neon-tetra', sprite: 'tetra', schooling: true, depth: 0.30 },
+    { name: 'b', lang: 'Go', color: '#00ADD8', stars: 1, forks: 0, size: 6, pace: 0.45, dormant: true, ageDays: 400, species: 'clownfish', sprite: 'clownfish', schooling: true, depth: 0.48 },
+    { name: 'c', lang: 'Lua', color: '#000080', stars: 0, forks: 0, size: 6, pace: 1, dormant: false, ageDays: 20, species: 'angelfish', sprite: 'angelfish', schooling: false, depth: 0.70 },
   ],
   generated: 'fixed',
 };
@@ -124,6 +146,20 @@ ok('svg has an xml root', svg.startsWith('<svg') && svg.endsWith('</svg>'));
 ok('svg contains animateMotion', svg.includes('<animateMotion'));
 ok('svg has no <script>', !/<script/i.test(svg));
 ok('one path per fish', (svg.match(/<animateMotion/g) || []).length >= sample.fish.length);
+let loopGap = 0, loopTangent = 1;
+for (const track of t1) {
+  const continuity = loopContinuity(track);
+  loopGap = Math.max(loopGap, continuity.positionGap);
+  loopTangent = Math.min(loopTangent, continuity.tangentDot);
+}
+ok('loop bridge returns exactly to its start', loopGap === 0, loopGap.toFixed(3));
+ok('loop bridge has C1 tangents at the seam', loopTangent > 0.999, loopTangent.toFixed(4));
+ok('each fish path closes with a cubic bridge', (loopPathFrom(t1[0]).match(/C/g) || []).length === 1);
+ok('svg stays below 200 KB for sample data', Buffer.byteLength(svg) < 200 * 1024,
+   (Buffer.byteLength(svg) / 1024).toFixed(1) + ' KB');
+const jsSpecies = speciesFor('JavaScript');
+ok('language maps to a stable fish species', jsSpecies.name === speciesFor('JavaScript').name);
+ok('SVG embeds original vector fish silhouettes', !/<image\b|(?:href|src)="https?:/i.test(svg));
 
 console.log('\n' + (fail === 0 ? 'ALL CHECKS PASSED' : fail + ' CHECK(S) FAILED') + '\n');
 process.exit(fail ? 1 : 0);

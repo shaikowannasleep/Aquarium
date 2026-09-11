@@ -18,6 +18,22 @@ const LANG_COLOR = {
   ShaderLab: '#222c37', HLSL: '#aace60', Vue: '#41b883', Jupyter: '#DA5B0B',
 };
 
+const SPECIES = [
+  { name: 'neon-tetra', sprite: 'tetra', schooling: true, depth: 0.30 },
+  { name: 'clownfish', sprite: 'clownfish', schooling: true, depth: 0.48 },
+  { name: 'yellow-tang', sprite: 'tang', schooling: true, depth: 0.62 },
+  { name: 'butterflyfish', sprite: 'butterflyfish', schooling: false, depth: 0.56 },
+  { name: 'angelfish', sprite: 'angelfish', schooling: false, depth: 0.70 },
+  { name: 'seahorse', sprite: 'seahorse', schooling: false, depth: 0.78 },
+];
+
+function speciesFor(language) {
+  let hash = 0;
+  const source = language || 'Other';
+  for (let i = 0; i < source.length; i++) hash = (hash * 31 + source.charCodeAt(i)) | 0;
+  return SPECIES[(hash >>> 0) % SPECIES.length];
+}
+
 function get(path) {
   return new Promise((resolve, reject) => {
     const headers = {
@@ -55,6 +71,7 @@ function repoToFish(r, now) {
   // fish are alive.
   const dormant = ageDays > 365;
   const pace = dormant ? 0.45 : 1;
+  const species = speciesFor(r.language);
 
   return {
     name: r.name,
@@ -64,6 +81,10 @@ function repoToFish(r, now) {
     forks: r.forks_count || 0,
     size,
     pace,
+    species: species.name,
+    sprite: species.sprite,
+    schooling: species.schooling,
+    depth: species.depth,
     dormant,
     ageDays: Math.round(ageDays),
   };
@@ -105,17 +126,22 @@ function fallback(user) {
     followers: 0,
     publicRepos: langs.length,
     offline: true,
-    fish: langs.map((l, i) => ({
+    fish: langs.map((l, i) => {
+      const species = speciesFor(l);
+      return {
       name: 'repo-' + i, lang: l, color: LANG_COLOR[l],
       stars: (i * 7) % 40, forks: i,
       size: 6 + ((i * 5) % 11), pace: i % 6 === 0 ? 0.45 : 1,
+      species: species.name, sprite: species.sprite,
+      schooling: species.schooling, depth: species.depth,
       dormant: i % 6 === 0, ageDays: i * 30,
-    })),
+      };
+    }),
     generated: new Date().toISOString(),
   };
 }
 
-module.exports = { fetchProfile, fallback, LANG_COLOR };
+module.exports = { fetchProfile, fallback, LANG_COLOR, SPECIES, speciesFor };
 
 if (require.main === module) {
   const user = process.argv[2] || 'shaikowannasleep';
