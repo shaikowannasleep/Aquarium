@@ -1,14 +1,11 @@
 {
-  "name": "abyssal-aquarium",
+  "name": "dung-lab",
   "version": "1.0.0",
-  "description": "A GitHub profile aquarium where every fish is a repository, driven by Reynolds boids and baked to SMIL SVG.",
+  "private": false,
+  "description": "A portfolio monorepo for three code-driven interactive experiments.",
   "scripts": {
-    "test": "node test/headless.js",
-    "bake": "node tools/bake-svg.js",
-    "pages": "node tools/build-pages.js",
-    "build": "node tools/bake-svg.js && node tools/build-pages.js",
-    "serve": "python3 -m http.server 8090 -d docs"
-  },
-  "license": "MIT",
-  "private": false
+    "serve": "python3 -m http.server 8090 -d docs",
+    "test:fast": "npm --prefix apps/abyssal-dive run test && npm --prefix apps/lumen-playable run test",
+    "build:all": "npm --prefix apps/abyssal-dive run build && npm --prefix apps/lumen-playable run build"
+  }
 }

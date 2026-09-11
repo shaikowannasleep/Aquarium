@@ -1,0 +1,18 @@
+{
+  "name": "abyssal-dive",
+  "version": "0.1.0",
+  "description": "One lamp, two jobs. A shepherding game where boids steer themselves and the knowledge of where safety lies is baked into the water, not into the fish.",
+  "scripts": {
+    "build": "node build.js",
+    "serve": "python3 -m http.server 8090 -d src",
+    "test": "node test/flowfield.test.js && node test/level.test.js",
+    "test:flow": "node test/flowfield.test.js",
+    "test:level": "node test/level.test.js",
+    "test:bot": "node test/playable.test.js",
+    "test:frenzy": "node test/frenzy.test.js",
+    "test:all": "npm run test && npm run test:bot && npm run test:frenzy"
+  },
+  "keywords": ["boids", "flocking", "flow-field", "pathfinding", "canvas", "game"],
+  "license": "MIT",
+  "private": false
+}

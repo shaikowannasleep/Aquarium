@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Abyssal Dive</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow:hidden;background:#01040c;
+  font-family:ui-monospace,Menlo,Consolas,monospace;color:#dceeff;
+  user-select:none;touch-action:none}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:crosshair}
+#ui{position:fixed;inset:0;pointer-events:none}
+
+#hud{position:absolute;top:0;left:0;right:264px;padding:14px 18px;
+  display:flex;justify-content:space-between;align-items:flex-start;
+  text-shadow:0 2px 10px #000}
+#hud .blk{font-size:10px;letter-spacing:.18em;opacity:.55;margin-bottom:2px}
+#hud .val{font-size:22px;font-weight:700;letter-spacing:.02em}
+#saved{color:#7affc8}#lost{color:#ff7a5e}
+#mid{text-align:center}
+#dazzle{font-size:11px;letter-spacing:.2em;opacity:.6}
+#dazzle.ready{color:#9fe9ff;opacity:1}
+#dazzle.on{color:#fff;opacity:1}
+#dazzle.rage{color:#ff5a44;opacity:1;animation:rage .45s infinite alternate}
+@keyframes rage{from{opacity:.72}to{opacity:1}}
+#pips{display:flex;gap:5px;justify-content:center;margin-top:7px}
+#pips i{width:15px;height:5px;border-radius:99px;
+  background:rgba(255,255,255,.16);transition:background .18s,box-shadow .18s}
+#pips i.f{background:linear-gradient(90deg,#6fe6ff,#9dffe4);
+  box-shadow:0 0 8px rgba(90,220,255,.8)}
+#bar{width:150px;height:4px;margin:6px auto 0;border-radius:99px;
+  background:rgba(255,255,255,.14);overflow:hidden}
+#dazzleFill{height:100%;width:0;background:linear-gradient(90deg,#4fd6ff,#9affe0);
+  box-shadow:0 0 10px #4fd6ff}
+#seed{font-size:10px;letter-spacing:.14em;opacity:.32;margin-top:5px}
+
+#hint{position:absolute;left:50%;top:64%;transform:translateX(-50%);
+  text-align:center;font-size:12px;letter-spacing:.08em;line-height:2;
+  opacity:0;transition:opacity .5s}
+#hint.on{opacity:.7}
+#hint b{color:#9fe9ff}
+
+/* ---------------- depth panel ---------------- */
+#panel{position:absolute;top:0;right:0;bottom:0;width:250px;
+  padding:16px 16px 14px;overflow-y:auto;pointer-events:auto;
+  background:linear-gradient(180deg,rgba(3,10,24,.82),rgba(1,4,12,.92));
+  border-left:1px solid rgba(110,200,255,.13);
+  font-size:10.5px;line-height:1.72;color:#b7d8ef;
+  scrollbar-width:thin;scrollbar-color:rgba(110,200,255,.3) transparent}
+#panel::-webkit-scrollbar{width:5px}
+#panel::-webkit-scrollbar-thumb{background:rgba(110,200,255,.3);border-radius:9px}
+#pDepth{font-size:30px;font-weight:800;letter-spacing:.02em;color:#eaf6ff;
+  line-height:1;text-shadow:0 0 22px rgba(80,200,255,.45)}
+#pDepth small{font-size:12px;font-weight:600;opacity:.5;margin-left:3px}
+#pLayer{font-size:11px;font-weight:700;letter-spacing:.2em;margin-top:7px}
+#pCommon{font-size:10px;opacity:.45;letter-spacing:.08em;font-style:italic}
+.pBar{height:3px;border-radius:9px;background:rgba(255,255,255,.09);
+  margin:11px 0 13px;overflow:hidden}
+.pBar i{display:block;height:100%;border-radius:9px;
+  background:linear-gradient(90deg,#3fa9e0,#9be8ff)}
+.pRow{display:flex;justify-content:space-between;gap:8px;padding:3px 0}
+.pRow span{opacity:.5}
+.pRow b{color:#e6f5ff;font-weight:700}
+.pHead{font-size:9px;letter-spacing:.22em;opacity:.38;
+  margin:15px 0 6px;padding-top:11px;
+  border-top:1px solid rgba(110,200,255,.12)}
+.pFact{margin-bottom:11px}
+.pFact b{display:block;color:#7fd8ff;font-weight:600;font-size:9.5px;
+  letter-spacing:.11em;text-transform:uppercase;margin-bottom:3px;opacity:.85}
+.pFact p{opacity:.72;font-size:10.5px}
+.pTags{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
+.pTags i{font-style:normal;font-size:9px;letter-spacing:.05em;
+  padding:2px 7px;border-radius:9px;background:rgba(110,200,255,.10);
+  border:1px solid rgba(110,200,255,.16);opacity:.8}
+#pNote{margin-top:14px;padding-top:11px;font-size:9px;opacity:.3;
+  line-height:1.65;border-top:1px solid rgba(110,200,255,.12)}
+@media (max-width:820px){
+  #panel{display:none}
+  #hud{right:0}
+}
+
+#end{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:14px;padding:24px;
+  background:radial-gradient(circle at 50% 45%,rgba(6,24,48,.8),rgba(1,4,12,.96));
+  opacity:0;pointer-events:none;transition:opacity .6s;text-align:center}
+#end.on{opacity:1;pointer-events:auto}
+#endTitle{font-size:34px;font-weight:800;letter-spacing:.12em;
+  background:linear-gradient(180deg,#eafcff,#5ad8ff 60%,#2280c8);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 24px rgba(70,200,255,.5))}
+#endBody{font-size:13px;opacity:.7;letter-spacing:.04em;max-width:30em;line-height:1.7}
+#endStats{font-size:11px;opacity:.55;letter-spacing:.1em;line-height:2}
+#endStats b{color:#9fe9ff}
+.row{display:flex;gap:12px;margin-top:8px}
+button{pointer-events:auto;cursor:pointer;border:0;border-radius:99px;
+  padding:13px 30px;font:700 13px ui-monospace,Menlo,Consolas,monospace;
+  letter-spacing:.14em}
+#again{color:#05131f;background:linear-gradient(180deg,#8df7dd,#25c9b4);
+  box-shadow:0 8px 26px rgba(45,220,200,.35)}
+#retry{color:#9fe9ff;background:transparent;border:1px solid rgba(120,220,255,.4)}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="ui">
+  <div id="hud">
+    <div>
+      <div class="blk">SHELTERED</div>
+      <div class="val" id="saved">0</div>
+    </div>
+    <div id="mid">
+      <div id="dazzle">LAMP READY</div>
+      <div id="pips"></div>
+      <div id="bar"><div id="dazzleFill"></div></div>
+      <div id="seed">#0</div>
+    </div>
+    <div style="text-align:right">
+      <div class="blk">TAKEN</div>
+      <div class="val" id="lost">0</div>
+      <div class="blk" style="margin-top:8px">SWIMMING</div>
+      <div class="val" id="swimming" style="font-size:15px;opacity:.75">0</div>
+    </div>
+  </div>
+
+  <div id="hint">
+    <div><b>Hold</b> to light the water. The school follows the light.</div>
+    <div>Hold it <b>on the hunter</b> to dazzle it — blinded, it cannot feed.</div>
+    <div>Five charges. They refill only once the lamp runs dry.</div>
+    <div>Dazzle it <b>three times</b> and it stops flinching — then tires.</div>
+    <div>Fish slip through <b>kelp</b>. The hunter cannot.</div>
+  </div>
+
+  <div id="panel">
+    <div id="pDepth">0<small>m</small></div>
+    <div id="pLayer">EPIPELAGIC</div>
+    <div id="pCommon">the sunlit zone</div>
+    <div class="pBar"><i id="pBarFill" style="width:2%"></i></div>
+
+    <div class="pRow"><span>temperature</span><b id="pTemp">-</b></div>
+    <div class="pRow"><span>pressure</span><b id="pPress">-</b></div>
+    <div class="pRow"><span>sunlight</span><b id="pLight">-</b></div>
+
+    <div class="pHead">COVER AT THIS DEPTH</div>
+    <div class="pTags" id="pCover"></div>
+
+    <div class="pHead">LIFE HERE</div>
+    <div class="pTags" id="pFauna"></div>
+
+    <div class="pHead">FIELD NOTES</div>
+    <div id="pFacts"></div>
+
+    <div id="pNote">
+      Typical open-ocean values. Real temperature and light vary widely
+      with latitude and season.
+    </div>
+  </div>
+
+  <div id="end">
+    <div id="endTitle"></div>
+    <div id="endBody"></div>
+    <div id="endStats"></div>
+    <div class="row">
+      <button id="again">DIVE DEEPER</button>
+      <button id="retry">SAME SEED</button>
+    </div>
+  </div>
+</div>
+
+<script src="oceanography.js"></script>
+<script src="flowfield.js"></script>
+<script src="level.js"></script>
+<script src="engine.js"></script>
+<script src="game.js"></script>
+</body>
+</html>

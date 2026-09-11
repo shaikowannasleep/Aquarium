@@ -1,0 +1,1829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Abyssal Dive</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow:hidden;background:#01040c;
+  font-family:ui-monospace,Menlo,Consolas,monospace;color:#dceeff;
+  user-select:none;touch-action:none}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:crosshair}
+#ui{position:fixed;inset:0;pointer-events:none}
+
+#hud{position:absolute;top:0;left:0;right:264px;padding:14px 18px;
+  display:flex;justify-content:space-between;align-items:flex-start;
+  text-shadow:0 2px 10px #000}
+#hud .blk{font-size:10px;letter-spacing:.18em;opacity:.55;margin-bottom:2px}
+#hud .val{font-size:22px;font-weight:700;letter-spacing:.02em}
+#saved{color:#7affc8}#lost{color:#ff7a5e}
+#mid{text-align:center}
+#dazzle{font-size:11px;letter-spacing:.2em;opacity:.6}
+#dazzle.ready{color:#9fe9ff;opacity:1}
+#dazzle.on{color:#fff;opacity:1}
+#dazzle.rage{color:#ff5a44;opacity:1;animation:rage .45s infinite alternate}
+@keyframes rage{from{opacity:.72}to{opacity:1}}
+#pips{display:flex;gap:5px;justify-content:center;margin-top:7px}
+#pips i{width:15px;height:5px;border-radius:99px;
+  background:rgba(255,255,255,.16);transition:background .18s,box-shadow .18s}
+#pips i.f{background:linear-gradient(90deg,#6fe6ff,#9dffe4);
+  box-shadow:0 0 8px rgba(90,220,255,.8)}
+#bar{width:150px;height:4px;margin:6px auto 0;border-radius:99px;
+  background:rgba(255,255,255,.14);overflow:hidden}
+#dazzleFill{height:100%;width:0;background:linear-gradient(90deg,#4fd6ff,#9affe0);
+  box-shadow:0 0 10px #4fd6ff}
+#seed{font-size:10px;letter-spacing:.14em;opacity:.32;margin-top:5px}
+
+#hint{position:absolute;left:50%;top:64%;transform:translateX(-50%);
+  text-align:center;font-size:12px;letter-spacing:.08em;line-height:2;
+  opacity:0;transition:opacity .5s}
+#hint.on{opacity:.7}
+#hint b{color:#9fe9ff}
+
+/* ---------------- depth panel ---------------- */
+#panel{position:absolute;top:0;right:0;bottom:0;width:250px;
+  padding:16px 16px 14px;overflow-y:auto;pointer-events:auto;
+  background:linear-gradient(180deg,rgba(3,10,24,.82),rgba(1,4,12,.92));
+  border-left:1px solid rgba(110,200,255,.13);
+  font-size:10.5px;line-height:1.72;color:#b7d8ef;
+  scrollbar-width:thin;scrollbar-color:rgba(110,200,255,.3) transparent}
+#panel::-webkit-scrollbar{width:5px}
+#panel::-webkit-scrollbar-thumb{background:rgba(110,200,255,.3);border-radius:9px}
+#pDepth{font-size:30px;font-weight:800;letter-spacing:.02em;color:#eaf6ff;
+  line-height:1;text-shadow:0 0 22px rgba(80,200,255,.45)}
+#pDepth small{font-size:12px;font-weight:600;opacity:.5;margin-left:3px}
+#pLayer{font-size:11px;font-weight:700;letter-spacing:.2em;margin-top:7px}
+#pCommon{font-size:10px;opacity:.45;letter-spacing:.08em;font-style:italic}
+.pBar{height:3px;border-radius:9px;background:rgba(255,255,255,.09);
+  margin:11px 0 13px;overflow:hidden}
+.pBar i{display:block;height:100%;border-radius:9px;
+  background:linear-gradient(90deg,#3fa9e0,#9be8ff)}
+.pRow{display:flex;justify-content:space-between;gap:8px;padding:3px 0}
+.pRow span{opacity:.5}
+.pRow b{color:#e6f5ff;font-weight:700}
+.pHead{font-size:9px;letter-spacing:.22em;opacity:.38;
+  margin:15px 0 6px;padding-top:11px;
+  border-top:1px solid rgba(110,200,255,.12)}
+.pFact{margin-bottom:11px}
+.pFact b{display:block;color:#7fd8ff;font-weight:600;font-size:9.5px;
+  letter-spacing:.11em;text-transform:uppercase;margin-bottom:3px;opacity:.85}
+.pFact p{opacity:.72;font-size:10.5px}
+.pTags{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
+.pTags i{font-style:normal;font-size:9px;letter-spacing:.05em;
+  padding:2px 7px;border-radius:9px;background:rgba(110,200,255,.10);
+  border:1px solid rgba(110,200,255,.16);opacity:.8}
+#pNote{margin-top:14px;padding-top:11px;font-size:9px;opacity:.3;
+  line-height:1.65;border-top:1px solid rgba(110,200,255,.12)}
+@media (max-width:820px){
+  #panel{display:none}
+  #hud{right:0}
+}
+
+#end{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:14px;padding:24px;
+  background:radial-gradient(circle at 50% 45%,rgba(6,24,48,.8),rgba(1,4,12,.96));
+  opacity:0;pointer-events:none;transition:opacity .6s;text-align:center}
+#end.on{opacity:1;pointer-events:auto}
+#endTitle{font-size:34px;font-weight:800;letter-spacing:.12em;
+  background:linear-gradient(180deg,#eafcff,#5ad8ff 60%,#2280c8);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 24px rgba(70,200,255,.5))}
+#endBody{font-size:13px;opacity:.7;letter-spacing:.04em;max-width:30em;line-height:1.7}
+#endStats{font-size:11px;opacity:.55;letter-spacing:.1em;line-height:2}
+#endStats b{color:#9fe9ff}
+.row{display:flex;gap:12px;margin-top:8px}
+button{pointer-events:auto;cursor:pointer;border:0;border-radius:99px;
+  padding:13px 30px;font:700 13px ui-monospace,Menlo,Consolas,monospace;
+  letter-spacing:.14em}
+#again{color:#05131f;background:linear-gradient(180deg,#8df7dd,#25c9b4);
+  box-shadow:0 8px 26px rgba(45,220,200,.35)}
+#retry{color:#9fe9ff;background:transparent;border:1px solid rgba(120,220,255,.4)}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="ui">
+  <div id="hud">
+    <div>
+      <div class="blk">SHELTERED</div>
+      <div class="val" id="saved">0</div>
+    </div>
+    <div id="mid">
+      <div id="dazzle">LAMP READY</div>
+      <div id="pips"></div>
+      <div id="bar"><div id="dazzleFill"></div></div>
+      <div id="seed">#0</div>
+    </div>
+    <div style="text-align:right">
+      <div class="blk">TAKEN</div>
+      <div class="val" id="lost">0</div>
+      <div class="blk" style="margin-top:8px">SWIMMING</div>
+      <div class="val" id="swimming" style="font-size:15px;opacity:.75">0</div>
+    </div>
+  </div>
+
+  <div id="hint">
+    <div><b>Hold</b> to light the water. The school follows the light.</div>
+    <div>Hold it <b>on the hunter</b> to dazzle it — blinded, it cannot feed.</div>
+    <div>Five charges. They refill only once the lamp runs dry.</div>
+    <div>Dazzle it <b>three times</b> and it stops flinching — then tires.</div>
+    <div>Fish slip through <b>kelp</b>. The hunter cannot.</div>
+  </div>
+
+  <div id="panel">
+    <div id="pDepth">0<small>m</small></div>
+    <div id="pLayer">EPIPELAGIC</div>
+    <div id="pCommon">the sunlit zone</div>
+    <div class="pBar"><i id="pBarFill" style="width:2%"></i></div>
+
+    <div class="pRow"><span>temperature</span><b id="pTemp">-</b></div>
+    <div class="pRow"><span>pressure</span><b id="pPress">-</b></div>
+    <div class="pRow"><span>sunlight</span><b id="pLight">-</b></div>
+
+    <div class="pHead">COVER AT THIS DEPTH</div>
+    <div class="pTags" id="pCover"></div>
+
+    <div class="pHead">LIFE HERE</div>
+    <div class="pTags" id="pFauna"></div>
+
+    <div class="pHead">FIELD NOTES</div>
+    <div id="pFacts"></div>
+
+    <div id="pNote">
+      Typical open-ocean values. Real temperature and light vary widely
+      with latitude and season.
+    </div>
+  </div>
+
+  <div id="end">
+    <div id="endTitle"></div>
+    <div id="endBody"></div>
+    <div id="endStats"></div>
+    <div class="row">
+      <button id="again">DIVE DEEPER</button>
+      <button id="retry">SAME SEED</button>
+    </div>
+  </div>
+</div>
+
+<script>'use strict';
+function pressureBar(depth) {
+  return 1 + depth / 9.95;
+}
+function temperatureC(depth) {
+  if (depth <= 100) return 18 - depth * 0.02;
+  if (depth <= 1000) {
+    const t = (depth - 100) / 900;
+    return 16 - 12 * Math.pow(t, 0.65);
+  }
+  if (depth <= 4000) {
+    const t = (depth - 1000) / 3000;
+    return 4 - 2.2 * t;
+  }
+  return 1.8 + (depth - 4000) * 0.00012;
+}
+function lightFraction(depth) {
+  return Math.exp(-depth / 32.5);
+}
+function lightLabel(depth) {
+  const f = lightFraction(depth);
+  if (depth < 200) return (f * 100).toFixed(f > 0.01 ? 1 : 3) + '% of surface light';
+  if (depth < 1000) return 'trace daylight, far below vision';
+  return 'no sunlight at all';
+}
+const LAYERS = [
+  {
+    key: 'epipelagic',
+    name: 'EPIPELAGIC',
+    common: 'the sunlit zone',
+    from: 0, to: 200,
+    tint: '#2f7fd0',
+    solid: ['rock', 'coral'],
+    passable: ['kelp'],
+    passableName: 'kelp',
+    fauna: ['sardine', 'anchovy', 'moon jelly', 'mackerel'],
+    facts: [
+      {
+        tag: 'why they follow you',
+        text: 'Schooling fish steer by their neighbours, not by a leader. ' +
+              'Reynolds showed in 1987 that separation, alignment and cohesion ' +
+              'alone reproduce the whole shape of a school.',
+      },
+      {
+        tag: 'why kelp grows here',
+        text: 'Kelp is a photosynthesiser. It cannot live below the sunlit ' +
+              'zone, which is why it is the only soft cover on this level.',
+      },
+    ],
+  },
+  {
+    key: 'mesopelagic',
+    name: 'MESOPELAGIC',
+    common: 'the twilight zone',
+    from: 200, to: 1000,
+    tint: '#1d4f8c',
+    solid: ['rock'],
+    passable: ['siphonophore'],
+    passableName: 'siphonophore curtain',
+    fauna: ['lanternfish', 'hatchetfish', 'bristlemouth', 'krill'],
+    facts: [
+      {
+        tag: 'the largest migration on Earth',
+        text: 'Much of this layer swims toward the surface at dusk to feed ' +
+              'and sinks again before dawn. It happens every night, ocean-wide.',
+      },
+      {
+        tag: 'why your lamp works',
+        text: 'Lanternfish carry rows of light organs and orient to light. ' +
+              'A steady lamp gathers them; a harsh one scatters them.',
+      },
+      {
+        tag: 'the most numerous vertebrate alive',
+        text: 'Bristlemouths of the genus Cyclothone are thought to be the ' +
+              'most abundant vertebrates on the planet, and almost nobody ' +
+              'has heard of them.',
+      },
+    ],
+  },
+  {
+    key: 'bathypelagic',
+    name: 'BATHYPELAGIC',
+    common: 'the midnight zone',
+    from: 1000, to: 4000,
+    tint: '#132e5c',
+    solid: ['rock', 'deepcoral'],
+    passable: ['glasssponge'],
+    passableName: 'glass sponge garden',
+    fauna: ['anglerfish', 'gulper eel', 'dragonfish', 'grenadier'],
+    facts: [
+      {
+        tag: 'no sunlight reaches here',
+        text: 'Every light you can see below 1000 m was made by something ' +
+              'alive. Nothing filters down this far.',
+      },
+      {
+        tag: 'why everything glows blue',
+        text: 'Bioluminescence clusters around 470-490 nm because blue ' +
+              'travels furthest through seawater. The palette of this game ' +
+              'is set by physics, not by taste.',
+      },
+      {
+        tag: 'the fish with a red searchlight',
+        text: 'Malacosteus, a dragonfish, emits red light that most of its ' +
+              'prey cannot see - a private searchlight in a blue world.',
+      },
+      {
+        tag: 'the lure is a trap',
+        text: 'An anglerfish hangs a lit esca in front of its mouth. Down ' +
+              'here, a light in the dark is as often bait as it is company.',
+      },
+    ],
+  },
+  {
+    key: 'abyssopelagic',
+    name: 'ABYSSOPELAGIC',
+    common: 'the abyss',
+    from: 4000, to: 6000,
+    tint: '#0b1c3d',
+    solid: ['rock', 'nodule'],
+    passable: ['xenophyophore'],
+    passableName: 'xenophyophore field',
+    fauna: ['sea pig', 'tripod fish', 'dumbo octopus', 'rattail'],
+    facts: [
+      {
+        tag: 'roughly 400 atmospheres',
+        text: 'At 4000 m the water presses with about four hundred times the ' +
+              'weight of the air at the surface.',
+      },
+      {
+        tag: 'everything here is falling',
+        text: 'With no sunlight there is no plant life. Almost the entire ' +
+              'food supply is marine snow drifting down from far above.',
+      },
+      {
+        tag: 'the fish that stands still',
+        text: 'The tripod fish props itself on three stiffened fins and waits, ' +
+              'facing the current, for food to arrive. It barely swims at all.',
+      },
+      {
+        tag: 'why the schools thin out',
+        text: 'Shoaling needs food dense enough to be worth crowding for. ' +
+              'Down here animals are mostly solitary, and the water goes quiet.',
+      },
+    ],
+  },
+  {
+    key: 'hadal',
+    name: 'HADAL',
+    common: 'the trenches',
+    from: 6000, to: 11000,
+    tint: '#060f24',
+    solid: ['rock', 'nodule'],
+    passable: ['xenophyophore'],
+    passableName: 'xenophyophore field',
+    fauna: ['snailfish', 'amphipod', 'sea cucumber'],
+    facts: [
+      {
+        tag: 'only in the trenches',
+        text: 'The hadal zone is not an open layer but the inside of ocean ' +
+              'trenches, so it is a scattering of deep pockets rather than ' +
+              'one continuous world.',
+      },
+      {
+        tag: 'a ceiling for fish',
+        text: 'No fish has been confirmed below roughly 8300 m. Past that ' +
+              'depth the chemistry that keeps their proteins working appears ' +
+              'to give out.',
+      },
+    ],
+  },
+];
+function layerAt(depth) {
+  for (let i = 0; i < LAYERS.length; i++) {
+    if (depth < LAYERS[i].to) return LAYERS[i];
+  }
+  return LAYERS[LAYERS.length - 1];
+}
+const DIVE_LADDER = [140, 620, 1500, 2600, 3600, 4600, 5600, 6800];
+function depthForRun(runIndex) {
+  const i = Math.min(runIndex, DIVE_LADDER.length - 1);
+  return DIVE_LADDER[i];
+}
+const COVER_NAMES = {
+  rock: 'rock',
+  coral: 'reef coral',
+  deepcoral: 'deep-sea coral',
+  nodule: 'manganese nodule',
+  kelp: 'kelp',
+  siphonophore: 'siphonophore',
+  glasssponge: 'glass sponge',
+  xenophyophore: 'xenophyophore',
+};
+function readout(depth) {
+  const L = layerAt(depth);
+  return {
+    layer: L,
+    depth,
+    tempC: temperatureC(depth),
+    pressureBar: pressureBar(depth),
+    light: lightLabel(depth),
+    lightFraction: lightFraction(depth),
+  };
+}
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    LAYERS, DIVE_LADDER, COVER_NAMES,
+    layerAt, depthForRun, readout,
+    temperatureC, pressureBar, lightFraction, lightLabel,
+  };
+}
+if (typeof window !== 'undefined') {
+  window.OCEAN = {
+    LAYERS, DIVE_LADDER, COVER_NAMES,
+    layerAt, depthForRun, readout,
+    temperatureC, pressureBar, lightFraction, lightLabel,
+  };
+}
+'use strict';
+const UNREACHABLE = 1e9;
+class FlowField {
+  constructor(width, height, cellSize) {
+    this.cs = cellSize || 26;
+    this.resize(width, height);
+  }
+  resize(width, height) {
+    this.w = width;
+    this.h = height;
+    this.cols = Math.max(2, Math.ceil(width / this.cs));
+    this.rows = Math.max(2, Math.ceil(height / this.cs));
+    const n = this.cols * this.rows;
+    this.cost = new Float32Array(n);
+    this.dist = new Float32Array(n);
+    this.dirX = new Float32Array(n);
+    this.dirY = new Float32Array(n);
+    this.blocked = new Uint8Array(n);
+    this.queue = new Int32Array(n);
+    this._n = n;
+  }
+  idx(cx, cy) { return cy * this.cols + cx; }
+  cellAt(x, y) {
+    const cx = Math.min(this.cols - 1, Math.max(0, (x / this.cs) | 0));
+    const cy = Math.min(this.rows - 1, Math.max(0, (y / this.cs) | 0));
+    return cy * this.cols + cx;
+  }
+  rasterise(obstacles) {
+    this.blocked.fill(0);
+    this.cost.fill(1);
+    const cs = this.cs;
+    for (let cy = 0; cy < this.rows; cy++) {
+      for (let cx = 0; cx < this.cols; cx++) {
+        const x = cx * cs + cs * 0.5;
+        const y = cy * cs + cs * 0.5;
+        const i = cy * this.cols + cx;
+        for (let k = 0; k < obstacles.length; k++) {
+          const o = obstacles[k];
+          if (o.passable) continue;
+          const d = Math.hypot(x - o.x, y - o.y);
+          if (d < o.r + 6) { this.blocked[i] = 1; break; }
+          if (d < o.r + 34) {
+            const t = 1 - (d - o.r - 6) / 28;
+            const c = 1 + t * 5;
+            if (c > this.cost[i]) this.cost[i] = c;
+          }
+        }
+      }
+    }
+  }
+  build(refuges) {
+    const n = this._n;
+    this.dist.fill(UNREACHABLE);
+    const q = this.queue;
+    let head = 0, tail = 0;
+    const push = i => { q[tail] = i; tail = (tail + 1) % n; };
+    for (let r = 0; r < refuges.length; r++) {
+      const R = refuges[r];
+      if (R.closed) continue;
+      const cx0 = Math.max(0, ((R.x - R.r) / this.cs) | 0);
+      const cx1 = Math.min(this.cols - 1, ((R.x + R.r) / this.cs) | 0);
+      const cy0 = Math.max(0, ((R.y - R.r) / this.cs) | 0);
+      const cy1 = Math.min(this.rows - 1, ((R.y + R.r) / this.cs) | 0);
+      for (let cy = cy0; cy <= cy1; cy++) {
+        for (let cx = cx0; cx <= cx1; cx++) {
+          const i = cy * this.cols + cx;
+          if (this.blocked[i]) continue;
+          const x = cx * this.cs + this.cs * 0.5;
+          const y = cy * this.cs + this.cs * 0.5;
+          if (Math.hypot(x - R.x, y - R.y) > R.r) continue;
+          this.dist[i] = 0;
+          push(i);
+        }
+      }
+    }
+    let guard = 0;
+    const maxIter = n * 8;
+    while (head !== tail && guard++ < maxIter) {
+      const i = q[head];
+      head = (head + 1) % n;
+      const cy = (i / this.cols) | 0;
+      const cx = i - cy * this.cols;
+      const d0 = this.dist[i];
+      for (let oy = -1; oy <= 1; oy++) {
+        for (let ox = -1; ox <= 1; ox++) {
+          if (!ox && !oy) continue;
+          const nx = cx + ox, ny = cy + oy;
+          if (nx < 0 || ny < 0 || nx >= this.cols || ny >= this.rows) continue;
+          const j = ny * this.cols + nx;
+          if (this.blocked[j]) continue;
+          const diag = ox && oy;
+          if (diag) {
+            if (this.blocked[cy * this.cols + nx]) continue;
+            if (this.blocked[ny * this.cols + cx]) continue;
+          }
+          const step = (diag ? 1.41421356 : 1) * this.cost[j];
+          const nd = d0 + step;
+          if (nd < this.dist[j] - 1e-4) {
+            this.dist[j] = nd;
+            push(j);
+          }
+        }
+      }
+    }
+    this.gradient();
+    return guard < maxIter;
+  }
+  gradient() {
+    const { cols, rows } = this;
+    for (let cy = 0; cy < rows; cy++) {
+      for (let cx = 0; cx < cols; cx++) {
+        const i = cy * cols + cx;
+        if (this.blocked[i] || this.dist[i] >= UNREACHABLE) {
+          this.dirX[i] = 0; this.dirY[i] = 0;
+          continue;
+        }
+        const sample = (px, py) => {
+          if (px < 0 || py < 0 || px >= cols || py >= rows) return this.dist[i];
+          const k = py * cols + px;
+          if (this.blocked[k] || this.dist[k] >= UNREACHABLE) return this.dist[i] + 4;
+          return this.dist[k];
+        };
+        const gx = sample(cx - 1, cy) - sample(cx + 1, cy);
+        const gy = sample(cx, cy - 1) - sample(cx, cy + 1);
+        const m = Math.hypot(gx, gy);
+        if (m > 1e-6) { this.dirX[i] = gx / m; this.dirY[i] = gy / m; }
+        else { this.dirX[i] = 0; this.dirY[i] = 0; }
+      }
+    }
+  }
+  sample(x, y, out) {
+    const cs = this.cs;
+    const fx = x / cs - 0.5, fy = y / cs - 0.5;
+    const x0 = Math.floor(fx), y0 = Math.floor(fy);
+    const tx = fx - x0, ty = fy - y0;
+    let sx = 0, sy = 0;
+    for (let j = 0; j <= 1; j++) {
+      for (let i = 0; i <= 1; i++) {
+        const cx = Math.min(this.cols - 1, Math.max(0, x0 + i));
+        const cy = Math.min(this.rows - 1, Math.max(0, y0 + j));
+        const k = cy * this.cols + cx;
+        const w = (i ? tx : 1 - tx) * (j ? ty : 1 - ty);
+        sx += this.dirX[k] * w;
+        sy += this.dirY[k] * w;
+      }
+    }
+    out.x = sx; out.y = sy;
+    return out;
+  }
+  distanceAt(x, y) { return this.dist[this.cellAt(x, y)]; }
+  isBlocked(x, y) { return this.blocked[this.cellAt(x, y)] === 1; }
+}
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { FlowField, UNREACHABLE };
+}
+if (typeof window !== 'undefined') {
+  window.FlowField = FlowField;
+  window.FLOW_UNREACHABLE = UNREACHABLE;
+}
+'use strict';
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function makeLevel(seed, W, H, depth) {
+  const rnd = mulberry32(seed);
+  const R = (a, b) => a + rnd() * (b - a);
+  const OC = (typeof require !== 'undefined')
+    ? require('./oceanography')
+    : (typeof window !== 'undefined' ? window.OCEAN : null);
+  const d = depth === undefined ? 140 : depth;
+  const layer = OC ? OC.layerAt(d) : null;
+  const solidKinds = layer ? layer.solid : ['rock', 'coral'];
+  const softKind = layer ? layer.passable[0] : 'kelp';
+  const obstacles = [];
+  const refuges = [];
+  const bands = 3;
+  for (let b = 0; b < bands; b++) {
+    const bx = W * (0.30 + b * 0.185);
+    const gapCount = b === 1 ? 2 : 1;
+    const gaps = [];
+    if (gapCount === 1) {
+      gaps.push(R(H * 0.22, H * 0.78));
+    } else {
+      gaps.push(R(H * 0.14, H * 0.38));
+      gaps.push(R(H * 0.62, H * 0.86));
+    }
+    const generous = (rnd() * gapCount) | 0;
+    for (let y = -10; y < H + 40; y += 40) {
+      let inGap = false;
+      for (let k = 0; k < gaps.length; k++) {
+        const halfWidth = (k === generous ? R(74, 96) : R(46, 62));
+        if (Math.abs(y - gaps[k]) < halfWidth) { inGap = true; break; }
+      }
+      if (inGap) continue;
+      obstacles.push({
+        kind: 'rock',
+        x: bx + R(-16, 16),
+        y: y + R(-8, 8),
+        r: R(24, 34),
+        spin: rnd() * Math.PI * 2,
+        seedShape: (rnd() * 1000) | 0,
+      });
+    }
+    for (let k = 0; k < gaps.length; k++) {
+      if (rnd() > 0.55) continue;
+      const gy = gaps[k];
+      const blades = 3 + ((rnd() * 3) | 0);
+      for (let b = 0; b < blades; b++) {
+        obstacles.push({
+          kind: softKind,
+          passable: true,
+          x: bx + R(-22, 22),
+          y: gy + R(-46, 46),
+          r: R(26, 38),
+          spin: rnd() * Math.PI * 2,
+          sway: rnd() * Math.PI * 2,
+          seedShape: (rnd() * 1000) | 0,
+        });
+      }
+    }
+  }
+  const extra = 5 + ((rnd() * 4) | 0);
+  const secondSolid = solidKinds.length > 1 ? solidKinds[1] : solidKinds[0];
+  for (let i = 0; i < extra; i++) {
+    const fancy = rnd() < 0.45 && secondSolid !== 'rock';
+    const kind = fancy ? secondSolid : 'rock';
+    obstacles.push({
+      kind,
+      x: R(W * 0.24, W * 0.92),
+      y: R(H * 0.10, H * 0.90),
+      r: fancy ? R(22, 32) : R(20, 38),
+      spin: rnd() * Math.PI * 2,
+      seedShape: (rnd() * 1000) | 0,
+      hue: kind === 'coral' ? R(300, 355)
+         : kind === 'deepcoral' ? R(18, 44)
+         : 0,
+    });
+  }
+  const beds = 2 + ((rnd() * 3) | 0);
+  for (let i = 0; i < beds; i++) {
+    const bx = R(W * 0.26, W * 0.88);
+    const by = R(H * 0.14, H * 0.86);
+    const blades = 4 + ((rnd() * 4) | 0);
+    for (let b = 0; b < blades; b++) {
+      obstacles.push({
+        kind: softKind,
+        passable: true,
+        x: bx + R(-44, 44),
+        y: by + R(-40, 40),
+        r: R(24, 36),
+        spin: rnd() * Math.PI * 2,
+        sway: rnd() * Math.PI * 2,
+        seedShape: (rnd() * 1000) | 0,
+      });
+    }
+  }
+  const refugeCount = 2 + ((rnd() * 2) | 0);
+  const spots = [
+    { x: W * 0.93, y: H * 0.22 },
+    { x: W * 0.93, y: H * 0.76 },
+    { x: W * 0.62, y: H * 0.10 },
+    { x: W * 0.62, y: H * 0.90 },
+  ];
+  for (let i = spots.length - 1; i > 0; i--) {
+    const j = (rnd() * (i + 1)) | 0;
+    const t = spots[i]; spots[i] = spots[j]; spots[j] = t;
+  }
+  for (let i = 0; i < refugeCount; i++) {
+    const s = spots[i];
+    refuges.push({
+      x: s.x + R(-24, 24),
+      y: s.y + R(-20, 20),
+      r: R(44, 58),
+      capacity: 0,
+      held: 0,
+      closed: false,
+      pulse: rnd() * Math.PI * 2,
+    });
+  }
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    if (obstacles[i].passable) continue;
+    for (let k = 0; k < refuges.length; k++) {
+      const Rf = refuges[k];
+      if (Math.hypot(obstacles[i].x - Rf.x, obstacles[i].y - Rf.y) < Rf.r + 52) {
+        obstacles.splice(i, 1);
+        break;
+      }
+    }
+  }
+  const schoolSize = 64;
+  let remaining = Math.round(schoolSize * (1.0 + rnd() * 0.15));
+  for (let i = 0; i < refuges.length; i++) {
+    const isLast = i === refuges.length - 1;
+    const share = isLast ? remaining
+      : Math.max(12, Math.round(remaining * R(0.32, 0.5)));
+    refuges[i].capacity = share;
+    remaining -= share;
+  }
+  const hunter = {
+    x: -120,
+    y: R(H * 0.25, H * 0.75),
+    vx: 0, vy: 0,
+    active: true,
+    scare: 1.0,
+    slowUntil: 0,
+    cooldownUntil: 0,
+    t: 0,
+    stunFlash: 0,
+    stunCount: 0,
+    frenzyUntil: 0,
+    exhaustUntil: 0,
+  };
+  const school = [];
+  const sx = W * 0.10, sy = H * 0.5;
+  for (let i = 0; i < schoolSize; i++) {
+    school.push({
+      x: sx + R(-70, 70),
+      y: sy + R(-130, 130),
+    });
+  }
+  const level = {
+    seed,
+    depth: d,
+    layer,
+    softKind,
+    obstacles,
+    refuges,
+    hunter,
+    school,
+    schoolSize,
+    totalCapacity: refuges.reduce((s, r) => s + r.capacity, 0),
+    repairs: 0,
+  };
+  repair(level, W, H);
+  return level;
+}
+function repair(level, W, H) {
+  const FF = (typeof require !== 'undefined')
+    ? require('./flowfield').FlowField
+    : (typeof window !== 'undefined' ? window.FlowField : null);
+  if (!FF) return level;
+  const UNREACH = (typeof require !== 'undefined')
+    ? require('./flowfield').UNREACHABLE
+    : window.FLOW_UNREACHABLE;
+  const ff = new FF(W, H, 24);
+  for (let pass = 0; pass < 24; pass++) {
+    ff.rasterise(level.obstacles);
+    ff.build(level.refuges);
+    const stranded = [];
+    for (const f of level.school) {
+      if (ff.distanceAt(f.x, f.y) >= UNREACH) stranded.push(f);
+    }
+    if (!stranded.length) return level;
+    let victim = -1, bestScore = -1;
+    for (let i = 0; i < level.obstacles.length; i++) {
+      const o = level.obstacles[i];
+      if (o.passable) continue;
+      let score = 0;
+      for (const f of stranded) {
+        const d = Math.hypot(f.x - o.x, f.y - o.y);
+        if (d < o.r + 90) score += (o.r + 90 - d) / (o.r + 90);
+      }
+      if (score > bestScore) { bestScore = score; victim = i; }
+    }
+    if (victim < 0 || bestScore <= 0) break;
+    level.obstacles.splice(victim, 1);
+    level.repairs++;
+  }
+  return level;
+}
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { makeLevel, mulberry32 };
+}
+if (typeof window !== 'undefined') {
+  window.makeLevel = makeLevel;
+  window.mulberry32 = mulberry32;
+}
+'use strict';
+(function (global) {
+const TAU = Math.PI * 2;
+function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+function lerp(a, b, t) { return a + (b - a) * t; }
+function rand(a, b) { return a + Math.random() * (b - a); }
+function defaultParams() {
+  return {
+    rSep: 18, rAli: 42, rCoh: 52,
+    fov: -0.35,
+    wSep: 2.10, wAli: 1.05, wCoh: 0.95,
+    wFlee: 4.60, wAvoid: 5.20, wLure: 2.40, wBounds: 3.40,
+    minSpeed: 46, maxSpeed: 132, maxForce: 260,
+    panicSpeedBoost: 1.55,
+    rFlee: 132, rLure: 210, lureCore: 15,
+    maxNeighbours: 7,
+    margin: 54,
+    stressDecay: 1.9,
+  };
+}
+class SwarmEngine {
+  constructor(capacity, width, height) {
+    const c = capacity | 0;
+    this.cap = c;
+    this.n = 0;
+    this.w = width;
+    this.h = height;
+    this.p = defaultParams();
+    this.px = new Float32Array(c);
+    this.py = new Float32Array(c);
+    this.vx = new Float32Array(c);
+    this.vy = new Float32Array(c);
+    this.ax = new Float32Array(c);
+    this.ay = new Float32Array(c);
+    this.tx = new Float32Array(c);
+    this.ty = new Float32Array(c);
+    this.stress = new Float32Array(c);
+    this.phase = new Float32Array(c);
+    this.speedScale = new Float32Array(c);
+    this.alive = new Uint8Array(c);
+    this.cell = Math.max(16, this.p.rCoh);
+    this.cols = 1; this.rows = 1;
+    this.cellOf = new Int32Array(c);
+    this.sorted = new Int32Array(c);
+    this.counts = new Int32Array(1);
+    this.resize(width, height);
+    this.stat = {
+      neighbourTests: 0, neighbourHits: 0,
+      simMs: 0, gridMs: 0, occupied: 0,
+    };
+    this.debugIndex = 0;
+    this.dbg = { sx: 0, sy: 0, ax: 0, ay: 0, cx: 0, cy: 0, count: 0 };
+  }
+  resize(w, h) {
+    this.w = w; this.h = h;
+    this.cell = Math.max(16, this.p.rCoh);
+    this.cols = Math.max(1, Math.ceil(w / this.cell) + 1);
+    this.rows = Math.max(1, Math.ceil(h / this.cell) + 1);
+    const nc = this.cols * this.rows;
+    if (this.counts.length < nc + 1) this.counts = new Int32Array(nc + 1);
+  }
+  spawn(x, y, speed) {
+    if (this.n >= this.cap) return -1;
+    const i = this.n++;
+    const a = Math.random() * TAU;
+    const s = speed !== undefined ? speed : rand(this.p.minSpeed, this.p.maxSpeed);
+    this.px[i] = x; this.py[i] = y;
+    this.vx[i] = Math.cos(a) * s; this.vy[i] = Math.sin(a) * s;
+    this.tx[i] = x; this.ty[i] = y;
+    this.stress[i] = 0;
+    this.phase[i] = Math.random() * TAU;
+    this.speedScale[i] = 1;
+    this.alive[i] = 1;
+    return i;
+  }
+  removeAt(i) {
+    const last = --this.n;
+    if (i !== last) {
+      this.px[i] = this.px[last]; this.py[i] = this.py[last];
+      this.vx[i] = this.vx[last]; this.vy[i] = this.vy[last];
+      this.tx[i] = this.tx[last]; this.ty[i] = this.ty[last];
+      this.stress[i] = this.stress[last];
+      this.phase[i] = this.phase[last];
+      this.speedScale[i] = this.speedScale[last];
+    }
+  }
+  buildGrid() {
+    const t0 = performance.now();
+    const n = this.n, cols = this.cols, rows = this.rows, cs = this.cell;
+    const nc = cols * rows;
+    const counts = this.counts;
+    counts.fill(0, 0, nc + 1);
+    for (let i = 0; i < n; i++) {
+      const cx = clamp((this.px[i] / cs) | 0, 0, cols - 1);
+      const cy = clamp((this.py[i] / cs) | 0, 0, rows - 1);
+      const c = cy * cols + cx;
+      this.cellOf[i] = c;
+      counts[c + 1]++;
+    }
+    let occupied = 0;
+    for (let c = 0; c < nc; c++) {
+      if (counts[c + 1] > 0) occupied++;
+      counts[c + 1] += counts[c];
+    }
+    const cursor = this.sorted;
+    for (let i = 0; i < n; i++) {
+      const c = this.cellOf[i];
+      cursor[counts[c]++] = i;
+    }
+    for (let c = nc; c > 0; c--) counts[c] = counts[c - 1];
+    counts[0] = 0;
+    this.stat.occupied = occupied;
+    this.stat.gridMs = performance.now() - t0;
+  }
+  step(dt, world) {
+    const t0 = performance.now();
+    this.buildGrid();
+    const p = this.p, n = this.n;
+    const cols = this.cols, rows = this.rows, cs = this.cell;
+    const counts = this.counts;
+    const sorted = this.sorted;
+    const rSep2 = p.rSep * p.rSep, rAli2 = p.rAli * p.rAli, rCoh2 = p.rCoh * p.rCoh;
+    const maxN = p.maxNeighbours;
+    let tests = 0, hits = 0;
+    for (let i = 0; i < n; i++) {
+      const x = this.px[i], y = this.py[i];
+      const vxi = this.vx[i], vyi = this.vy[i];
+      const sp = Math.hypot(vxi, vyi) || 1e-6;
+      const fwx = vxi / sp, fwy = vyi / sp;
+      let sepX = 0, sepY = 0, aliX = 0, aliY = 0, cohX = 0, cohY = 0;
+      let nAli = 0, nCoh = 0, seen = 0;
+      const gx = clamp((x / cs) | 0, 0, cols - 1);
+      const gy = clamp((y / cs) | 0, 0, rows - 1);
+      const x0 = gx > 0 ? gx - 1 : 0, x1 = gx < cols - 1 ? gx + 1 : cols - 1;
+      const y0 = gy > 0 ? gy - 1 : 0, y1 = gy < rows - 1 ? gy + 1 : rows - 1;
+      outer:
+      for (let cy = y0; cy <= y1; cy++) {
+        const rowBase = cy * cols;
+        for (let cx = x0; cx <= x1; cx++) {
+          const c = rowBase + cx;
+          const s = counts[c], e = counts[c + 1];
+          for (let k = s; k < e; k++) {
+            const j = sorted[k];
+            if (j === i) continue;
+            const dx = this.px[j] - x, dy = this.py[j] - y;
+            const d2 = dx * dx + dy * dy;
+            tests++;
+            if (d2 > rCoh2 || d2 < 1e-8) continue;
+            const inv = 1 / Math.sqrt(d2);
+            if (fwx * dx * inv + fwy * dy * inv < p.fov) continue;
+            hits++;
+            if (d2 < rSep2) {
+              const w = 1 / d2;
+              sepX -= dx * w; sepY -= dy * w;
+            }
+            if (d2 < rAli2) { aliX += this.vx[j]; aliY += this.vy[j]; nAli++; }
+            cohX += this.px[j]; cohY += this.py[j]; nCoh++;
+            if (++seen >= maxN) break outer;
+          }
+        }
+      }
+      let fx = 0, fy = 0;
+      let dsx = 0, dsy = 0, dax = 0, day = 0, dcx = 0, dcy = 0;
+      if (sepX || sepY) {
+        const m = Math.hypot(sepX, sepY);
+        dsx = (sepX / m) * p.maxSpeed - vxi;
+        dsy = (sepY / m) * p.maxSpeed - vyi;
+        fx += dsx * p.wSep; fy += dsy * p.wSep;
+      }
+      if (nAli) {
+        const mx = aliX / nAli, my = aliY / nAli;
+        const m = Math.hypot(mx, my) || 1;
+        dax = (mx / m) * p.maxSpeed - vxi;
+        day = (my / m) * p.maxSpeed - vyi;
+        fx += dax * p.wAli; fy += day * p.wAli;
+      }
+      if (nCoh) {
+        const mx = cohX / nCoh - x, my = cohY / nCoh - y;
+        const m = Math.hypot(mx, my) || 1;
+        dcx = (mx / m) * p.maxSpeed - vxi;
+        dcy = (my / m) * p.maxSpeed - vyi;
+        fx += dcx * p.wCoh; fy += dcy * p.wCoh;
+      }
+      if (i === this.debugIndex) {
+        this.dbg.sx = dsx; this.dbg.sy = dsy;
+        this.dbg.ax = dax; this.dbg.ay = day;
+        this.dbg.cx = dcx; this.dbg.cy = dcy;
+        this.dbg.count = seen;
+      }
+      let panic = 0;
+      const preds = world.predators;
+      for (let q = 0; q < preds.length; q++) {
+        const P = preds[q];
+        if (!P.active) continue;
+        const dx = x - P.x, dy = y - P.y;
+        const d = Math.hypot(dx, dy);
+        const R = p.rFlee * (P.scare || 1);
+        if (d < R && d > 1e-4) {
+          const t = 1 - d / R;
+          const w = t * t;
+          fx += (dx / d) * p.maxSpeed * p.wFlee * w;
+          fy += (dy / d) * p.maxSpeed * p.wFlee * w;
+          if (w > panic) panic = w;
+        }
+      }
+      const obs = world.obstacles;
+      for (let q = 0; q < obs.length; q++) {
+        const O = obs[q];
+        if (O.passable) continue;
+        const ahx = x + fwx * 26, ahy = y + fwy * 26;
+        const dx = ahx - O.x, dy = ahy - O.y;
+        const d = Math.hypot(dx, dy);
+        const R = O.r + 22;
+        if (d < R && d > 1e-4) {
+          const t = 1 - d / R;
+          fx += (dx / d) * p.maxSpeed * p.wAvoid * t;
+          fy += (dy / d) * p.maxSpeed * p.wAvoid * t;
+        }
+      }
+      const L = world.lure;
+      if (L && L.active) {
+        const dx = L.x - x, dy = L.y - y;
+        const d = Math.hypot(dx, dy);
+        const R = p.rLure * L.power;
+        if (d < R && d > 1e-4) {
+          const t = 1 - d / R;
+          const core = d < p.lureCore ? -0.8 : 1;
+          fx += (dx / d) * p.maxSpeed * p.wLure * t * L.power * core;
+          fy += (dy / d) * p.maxSpeed * p.wLure * t * L.power * core;
+        }
+      }
+      const m0 = p.margin;
+      if (x < m0) fx += (m0 - x) * p.wBounds;
+      else if (x > this.w - m0) fx -= (x - (this.w - m0)) * p.wBounds;
+      if (y < m0) fy += (m0 - y) * p.wBounds;
+      else if (y > this.h - m0) fy -= (y - (this.h - m0)) * p.wBounds;
+      const fm = Math.hypot(fx, fy);
+      if (fm > p.maxForce) { const k = p.maxForce / fm; fx *= k; fy *= k; }
+      let nvx = vxi + fx * dt;
+      let nvy = vyi + fy * dt;
+      const st = Math.max(this.stress[i] - p.stressDecay * dt, panic);
+      this.stress[i] = clamp(st, 0, 1);
+      const sc = this.speedScale[i] || 1;
+      const vmax = p.maxSpeed * sc * lerp(1, p.panicSpeedBoost, this.stress[i]);
+      const vmin = p.minSpeed * sc;
+      const nsp = Math.hypot(nvx, nvy);
+      if (nsp > vmax) { const k = vmax / nsp; nvx *= k; nvy *= k; }
+      else if (nsp < vmin) {
+        const k = vmin / (nsp || 1e-6); nvx *= k; nvy *= k;
+      }
+      this.vx[i] = nvx; this.vy[i] = nvy;
+      const nx = this.px[i] + nvx * dt;
+      const ny = this.py[i] + nvy * dt;
+      this.tx[i] = lerp(this.tx[i], this.px[i], 0.45);
+      this.ty[i] = lerp(this.ty[i], this.py[i], 0.45);
+      this.px[i] = clamp(nx, -40, this.w + 40);
+      this.py[i] = clamp(ny, -40, this.h + 40);
+      this.phase[i] += dt * (6 + nsp * 0.05);
+    }
+    this.stat.neighbourTests = tests;
+    this.stat.neighbourHits = hits;
+    this.stat.simMs = performance.now() - t0;
+  }
+  polarisation() {
+    let sx = 0, sy = 0;
+    const n = this.n;
+    if (!n) return 0;
+    for (let i = 0; i < n; i++) {
+      const s = Math.hypot(this.vx[i], this.vy[i]) || 1;
+      sx += this.vx[i] / s; sy += this.vy[i] / s;
+    }
+    return Math.hypot(sx, sy) / n;
+  }
+  centroid(out) {
+    let sx = 0, sy = 0; const n = this.n;
+    for (let i = 0; i < n; i++) { sx += this.px[i]; sy += this.py[i]; }
+    out.x = n ? sx / n : 0; out.y = n ? sy / n : 0;
+    return out;
+  }
+}
+global.SwarmEngine = SwarmEngine;
+})(typeof window !== 'undefined' ? window : globalThis);
+'use strict';
+(function () {
+const TAU = Math.PI * 2;
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+const lerp = (a, b, t) => a + (b - a) * t;
+const LAMP_CHARGES     = 5;
+const LAMP_REFILL_TIME = 4.2;
+const DAZZLE_DURATION  = 2.6;
+const DAZZLE_AIM_TIME  = 0.4;
+const DAZZLE_SLOW      = 0.26;
+const FRENZY_TRIGGER   = 3;
+const FRENZY_DURATION  = 3.0;
+const FRENZY_SPEED     = 1.55;
+const EXHAUST_DURATION = 3.0;
+const EXHAUST_SPEED    = 0.5;
+const Sfx = (() => {
+  let ac = null, master = null;
+  function ctx() {
+    if (!ac) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ac = new AC();
+      master = ac.createGain();
+      master.gain.value = 0.2;
+      master.connect(ac.destination);
+    }
+    if (ac.state === 'suspended') ac.resume();
+    return ac;
+  }
+  function tone(freq, dur, type, vol) {
+    const c = ctx(); if (!c) return;
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(freq, c.currentTime);
+    g.gain.setValueAtTime(0, c.currentTime);
+    g.gain.linearRampToValueAtTime(vol === undefined ? 0.4 : vol, c.currentTime + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + dur);
+    o.connect(g); g.connect(master);
+    o.start(); o.stop(c.currentTime + dur + 0.02);
+  }
+  return {
+    unlock() { ctx(); },
+    saved(n) { tone(460 + (n % 10) * 36, 0.18, 'triangle', 0.3); },
+    lost() { tone(78, 0.34, 'sawtooth', 0.3); },
+    dazzle() { tone(880, 0.22, 'square', 0.16); setTimeout(() => tone(1240, 0.16, 'sine', 0.12), 70); },
+    ready() { tone(680, 0.12, 'sine', 0.13); },
+    frenzy() {
+      tone(140, 0.5, 'sawtooth', 0.3);
+      setTimeout(() => tone(104, 0.6, 'sawtooth', 0.26), 90);
+    },
+    win() { [0, 1, 2, 3, 4].forEach(i => setTimeout(() => tone(392 * Math.pow(1.2, i), 0.45, 'triangle', 0.34), i * 120)); },
+  };
+})();
+class AbyssalDive {
+  constructor() {
+    this.cv = document.getElementById('cv');
+    this.g = this.cv.getContext('2d');
+    this.dpr = Math.min(window.devicePixelRatio || 1, 2);
+    this.el = {
+      saved: document.getElementById('saved'),
+      lost: document.getElementById('lost'),
+      swimming: document.getElementById('swimming'),
+      dazzle: document.getElementById('dazzle'),
+      dazzleFill: document.getElementById('dazzleFill'),
+      seed: document.getElementById('seed'),
+      pips: document.getElementById('pips'),
+      end: document.getElementById('end'),
+      endTitle: document.getElementById('endTitle'),
+      endBody: document.getElementById('endBody'),
+      endStats: document.getElementById('endStats'),
+      hint: document.getElementById('hint'),
+      pDepth: document.getElementById('pDepth'),
+      pLayer: document.getElementById('pLayer'),
+      pCommon: document.getElementById('pCommon'),
+      pBarFill: document.getElementById('pBarFill'),
+      pTemp: document.getElementById('pTemp'),
+      pPress: document.getElementById('pPress'),
+      pLight: document.getElementById('pLight'),
+      pCover: document.getElementById('pCover'),
+      pFauna: document.getElementById('pFauna'),
+      pFacts: document.getElementById('pFacts'),
+    };
+    this.resize();
+    window.addEventListener('resize', () => this.resize());
+    this.pointer = { x: this.W / 2, y: this.H / 2, down: false, used: false };
+    this.bindInput();
+    this.runIndex = 0;
+    this.seed = (Math.random() * 100000) | 0;
+    this.start(this.seed);
+    this.last = performance.now();
+    this.acc = 0;
+    requestAnimationFrame(t => this.loop(t));
+  }
+  resize() {
+    this.W = window.innerWidth;
+    this.H = window.innerHeight;
+    this.cv.width = Math.floor(this.W * this.dpr);
+    this.cv.height = Math.floor(this.H * this.dpr);
+    this.g.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    if (this.ff) { this.ff.resize(this.W, this.H); this.rebuildField(); }
+    if (this.sw) this.sw.resize(this.W, this.H);
+  }
+  start(seed) {
+    this.seed = seed;
+    const origRandom = Math.random;
+    Math.random = mulberry32(seed ^ 0x5eed);
+    this.depth = OCEAN.depthForRun(this.runIndex);
+    this.level = makeLevel(seed, this.W, this.H, this.depth);
+    this.lv = this.level;
+    this.sw = new SwarmEngine(this.level.schoolSize + 8, this.W, this.H);
+    for (const f of this.level.school) this.sw.spawn(f.x, f.y);
+    Math.random = origRandom;
+    const p = this.sw.p;
+    p.rSep = 17; p.rAli = 40; p.rCoh = 50;
+    p.wSep = 2.3; p.wAli = 1.15; p.wCoh = 0.9;
+    p.wLure = 2.6; p.wAvoid = 5.6; p.wFlee = 4.8; p.wBounds = 3.4;
+    p.minSpeed = 40; p.maxSpeed = 124; p.maxForce = 250;
+    p.rFlee = 128; p.rLure = 190; p.margin = 40;
+    p.lureCore = 15;
+    this.ff = new FlowField(this.W, this.H, 24);
+    this.rebuildField();
+    this.world = {
+      predators: [this.level.hunter],
+      obstacles: this.level.obstacles,
+      lure: { x: this.W / 2, y: this.H / 2, power: 0, active: false },
+    };
+    this.saved = 0;
+    this.lost = 0;
+    this.time = 0;
+    this.state = 'play';
+    this.shake = 0;
+    this.particles = [];
+    this.dazzleAim = 0;
+    this.charges = LAMP_CHARGES;
+    this.refillT = 0;
+    this.wasEmpty = false;
+    this.el.seed.textContent = '#' + seed;
+    this.el.end.classList.remove('on');
+    this.updatePanel();
+    if (!this.pointer.used) this.el.hint.classList.add('on');
+  }
+  updatePanel() {
+    const r = OCEAN.readout(this.depth);
+    const L = r.layer;
+    const e = this.el;
+    e.pDepth.innerHTML = this.depth.toLocaleString() + '<small>m</small>';
+    e.pLayer.textContent = L.name;
+    e.pLayer.style.color = L.tint;
+    e.pCommon.textContent = L.common;
+    e.pBarFill.style.width = Math.min(100, (this.depth / 11000) * 100).toFixed(1) + '%';
+    e.pTemp.textContent = r.tempC.toFixed(1) + ' C';
+    e.pPress.textContent = Math.round(r.pressureBar).toLocaleString() + ' bar';
+    e.pLight.textContent = r.light;
+    const soft = L.passable;
+    const cover = L.solid.concat(soft);
+    e.pCover.innerHTML = cover.map(function (k) {
+      const isSoft = soft.indexOf(k) >= 0;
+      const style = isSoft
+        ? ' style="background:rgba(70,200,150,.13);border-color:rgba(70,200,150,.3)"'
+        : '';
+      return '<i' + style + '>' + (OCEAN.COVER_NAMES[k] || k) +
+             (isSoft ? ' - passable' : '') + '</i>';
+    }).join('');
+    e.pFauna.innerHTML = L.fauna.map(function (f) {
+      return '<i>' + f + '</i>';
+    }).join('');
+    e.pFacts.innerHTML = L.facts.map(function (f) {
+      return '<div class="pFact"><b>' + f.tag + '</b><p>' + f.text + '</p></div>';
+    }).join('');
+  }
+  rebuildField() {
+    this.ff.rasterise(this.level.obstacles);
+    this.ff.build(this.level.refuges);
+  }
+  bindInput() {
+    const pos = e => {
+      const t = e.touches ? e.touches[0] : e;
+      const r = this.cv.getBoundingClientRect();
+      return { x: t.clientX - r.left, y: t.clientY - r.top };
+    };
+    const down = e => {
+      e.preventDefault(); Sfx.unlock();
+      const p = pos(e);
+      this.pointer.x = p.x; this.pointer.y = p.y;
+      this.pointer.down = true; this.pointer.used = true;
+      this.el.hint.classList.remove('on');
+    };
+    const move = e => {
+      e.preventDefault();
+      const p = pos(e);
+      this.pointer.x = p.x; this.pointer.y = p.y;
+    };
+    const up = e => { e.preventDefault(); this.pointer.down = false; };
+    this.cv.addEventListener('mousedown', down);
+    this.cv.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+    this.cv.addEventListener('touchstart', down, { passive: false });
+    this.cv.addEventListener('touchmove', move, { passive: false });
+    window.addEventListener('touchend', up, { passive: false });
+    document.getElementById('again').addEventListener('click', () => {
+      this.runIndex++;
+      this.start((Math.random() * 100000) | 0);
+    });
+    document.getElementById('retry').addEventListener('click', () => {
+      this.start(this.seed);
+    });
+  }
+  loop(now) {
+    const raw = (now - this.last) / 1000;
+    this.last = now;
+    this.acc += Math.min(raw, 0.05);
+    let guard = 0;
+    while (this.acc >= 1 / 60 && guard++ < 5) {
+      this.update(1 / 60);
+      this.acc -= 1 / 60;
+    }
+    this.render();
+    requestAnimationFrame(t => this.loop(t));
+  }
+  update(dt) {
+    this.time += dt;
+    const L = this.world.lure;
+    L.x = lerp(L.x, this.pointer.x, 0.3);
+    L.y = lerp(L.y, this.pointer.y, 0.3);
+    L.power = lerp(L.power, this.pointer.down ? 1 : 0.2, 0.12);
+    L.active = L.power > 0.04;
+    if (this.state === 'play') {
+      this.updateDazzle(dt);
+      this.updateHunter(dt);
+    }
+    this.sw.step(dt, this.world);
+    if (this.state === 'play') this.applyFlow(dt);
+    if (this.state === 'play') this.resolve(dt);
+    this.shake = Math.max(0, this.shake - dt * 3.4);
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      const p = this.particles[i];
+      p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt;
+      p.vx *= 0.94; p.vy *= 0.94;
+      if (p.t > p.life) this.particles.splice(i, 1);
+    }
+    this.updateHud();
+  }
+  updateDazzle(dt) {
+    const H = this.level.hunter;
+    const L = this.world.lure;
+    if (this.charges <= 0) {
+      this.wasEmpty = true;
+      this.refillT += dt;
+      if (this.refillT >= LAMP_REFILL_TIME) {
+        this.refillT = 0;
+        this.charges = LAMP_CHARGES;
+        Sfx.ready();
+      }
+    }
+    const frenzied = this.time < H.frenzyUntil;
+    const canSpend = this.charges > 0 && !frenzied && this.time >= H.slowUntil;
+    const onTarget = L.active && L.power > 0.6 &&
+      Math.hypot(L.x - H.x, L.y - H.y) < 76;
+    if (onTarget && canSpend) {
+      this.dazzleAim += dt;
+      if (this.dazzleAim >= DAZZLE_AIM_TIME) {
+        this.charges--;
+        this.dazzleAim = 0;
+        H.slowUntil = this.time + DAZZLE_DURATION;
+        H.stunFlash = 1;
+        H.stunCount++;
+        Sfx.dazzle();
+        this.burst(H.x, H.y, 18, 190);
+        if (H.stunCount >= FRENZY_TRIGGER) {
+          H.stunCount = 0;
+          H.slowUntil = 0;
+          H.frenzyUntil = this.time + FRENZY_DURATION;
+          H.exhaustUntil = H.frenzyUntil + EXHAUST_DURATION;
+          Sfx.frenzy();
+          this.shake = 1;
+          this.burst(H.x, H.y, 26, 6);
+        }
+      }
+    } else {
+      this.dazzleAim = Math.max(0, this.dazzleAim - dt * 1.6);
+    }
+  }
+  updateHunter(dt) {
+    const H = this.level.hunter;
+    H.t += dt;
+    H.stunFlash = Math.max(0, H.stunFlash - dt * 2);
+    let tx = 0, ty = 0, best = -1;
+    const sw = this.sw;
+    for (let i = 0; i < sw.n; i++) {
+      let c = 0;
+      for (let j = 0; j < sw.n; j += 3) {
+        const d = Math.hypot(sw.px[j] - sw.px[i], sw.py[j] - sw.py[i]);
+        if (d < 110) c++;
+      }
+      if (c > best) { best = c; tx = sw.px[i]; ty = sw.py[i]; }
+    }
+    if (best < 0) { tx = this.W / 2; ty = this.H / 2; }
+    const dazzled = this.time < H.slowUntil;
+    const base = 92 + Math.min(H.t * 3.2, 26);
+    const speed = base * (dazzled ? DAZZLE_SLOW : 1);
+    const dx = tx - H.x, dy = ty - H.y;
+    const d = Math.hypot(dx, dy) || 1;
+    H.vx = lerp(H.vx, (dx / d) * speed, dazzled ? 0.02 : 0.045);
+    H.vy = lerp(H.vy, (dy / d) * speed, dazzled ? 0.02 : 0.045);
+    for (const o of this.level.obstacles) {
+      const ox = H.x - o.x, oy = H.y - o.y;
+      const od = Math.hypot(ox, oy);
+      const R = o.r + (o.passable ? 20 : 34);
+      if (od < R && od > 1e-4) {
+        H.vx += (ox / od) * (1 - od / R) * 190;
+        H.vy += (oy / od) * (1 - od / R) * 190;
+      }
+    }
+    H.x += H.vx * dt;
+    H.y += H.vy * dt;
+    H.y = clamp(H.y, 30, this.H - 30);
+    H.scare = dazzled ? 0.55 : 1;
+  }
+  applyFlow(dt) {
+    const sw = this.sw, ff = this.ff;
+    const out = { x: 0, y: 0 };
+    for (let i = 0; i < sw.n; i++) {
+      ff.sample(sw.px[i], sw.py[i], out);
+      if (!out.x && !out.y) continue;
+      const w = (22 + sw.stress[i] * 120);
+      sw.vx[i] += out.x * w * dt;
+      sw.vy[i] += out.y * w * dt;
+    }
+  }
+  resolve() {
+    const sw = this.sw, H = this.level.hunter;
+    for (let i = sw.n - 1; i >= 0; i--) {
+      const x = sw.px[i], y = sw.py[i];
+      let entered = false;
+      for (const R of this.level.refuges) {
+        if (R.closed) continue;
+        if (Math.hypot(x - R.x, y - R.y) < R.r * 0.9) {
+          R.held++;
+          this.saved++;
+          Sfx.saved(this.saved);
+          this.burst(x, y, 5, 165);
+          if (R.held >= R.capacity) {
+            R.closed = true;
+            this.rebuildField();
+          }
+          sw.removeAt(i);
+          entered = true;
+          break;
+        }
+      }
+      if (entered) continue;
+      if (Math.hypot(x - H.x, y - H.y) < 25) {
+        this.lost++;
+        Sfx.lost();
+        this.burst(x, y, 7, 8);
+        this.shake = Math.min(1, this.shake + 0.3);
+        sw.removeAt(i);
+      }
+    }
+    if (sw.n === 0) this.finish();
+  }
+  finish() {
+    this.state = 'end';
+    const total = this.level.schoolSize;
+    const pct = this.saved / total;
+    let title, body;
+    if (this.lost === 0) {
+      title = 'EVERY ONE OF THEM';
+      body = 'You read the water instead of fighting it.';
+      Sfx.win();
+    } else if (pct >= 0.9) {
+      title = 'ALMOST ALL';
+      body = 'A handful stayed behind so the rest could turn the corner.';
+    } else if (pct >= 0.6) {
+      title = 'MOST OF THEM';
+      body = 'You chose, and the choice cost something.';
+    } else if (pct > 0) {
+      title = 'A FEW GOT THROUGH';
+      body = 'The reef closed faster than the school could read it.';
+    } else {
+      title = 'NONE';
+      body = 'The light was never in two places at once.';
+    }
+    this.el.endTitle.textContent = title;
+    this.el.endBody.textContent = body;
+    this.el.endStats.innerHTML =
+      '<b>' + this.saved + '</b> saved &nbsp;·&nbsp; <b>' + this.lost + '</b> lost' +
+      ' &nbsp;·&nbsp; seed <b>#' + this.seed + '</b>' +
+      '<br>' + this.level.refuges.length + ' crevices &nbsp;·&nbsp; ' +
+      this.time.toFixed(0) + 's';
+    setTimeout(() => this.el.end.classList.add('on'), 600);
+  }
+  burst(x, y, n, hue) {
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * TAU, s = 40 + Math.random() * 170;
+      this.particles.push({
+        x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s,
+        t: 0, life: 0.5 + Math.random() * 0.5, hue,
+      });
+    }
+  }
+  updateHud() {
+    this.el.saved.textContent = this.saved;
+    this.el.lost.textContent = this.lost;
+    this.el.swimming.textContent = this.sw.n;
+    const H = this.level.hunter;
+    let pips = '';
+    for (let i = 0; i < LAMP_CHARGES; i++) {
+      pips += '<i class="' + (i < this.charges ? 'f' : '') + '"></i>';
+    }
+    this.el.pips.innerHTML = pips;
+    if (this.time < H.frenzyUntil) {
+      this.el.dazzle.textContent = 'FRENZIED — LAMP USELESS';
+      this.el.dazzle.className = 'rage';
+      this.el.dazzleFill.style.width =
+        ((H.frenzyUntil - this.time) / FRENZY_DURATION * 100).toFixed(0) + '%';
+    } else if (this.time < H.exhaustUntil) {
+      this.el.dazzle.textContent = 'IT IS SPENT — GO';
+      this.el.dazzle.className = 'ready';
+      this.el.dazzleFill.style.width =
+        ((H.exhaustUntil - this.time) / EXHAUST_DURATION * 100).toFixed(0) + '%';
+    } else if (this.time < H.slowUntil) {
+      this.el.dazzle.textContent = 'DAZZLED — IT CANNOT FEED';
+      this.el.dazzle.className = 'on';
+      this.el.dazzleFill.style.width =
+        ((H.slowUntil - this.time) / DAZZLE_DURATION * 100).toFixed(0) + '%';
+    } else if (this.charges <= 0) {
+      this.el.dazzle.textContent = 'LAMP DRY';
+      this.el.dazzle.className = '';
+      this.el.dazzleFill.style.width =
+        (this.refillT / LAMP_REFILL_TIME * 100).toFixed(0) + '%';
+    } else {
+      this.el.dazzle.textContent = this.dazzleAim > 0 ? 'AIMING' : 'LAMP READY';
+      this.el.dazzle.className = 'ready';
+      this.el.dazzleFill.style.width =
+        (this.dazzleAim / DAZZLE_AIM_TIME * 100).toFixed(0) + '%';
+    }
+  }
+  render() {
+    const g = this.g, W = this.W, H = this.H;
+    g.save();
+    if (this.shake > 0.01) {
+      const s = this.shake * 8;
+      g.translate((Math.random() - 0.5) * s, (Math.random() - 0.5) * s);
+    }
+    const tint = this.level.layer ? this.level.layer.tint : '#071d3a';
+    const bg = g.createRadialGradient(W * 0.5, H * 0.4, 20, W * 0.5, H * 0.5, Math.max(W, H));
+    bg.addColorStop(0, tint);
+    bg.addColorStop(0.55, 'rgba(4,16,36,0.35)');
+    bg.addColorStop(1, '#01040c');
+    g.fillStyle = '#01040c';
+    g.fillRect(-20, -20, W + 40, H + 40);
+    g.globalAlpha = 0.55;
+    g.fillStyle = bg;
+    g.fillRect(-20, -20, W + 40, H + 40);
+    g.globalAlpha = 1;
+    this.drawRefuges(g);
+    this.drawObstacles(g);
+    this.drawLamp(g);
+    this.drawSchool(g);
+    this.drawHunter(g);
+    this.drawParticles(g);
+    g.restore();
+  }
+  drawRefuges(g) {
+    for (const R of this.level.refuges) {
+      R.pulse += 0.02;
+      const full = R.closed;
+      const glow = full ? 0.06 : 0.20;
+      const col = full ? '120,140,160' : '110,255,200';
+      const gr = g.createRadialGradient(R.x, R.y, 4, R.x, R.y, R.r * 1.5);
+      gr.addColorStop(0, 'rgba(' + col + ',' + glow + ')');
+      gr.addColorStop(1, 'rgba(' + col + ',0)');
+      g.fillStyle = gr;
+      g.beginPath(); g.arc(R.x, R.y, R.r * 1.5, 0, TAU); g.fill();
+      g.strokeStyle = 'rgba(' + col + ',' + (full ? 0.25 : 0.5) + ')';
+      g.lineWidth = 1.5;
+      g.setLineDash(full ? [3, 6] : [7, 8]);
+      g.lineDashOffset = -this.time * 18;
+      g.beginPath(); g.arc(R.x, R.y, R.r, 0, TAU); g.stroke();
+      g.setLineDash([]);
+      g.fillStyle = 'rgba(' + col + ',' + (full ? 0.4 : 0.8) + ')';
+      g.font = '600 11px ui-monospace,Menlo,Consolas,monospace';
+      g.textAlign = 'center';
+      g.fillText(full ? 'FULL' : R.held + '/' + R.capacity, R.x, R.y + 4);
+      g.textAlign = 'left';
+    }
+  }
+  drawObstacles(g) {
+    for (const o of this.level.obstacles) {
+      if (o.passable) this.drawSoft(g, o);
+    }
+    for (const o of this.level.obstacles) {
+      if (o.passable) continue;
+      if (o.kind === 'coral' || o.kind === 'deepcoral') this.drawCoral(g, o);
+      else if (o.kind === 'nodule') this.drawNodule(g, o);
+      else this.drawRock(g, o);
+    }
+  }
+  drawSoft(g, o) {
+    if (o.kind === 'siphonophore') return this.drawSiphonophore(g, o);
+    if (o.kind === 'glasssponge') return this.drawGlassSponge(g, o);
+    if (o.kind === 'xenophyophore') return this.drawXeno(g, o);
+    return this.drawKelp(g, o);
+  }
+  drawNodule(g, o) {
+    g.save();
+    g.translate(o.x, o.y); g.rotate(o.spin);
+    const gr = g.createRadialGradient(-o.r * 0.3, -o.r * 0.3, 2, 0, 0, o.r);
+    gr.addColorStop(0, '#2a2b33');
+    gr.addColorStop(1, '#0a0c14');
+    g.fillStyle = gr;
+    g.beginPath();
+    for (let k = 0; k < 11; k++) {
+      const a = (k / 11) * TAU;
+      const rr = o.r * (0.9 + ((o.seedShape + k * 23) % 9) / 90);
+      const px = Math.cos(a) * rr, py = Math.sin(a) * rr;
+      k ? g.lineTo(px, py) : g.moveTo(px, py);
+    }
+    g.closePath(); g.fill();
+    g.strokeStyle = 'rgba(160,170,190,0.12)';
+    g.lineWidth = 1; g.stroke();
+    g.restore();
+  }
+  drawSiphonophore(g, o) {
+    const sway = Math.sin(this.time * 0.8 + (o.sway || 0)) * 0.3;
+    g.save();
+    g.translate(o.x, o.y);
+    g.globalAlpha = 0.42;
+    g.strokeStyle = 'rgba(150,210,255,0.5)';
+    g.lineWidth = 1.1;
+    const n = 5 + (o.seedShape % 4);
+    for (let i = 0; i < n; i++) {
+      const off = (i - n / 2) * (o.r * 0.3);
+      const h = o.r * (1.7 + ((o.seedShape + i * 7) % 6) / 8);
+      g.beginPath();
+      g.moveTo(off, -o.r * 0.5);
+      g.quadraticCurveTo(off + sway * h * 0.5, h * 0.4, off + sway * h, h);
+      g.stroke();
+    }
+    g.fillStyle = 'rgba(180,230,255,0.5)';
+    g.beginPath(); g.ellipse(0, -o.r * 0.55, o.r * 0.3, o.r * 0.44, 0, 0, TAU); g.fill();
+    g.globalAlpha = 1;
+    g.restore();
+  }
+  drawGlassSponge(g, o) {
+    g.save();
+    g.translate(o.x, o.y);
+    g.globalAlpha = 0.38;
+    g.strokeStyle = 'rgba(190,235,255,0.6)';
+    g.lineWidth = 1;
+    const n = 3 + (o.seedShape % 3);
+    for (let i = 0; i < n; i++) {
+      const off = (i - n / 2) * (o.r * 0.44);
+      const h = o.r * (1.1 + ((o.seedShape + i * 11) % 5) / 7);
+      g.beginPath();
+      g.moveTo(off - o.r * 0.2, o.r * 0.5);
+      g.lineTo(off - o.r * 0.1, -h);
+      g.lineTo(off + o.r * 0.1, -h);
+      g.lineTo(off + o.r * 0.2, o.r * 0.5);
+      g.stroke();
+      for (let k = 1; k < 4; k++) {
+        const y = o.r * 0.5 - (o.r * 0.5 + h) * (k / 4);
+        g.beginPath();
+        g.moveTo(off - o.r * 0.17, y); g.lineTo(off + o.r * 0.17, y);
+        g.stroke();
+      }
+    }
+    g.globalAlpha = 1;
+    g.restore();
+  }
+  drawXeno(g, o) {
+    g.save();
+    g.translate(o.x, o.y);
+    g.globalAlpha = 0.34;
+    const gr = g.createRadialGradient(0, 0, 2, 0, 0, o.r);
+    gr.addColorStop(0, 'rgba(180,170,140,0.5)');
+    gr.addColorStop(1, 'rgba(90,85,70,0.05)');
+    g.fillStyle = gr;
+    const lobes = 4 + (o.seedShape % 4);
+    for (let k = 0; k < lobes; k++) {
+      const a = (k / lobes) * TAU + o.seedShape * 0.02;
+      g.beginPath();
+      g.ellipse(Math.cos(a) * o.r * 0.4, Math.sin(a) * o.r * 0.4,
+                o.r * 0.48, o.r * 0.34, a, 0, TAU);
+      g.fill();
+    }
+    g.globalAlpha = 1;
+    g.restore();
+  }
+  drawRock(g, o) {
+    g.save();
+    g.translate(o.x, o.y); g.rotate(o.spin);
+    const gr = g.createRadialGradient(0, -o.r * 0.3, 3, 0, 0, o.r);
+    gr.addColorStop(0, '#1b3252');
+    gr.addColorStop(1, '#071528');
+    g.fillStyle = gr;
+    g.beginPath();
+    for (let k = 0; k < 9; k++) {
+      const a = (k / 9) * TAU;
+      const rr = o.r * (0.84 + ((o.seedShape + k * 37) % 13) / 52);
+      const px = Math.cos(a) * rr, py = Math.sin(a) * rr;
+      k ? g.lineTo(px, py) : g.moveTo(px, py);
+    }
+    g.closePath(); g.fill();
+    g.strokeStyle = 'rgba(120,190,255,0.14)';
+    g.lineWidth = 1; g.stroke();
+    g.restore();
+  }
+  drawCoral(g, o) {
+    g.save();
+    g.translate(o.x, o.y); g.rotate(o.spin);
+    const hue = o.hue || 330;
+    const gr = g.createRadialGradient(0, -o.r * 0.25, 3, 0, 0, o.r);
+    gr.addColorStop(0, 'hsl(' + hue + ',42%,30%)');
+    gr.addColorStop(1, 'hsl(' + (hue - 16) + ',46%,13%)');
+    g.fillStyle = gr;
+    const lobes = 5 + (o.seedShape % 3);
+    for (let k = 0; k < lobes; k++) {
+      const a = (k / lobes) * TAU + o.seedShape * 0.01;
+      const rr = o.r * 0.62;
+      const cx = Math.cos(a) * o.r * 0.42;
+      const cy = Math.sin(a) * o.r * 0.42;
+      g.beginPath(); g.arc(cx, cy, rr, 0, TAU); g.fill();
+    }
+    g.globalAlpha = 0.5;
+    g.strokeStyle = 'hsla(' + (hue + 14) + ',78%,62%,0.35)';
+    g.lineWidth = 1;
+    for (let k = 0; k < lobes; k++) {
+      const a = (k / lobes) * TAU + o.seedShape * 0.01;
+      g.beginPath();
+      g.arc(Math.cos(a) * o.r * 0.42, Math.sin(a) * o.r * 0.42, o.r * 0.62, 0, TAU);
+      g.stroke();
+    }
+    g.globalAlpha = 1;
+    g.restore();
+  }
+  drawKelp(g, o) {
+    const sway = Math.sin(this.time * 1.1 + (o.sway || 0)) * 0.22;
+    g.save();
+    g.translate(o.x, o.y);
+    g.globalAlpha = 0.5;
+    const blades = 3 + (o.seedShape % 3);
+    for (let b = 0; b < blades; b++) {
+      const off = (b - blades / 2) * (o.r * 0.34);
+      const lean = sway + (b - blades / 2) * 0.06;
+      const h = o.r * (1.5 + ((o.seedShape + b * 13) % 7) / 10);
+      const grd = g.createLinearGradient(off, 0, off + lean * h, -h);
+      grd.addColorStop(0, 'rgba(26,92,74,0.85)');
+      grd.addColorStop(1, 'rgba(52,170,124,0.10)');
+      g.strokeStyle = grd;
+      g.lineWidth = o.r * 0.26;
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(off, o.r * 0.5);
+      g.quadraticCurveTo(off + lean * h * 0.4, -h * 0.35, off + lean * h, -h);
+      g.stroke();
+    }
+    g.globalAlpha = 1;
+    g.restore();
+  }
+  drawLamp(g) {
+    const L = this.world.lure;
+    if (L.power < 0.04) return;
+    const R = this.sw.p.rLure * L.power;
+    const gr = g.createRadialGradient(L.x, L.y, 2, L.x, L.y, R);
+    const ready = this.time >= this.dazzleReadyAt;
+    const tint = ready ? '190,245,255' : '255,220,170';
+    gr.addColorStop(0, 'rgba(' + tint + ',' + (0.42 * L.power).toFixed(3) + ')');
+    gr.addColorStop(0.3, 'rgba(90,200,255,' + (0.12 * L.power).toFixed(3) + ')');
+    gr.addColorStop(1, 'rgba(50,160,255,0)');
+    g.fillStyle = gr;
+    g.beginPath(); g.arc(L.x, L.y, R, 0, TAU); g.fill();
+    if (this.dazzleAim > 0) {
+      g.strokeStyle = 'rgba(255,255,255,0.75)';
+      g.lineWidth = 2.5;
+      g.beginPath();
+      g.arc(L.x, L.y, 26, -Math.PI / 2,
+            -Math.PI / 2 + TAU * (this.dazzleAim / DAZZLE_AIM_TIME));
+      g.stroke();
+    }
+  }
+  drawSchool(g) {
+    const sw = this.sw;
+    for (let i = 0; i < sw.n; i++) {
+      const x = sw.px[i], y = sw.py[i];
+      const st = sw.stress[i];
+      const vx = sw.vx[i], vy = sw.vy[i];
+      const sp = Math.hypot(vx, vy) || 1;
+      const dx = vx / sp, dy = vy / sp;
+      const nx = -dy, ny = dx;
+      const hue = lerp(190, 36, st);
+      g.strokeStyle = 'hsla(' + hue + ',95%,66%,0.26)';
+      g.lineWidth = 2;
+      g.beginPath(); g.moveTo(sw.tx[i], sw.ty[i]); g.lineTo(x, y); g.stroke();
+      const wig = Math.sin(sw.phase[i]) * 3;
+      g.fillStyle = 'hsla(' + hue + ',96%,' + lerp(64, 72, st) + '%,0.96)';
+      g.beginPath();
+      g.moveTo(x + dx * 7, y + dy * 7);
+      g.lineTo(x + nx * 2.9 - dx * 3.2, y + ny * 2.9 - dy * 3.2);
+      g.lineTo(x - dx * 5.6 + nx * wig, y - dy * 5.6 + ny * wig);
+      g.lineTo(x - nx * 2.9 - dx * 3.2, y - ny * 2.9 - dy * 3.2);
+      g.closePath(); g.fill();
+    }
+    g.globalCompositeOperation = 'lighter';
+    g.globalAlpha = 0.12;
+    for (let i = 0; i < sw.n; i += 2) {
+      g.fillStyle = 'hsl(' + lerp(190, 36, sw.stress[i]) + ',100%,60%)';
+      g.beginPath(); g.arc(sw.px[i], sw.py[i], 7, 0, TAU); g.fill();
+    }
+    g.globalAlpha = 1;
+    g.globalCompositeOperation = 'source-over';
+  }
+  drawHunter(g) {
+    const H = this.level.hunter;
+    const dazzled = this.time < H.slowUntil;
+    const frenzied = this.time < H.frenzyUntil;
+    const exhausted = !frenzied && this.time < H.exhaustUntil;
+    const a = Math.atan2(H.vy, H.vx);
+    g.save();
+    g.translate(H.x, H.y); g.rotate(a);
+    let col = '255,86,62';
+    if (dazzled) col = '150,220,255';
+    else if (frenzied) col = '255,40,30';
+    else if (exhausted) col = '150,130,120';
+    const halo = frenzied ? 126 : 92;
+    const gr = g.createRadialGradient(0, 0, 4, 0, 0, halo);
+    gr.addColorStop(0, 'rgba(' + col + ',' + (frenzied ? 0.4 : dazzled ? 0.3 : 0.22) + ')');
+    gr.addColorStop(1, 'rgba(' + col + ',0)');
+    g.fillStyle = gr;
+    g.beginPath(); g.arc(0, 0, halo, 0, TAU); g.fill();
+    if (frenzied) {
+      g.strokeStyle = 'rgba(255,70,50,0.55)';
+      g.lineWidth = 2;
+      g.beginPath();
+      for (let k = 0; k < 14; k++) {
+        const ang = (k / 14) * TAU;
+        const rr = 48 + Math.sin(this.time * 22 + k) * 9;
+        const px = Math.cos(ang) * rr, py = Math.sin(ang) * rr;
+        k ? g.lineTo(px, py) : g.moveTo(px, py);
+      }
+      g.closePath(); g.stroke();
+    }
+    if (frenzied) g.scale(1.12, 1.12);
+    else if (exhausted) g.scale(0.94, 0.94);
+    g.fillStyle = dazzled ? '#22394f' : (frenzied ? '#2a1014' : '#131e2c');
+    g.beginPath();
+    g.moveTo(36, 0); g.lineTo(2, 14); g.lineTo(-28, 7);
+    g.lineTo(-37, 18); g.lineTo(-22, 0); g.lineTo(-37, -18);
+    g.lineTo(-28, -7); g.lineTo(2, -14);
+    g.closePath(); g.fill();
+    g.strokeStyle = 'rgba(' + col + ',0.7)';
+    g.lineWidth = 1.5; g.stroke();
+    g.fillStyle = dazzled ? '#bfe8ff' : '#ff6a4a';
+    g.beginPath(); g.arc(15, -4, 2.8, 0, TAU); g.fill();
+    if (H.stunFlash > 0) {
+      g.globalAlpha = H.stunFlash;
+      g.fillStyle = '#ffffff';
+      g.beginPath(); g.arc(0, 0, 44 * (1 - H.stunFlash) + 12, 0, TAU); g.fill();
+      g.globalAlpha = 1;
+    }
+    g.restore();
+  }
+  drawParticles(g) {
+    g.globalCompositeOperation = 'lighter';
+    for (const p of this.particles) {
+      const a = 1 - p.t / p.life;
+      g.fillStyle = 'hsla(' + p.hue + ',100%,66%,' + (a * 0.72).toFixed(3) + ')';
+      g.beginPath(); g.arc(p.x, p.y, 2.4 * a + 0.6, 0, TAU); g.fill();
+    }
+    g.globalCompositeOperation = 'source-over';
+  }
+}
+window.addEventListener('load', () => { window.GAME = new AbyssalDive(); });
+})();</script>
+</body>
+</html>

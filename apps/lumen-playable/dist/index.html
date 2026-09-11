@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>LUMEN — Playable</title>
+<style>*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{width:100%;height:100%;overflow:hidden;background:#03060f;font-family:"Trebuchet MS",Verdana,system-ui,sans-serif;user-select:none;touch-action:none}#stage{position:fixed;inset:0;display:block}canvas{position:absolute;inset:0;width:100%;height:100%;display:block}#ui{position:fixed;inset:0;pointer-events:none;color:#eaf6ff}/* ---------------- HUD ---------------- */#hud{position:absolute;top:0;left:0;right:0;padding:14px 16px;display:flex;align-items:flex-start;justify-content:space-between;text-shadow:0 2px 10px rgba(0,0,0,.8)}#beat{font-size:11px;letter-spacing:.26em;opacity:.62;text-transform:uppercase}#obj{font-size:16px;font-weight:700;letter-spacing:.04em;margin-top:3px}#meter{width:132px;height:7px;margin-top:8px;border-radius:99px;background:rgba(255,255,255,.13);overflow:hidden}#meterFill{height:100%;width:0%;border-radius:99px;background:linear-gradient(90deg,#3fe0d0,#7af5a8);box-shadow:0 0 14px #3fe0d0;transition:width .18s ease-out}#right{text-align:right}#count{font-size:26px;font-weight:800;letter-spacing:.02em;line-height:1}#countLbl{font-size:9px;letter-spacing:.22em;opacity:.5;margin-top:3px}/* ---------------- toast ---------------- */#toast{position:absolute;left:50%;top:26%;transform:translate(-50%,-50%) scale(.9);text-align:center;opacity:0;transition:opacity .4s,transform .4s;width:86%}#toast.on{opacity:1;transform:translate(-50%,-50%) scale(1)}#toastT{font-size:30px;font-weight:800;letter-spacing:.06em;text-shadow:0 0 28px rgba(80,220,255,.65)}#toastS{font-size:13px;opacity:.72;margin-top:7px;letter-spacing:.05em}/* ---------------- hand hint ---------------- */#hand{position:absolute;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;border:2px solid rgba(255,255,255,.85);box-shadow:0 0 22px rgba(120,235,255,.8),inset 0 0 16px rgba(120,235,255,.45);opacity:0;transition:opacity .35s}#hand.on{opacity:.95}#hand::after{content:"";position:absolute;inset:-12px;border-radius:50%;border:2px solid rgba(140,240,255,.5);animation:pulse 1.5s infinite}@keyframes pulse{0%{transform:scale(.72);opacity:1}100%{transform:scale(1.35);opacity:0}}/* ---------------- end card ---------------- */#end{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:radial-gradient(circle at 50% 42%,rgba(10,30,60,.72),rgba(2,5,14,.94));opacity:0;pointer-events:none;transition:opacity .5s}#end.on{opacity:1;pointer-events:auto}#logo{font-size:50px;font-weight:900;letter-spacing:.2em;background:linear-gradient(180deg,#eafcff,#49d8ff 60%,#1f7fd0);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 26px rgba(70,200,255,.6))}#tag{font-size:13px;letter-spacing:.16em;opacity:.75;text-align:center;padding:0 24px}#stats{font-size:11px;letter-spacing:.1em;opacity:.6;text-align:center;line-height:1.8}#cta{margin-top:10px;padding:16px 46px;border-radius:99px;border:0;cursor:pointer;font-size:18px;font-weight:800;letter-spacing:.13em;color:#05131f;background:linear-gradient(180deg,#8df7dd,#25c9b4);box-shadow:0 10px 34px rgba(45,220,200,.45);animation:breathe 1.7s ease-in-out infinite}@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}#replay{font-size:11px;letter-spacing:.18em;opacity:.5;cursor:pointer;text-decoration:underline;pointer-events:auto}/* ---------------- tech overlay ---------------- */#techBtn{position:absolute;right:12px;bottom:12px;pointer-events:auto;cursor:pointer;font-size:9px;letter-spacing:.2em;padding:8px 12px;border-radius:8px;border:1px solid rgba(120,220,255,.35);color:#8fe4ff;background:rgba(8,20,38,.65);backdrop-filter:blur(4px)}#techBtn.on{background:#8fe4ff;color:#05131f}#tech{position:absolute;left:12px;bottom:12px;width:246px;padding:11px 13px;border-radius:10px;border:1px solid rgba(120,220,255,.25);background:rgba(5,14,28,.84);backdrop-filter:blur(6px);font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10px;line-height:1.68;color:#a8e9ff;display:none}#tech.on{display:block}#tech b{color:#fff;font-weight:700}#tech .k{display:inline-block;width:118px;opacity:.62}#tech hr{border:0;border-top:1px solid rgba(120,220,255,.18);margin:7px 0}.sl{display:flex;align-items:center;gap:7px;margin:3px 0}.sl span{width:46px;opacity:.62}.sl input{flex:1;height:3px;accent-color:#49d8ff}.sl i{width:34px;text-align:right;font-style:normal;color:#fff}</style>
+</head>
+<body>
+<div id="stage"><canvas id="cv"></canvas></div>
+
+<div id="ui">
+  <div id="hud">
+    <div>
+      <div id="beat">RULE 01 — COHESION</div>
+      <div id="obj">Gather the lost school</div>
+      <div id="meter"><div id="meterFill"></div></div>
+    </div>
+    <div id="right">
+      <div id="count">0/60</div>
+      <div id="countLbl">RESCUED</div>
+    </div>
+  </div>
+
+  <div id="toast"><div id="toastT"></div><div id="toastS"></div></div>
+  <div id="hand"></div>
+
+  <div id="end">
+    <div id="logo">LUMEN</div>
+    <div id="tag">EVERY FISH THINKS FOR ITSELF.<br>YOU ONLY BRING THE LIGHT.</div>
+    <div id="stats"></div>
+    <button id="cta">PLAY FREE</button>
+    <div id="replay">REPLAY</div>
+  </div>
+
+  <div id="techBtn">TECH</div>
+  <div id="tech">
+    <div><b>BOIDS — Reynolds 1987</b></div>
+    <div><span class="k">agents</span><b id="tAgents">0</b></div>
+    <div><span class="k">fps</span><b id="tFps">0</b></div>
+    <div><span class="k">sim step</span><b id="tSim">0</b></div>
+    <div><span class="k">grid build</span><b id="tGrid">0</b></div>
+    <hr>
+    <div><span class="k">pair tests</span><b id="tTests">0</b></div>
+    <div><span class="k">naive O(n²)</span><b id="tNaive">0</b></div>
+    <div><span class="k">cells used</span><b id="tCells">0</b></div>
+    <div><span class="k">order φ</span><b id="tPol">0</b></div>
+    <div><span class="k">tracked nbrs</span><b id="tNb">0</b></div>
+    <hr>
+    <div class="sl"><span>sep</span><input type="range" data-p="wSep" min="0" max="6" step="0.05"><i>0</i></div>
+    <div class="sl"><span>ali</span><input type="range" data-p="wAli" min="0" max="6" step="0.05"><i>0</i></div>
+    <div class="sl"><span>coh</span><input type="range" data-p="wCoh" min="0" max="6" step="0.05"><i>0</i></div>
+    <div class="sl"><span>lure</span><input type="range" data-p="wLure" min="0" max="8" step="0.05"><i>0</i></div>
+    <div class="sl"><span>r·coh</span><input type="range" data-p="rCoh" min="20" max="120" step="1"><i>0</i></div>
+    <div class="sl"><span>vmax</span><input type="range" data-p="maxSpeed" min="40" max="260" step="1"><i>0</i></div>
+  </div>
+</div>
+
+<script>'use strict';
+(function (global) {
+const TAU = Math.PI * 2;
+function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+function lerp(a, b, t) { return a + (b - a) * t; }
+function rand(a, b) { return a + Math.random() * (b - a); }
+function defaultParams() {
+  return {
+    rSep: 18, rAli: 42, rCoh: 52,
+    fov: -0.35,
+    wSep: 2.10, wAli: 1.05, wCoh: 0.95,
+    wFlee: 4.60, wAvoid: 5.20, wLure: 2.40, wBounds: 3.40,
+    minSpeed: 46, maxSpeed: 132, maxForce: 260,
+    panicSpeedBoost: 1.55,
+    rFlee: 132, rLure: 210,
+    maxNeighbours: 7,
+    margin: 54,
+    stressDecay: 1.9,
+  };
+}
+class SwarmEngine {
+  constructor(capacity, width, height) {
+    const c = capacity | 0;
+    this.cap = c;
+    this.n = 0;
+    this.w = width;
+    this.h = height;
+    this.p = defaultParams();
+    this.px = new Float32Array(c);
+    this.py = new Float32Array(c);
+    this.vx = new Float32Array(c);
+    this.vy = new Float32Array(c);
+    this.ax = new Float32Array(c);
+    this.ay = new Float32Array(c);
+    this.tx = new Float32Array(c);
+    this.ty = new Float32Array(c);
+    this.stress = new Float32Array(c);
+    this.phase = new Float32Array(c);
+    this.alive = new Uint8Array(c);
+    this.cell = Math.max(16, this.p.rCoh);
+    this.cols = 1; this.rows = 1;
+    this.cellOf = new Int32Array(c);
+    this.sorted = new Int32Array(c);
+    this.counts = new Int32Array(1);
+    this.resize(width, height);
+    this.stat = {
+      neighbourTests: 0, neighbourHits: 0,
+      simMs: 0, gridMs: 0, occupied: 0,
+    };
+    this.debugIndex = 0;
+    this.dbg = { sx: 0, sy: 0, ax: 0, ay: 0, cx: 0, cy: 0, count: 0 };
+  }
+  resize(w, h) {
+    this.w = w; this.h = h;
+    this.cell = Math.max(16, this.p.rCoh);
+    this.cols = Math.max(1, Math.ceil(w / this.cell) + 1);
+    this.rows = Math.max(1, Math.ceil(h / this.cell) + 1);
+    const nc = this.cols * this.rows;
+    if (this.counts.length < nc + 1) this.counts = new Int32Array(nc + 1);
+  }
+  spawn(x, y, speed) {
+    if (this.n >= this.cap) return -1;
+    const i = this.n++;
+    const a = Math.random() * TAU;
+    const s = speed !== undefined ? speed : rand(this.p.minSpeed, this.p.maxSpeed);
+    this.px[i] = x; this.py[i] = y;
+    this.vx[i] = Math.cos(a) * s; this.vy[i] = Math.sin(a) * s;
+    this.tx[i] = x; this.ty[i] = y;
+    this.stress[i] = 0;
+    this.phase[i] = Math.random() * TAU;
+    this.alive[i] = 1;
+    return i;
+  }
+  removeAt(i) {
+    const last = --this.n;
+    if (i !== last) {
+      this.px[i] = this.px[last]; this.py[i] = this.py[last];
+      this.vx[i] = this.vx[last]; this.vy[i] = this.vy[last];
+      this.tx[i] = this.tx[last]; this.ty[i] = this.ty[last];
+      this.stress[i] = this.stress[last];
+      this.phase[i] = this.phase[last];
+    }
+  }
+  buildGrid() {
+    const t0 = performance.now();
+    const n = this.n, cols = this.cols, rows = this.rows, cs = this.cell;
+    const nc = cols * rows;
+    const counts = this.counts;
+    counts.fill(0, 0, nc + 1);
+    for (let i = 0; i < n; i++) {
+      const cx = clamp((this.px[i] / cs) | 0, 0, cols - 1);
+      const cy = clamp((this.py[i] / cs) | 0, 0, rows - 1);
+      const c = cy * cols + cx;
+      this.cellOf[i] = c;
+      counts[c + 1]++;
+    }
+    let occupied = 0;
+    for (let c = 0; c < nc; c++) {
+      if (counts[c + 1] > 0) occupied++;
+      counts[c + 1] += counts[c];
+    }
+    const cursor = this.sorted;
+    for (let i = 0; i < n; i++) {
+      const c = this.cellOf[i];
+      cursor[counts[c]++] = i;
+    }
+    for (let c = nc; c > 0; c--) counts[c] = counts[c - 1];
+    counts[0] = 0;
+    this.stat.occupied = occupied;
+    this.stat.gridMs = performance.now() - t0;
+  }
+  step(dt, world) {
+    const t0 = performance.now();
+    this.buildGrid();
+    const p = this.p, n = this.n;
+    const cols = this.cols, rows = this.rows, cs = this.cell;
+    const counts = this.counts;
+    const sorted = this.sorted;
+    const rSep2 = p.rSep * p.rSep, rAli2 = p.rAli * p.rAli, rCoh2 = p.rCoh * p.rCoh;
+    const maxN = p.maxNeighbours;
+    let tests = 0, hits = 0;
+    for (let i = 0; i < n; i++) {
+      const x = this.px[i], y = this.py[i];
+      const vxi = this.vx[i], vyi = this.vy[i];
+      const sp = Math.hypot(vxi, vyi) || 1e-6;
+      const fwx = vxi / sp, fwy = vyi / sp;
+      let sepX = 0, sepY = 0, aliX = 0, aliY = 0, cohX = 0, cohY = 0;
+      let nAli = 0, nCoh = 0, seen = 0;
+      const gx = clamp((x / cs) | 0, 0, cols - 1);
+      const gy = clamp((y / cs) | 0, 0, rows - 1);
+      const x0 = gx > 0 ? gx - 1 : 0, x1 = gx < cols - 1 ? gx + 1 : cols - 1;
+      const y0 = gy > 0 ? gy - 1 : 0, y1 = gy < rows - 1 ? gy + 1 : rows - 1;
+      outer:
+      for (let cy = y0; cy <= y1; cy++) {
+        const rowBase = cy * cols;
+        for (let cx = x0; cx <= x1; cx++) {
+          const c = rowBase + cx;
+          const s = counts[c], e = counts[c + 1];
+          for (let k = s; k < e; k++) {
+            const j = sorted[k];
+            if (j === i) continue;
+            const dx = this.px[j] - x, dy = this.py[j] - y;
+            const d2 = dx * dx + dy * dy;
+            tests++;
+            if (d2 > rCoh2 || d2 < 1e-8) continue;
+            const inv = 1 / Math.sqrt(d2);
+            if (fwx * dx * inv + fwy * dy * inv < p.fov) continue;
+            hits++;
+            if (d2 < rSep2) {
+              const w = 1 / d2;
+              sepX -= dx * w; sepY -= dy * w;
+            }
+            if (d2 < rAli2) { aliX += this.vx[j]; aliY += this.vy[j]; nAli++; }
+            cohX += this.px[j]; cohY += this.py[j]; nCoh++;
+            if (++seen >= maxN) break outer;
+          }
+        }
+      }
+      let fx = 0, fy = 0;
+      let dsx = 0, dsy = 0, dax = 0, day = 0, dcx = 0, dcy = 0;
+      if (sepX || sepY) {
+        const m = Math.hypot(sepX, sepY);
+        dsx = (sepX / m) * p.maxSpeed - vxi;
+        dsy = (sepY / m) * p.maxSpeed - vyi;
+        fx += dsx * p.wSep; fy += dsy * p.wSep;
+      }
+      if (nAli) {
+        const mx = aliX / nAli, my = aliY / nAli;
+        const m = Math.hypot(mx, my) || 1;
+        dax = (mx / m) * p.maxSpeed - vxi;
+        day = (my / m) * p.maxSpeed - vyi;
+        fx += dax * p.wAli; fy += day * p.wAli;
+      }
+      if (nCoh) {
+        const mx = cohX / nCoh - x, my = cohY / nCoh - y;
+        const m = Math.hypot(mx, my) || 1;
+        dcx = (mx / m) * p.maxSpeed - vxi;
+        dcy = (my / m) * p.maxSpeed - vyi;
+        fx += dcx * p.wCoh; fy += dcy * p.wCoh;
+      }
+      if (i === this.debugIndex) {
+        this.dbg.sx = dsx; this.dbg.sy = dsy;
+        this.dbg.ax = dax; this.dbg.ay = day;
+        this.dbg.cx = dcx; this.dbg.cy = dcy;
+        this.dbg.count = seen;
+      }
+      let panic = 0;
+      const preds = world.predators;
+      for (let q = 0; q < preds.length; q++) {
+        const P = preds[q];
+        if (!P.active) continue;
+        const dx = x - P.x, dy = y - P.y;
+        const d = Math.hypot(dx, dy);
+        const R = p.rFlee * (P.scare || 1);
+        if (d < R && d > 1e-4) {
+          const t = 1 - d / R;
+          const w = t * t;
+          fx += (dx / d) * p.maxSpeed * p.wFlee * w;
+          fy += (dy / d) * p.maxSpeed * p.wFlee * w;
+          if (w > panic) panic = w;
+        }
+      }
+      const obs = world.obstacles;
+      for (let q = 0; q < obs.length; q++) {
+        const O = obs[q];
+        const ahx = x + fwx * 26, ahy = y + fwy * 26;
+        const dx = ahx - O.x, dy = ahy - O.y;
+        const d = Math.hypot(dx, dy);
+        const R = O.r + 22;
+        if (d < R && d > 1e-4) {
+          const t = 1 - d / R;
+          fx += (dx / d) * p.maxSpeed * p.wAvoid * t;
+          fy += (dy / d) * p.maxSpeed * p.wAvoid * t;
+        }
+      }
+      const L = world.lure;
+      if (L && L.active) {
+        const dx = L.x - x, dy = L.y - y;
+        const d = Math.hypot(dx, dy);
+        const R = p.rLure * L.power;
+        if (d < R && d > 1e-4) {
+          const t = 1 - d / R;
+          const core = d < 34 ? -1.1 : 1;
+          fx += (dx / d) * p.maxSpeed * p.wLure * t * L.power * core;
+          fy += (dy / d) * p.maxSpeed * p.wLure * t * L.power * core;
+        }
+      }
+      const m0 = p.margin;
+      if (x < m0) fx += (m0 - x) * p.wBounds;
+      else if (x > this.w - m0) fx -= (x - (this.w - m0)) * p.wBounds;
+      if (y < m0) fy += (m0 - y) * p.wBounds;
+      else if (y > this.h - m0) fy -= (y - (this.h - m0)) * p.wBounds;
+      const fm = Math.hypot(fx, fy);
+      if (fm > p.maxForce) { const k = p.maxForce / fm; fx *= k; fy *= k; }
+      let nvx = vxi + fx * dt;
+      let nvy = vyi + fy * dt;
+      const st = Math.max(this.stress[i] - p.stressDecay * dt, panic);
+      this.stress[i] = clamp(st, 0, 1);
+      const vmax = p.maxSpeed * lerp(1, p.panicSpeedBoost, this.stress[i]);
+      const nsp = Math.hypot(nvx, nvy);
+      if (nsp > vmax) { const k = vmax / nsp; nvx *= k; nvy *= k; }
+      else if (nsp < p.minSpeed) {
+        const k = p.minSpeed / (nsp || 1e-6); nvx *= k; nvy *= k;
+      }
+      this.vx[i] = nvx; this.vy[i] = nvy;
+      const nx = this.px[i] + nvx * dt;
+      const ny = this.py[i] + nvy * dt;
+      this.tx[i] = lerp(this.tx[i], this.px[i], 0.45);
+      this.ty[i] = lerp(this.ty[i], this.py[i], 0.45);
+      this.px[i] = clamp(nx, -40, this.w + 40);
+      this.py[i] = clamp(ny, -40, this.h + 40);
+      this.phase[i] += dt * (6 + nsp * 0.05);
+    }
+    this.stat.neighbourTests = tests;
+    this.stat.neighbourHits = hits;
+    this.stat.simMs = performance.now() - t0;
+  }
+  polarisation() {
+    let sx = 0, sy = 0;
+    const n = this.n;
+    if (!n) return 0;
+    for (let i = 0; i < n; i++) {
+      const s = Math.hypot(this.vx[i], this.vy[i]) || 1;
+      sx += this.vx[i] / s; sy += this.vy[i] / s;
+    }
+    return Math.hypot(sx, sy) / n;
+  }
+  centroid(out) {
+    let sx = 0, sy = 0; const n = this.n;
+    for (let i = 0; i < n; i++) { sx += this.px[i]; sy += this.py[i]; }
+    out.x = n ? sx / n : 0; out.y = n ? sy / n : 0;
+    return out;
+  }
+}
+global.SwarmEngine = SwarmEngine;
+})(typeof window !== 'undefined' ? window : globalThis);
+'use strict';
+(function () {
+const SwarmEngine = window.SwarmEngine;
+const TAU = Math.PI * 2;
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+const lerp = (a, b, t) => a + (b - a) * t;
+const ease = t => t * t * (3 - 2 * t);
+const Sfx = (() => {
+  let ac = null, master = null, muted = false;
+  function ctx() {
+    if (!ac) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      ac = new AC();
+      master = ac.createGain();
+      master.gain.value = 0.22;
+      master.connect(ac.destination);
+    }
+    if (ac.state === 'suspended') ac.resume();
+    return ac;
+  }
+  function tone(freq, dur, type, vol) {
+    if (muted) return;
+    const c = ctx(); if (!c) return;
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(freq, c.currentTime);
+    g.gain.setValueAtTime(0, c.currentTime);
+    g.gain.linearRampToValueAtTime(vol === undefined ? 0.5 : vol, c.currentTime + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + dur);
+    o.connect(g); g.connect(master);
+    o.start(); o.stop(c.currentTime + dur + 0.02);
+  }
+  return {
+    unlock() { ctx(); },
+    pickup(n) { tone(520 + (n % 12) * 42, 0.16, 'triangle', 0.34); },
+    win() {[0,1,2,3].forEach(i => setTimeout(() => tone(440 * Math.pow(1.26, i), 0.4, 'triangle', 0.4), i * 105)); },
+    hit() { tone(90, 0.28, 'sawtooth', 0.35); },
+    swell() { tone(180, 0.7, 'sine', 0.22); },
+  };
+})();
+class Game {
+  constructor(root) {
+    this.stage = root;
+    this.cv = document.getElementById('cv');
+    this.g = this.cv.getContext('2d');
+    this.dpr = Math.min(window.devicePixelRatio || 1, 2);
+    this.el = {
+      beat: document.getElementById('beat'),
+      obj: document.getElementById('obj'),
+      meterFill: document.getElementById('meterFill'),
+      count: document.getElementById('count'),
+      toast: document.getElementById('toast'),
+      toastT: document.getElementById('toastT'),
+      toastS: document.getElementById('toastS'),
+      hand: document.getElementById('hand'),
+      end: document.getElementById('end'),
+      stats: document.getElementById('stats'),
+      tech: document.getElementById('tech'),
+      techBtn: document.getElementById('techBtn'),
+    };
+    this.W = 0; this.H = 0;
+    this.resize();
+    window.addEventListener('resize', () => this.resize());
+    this.sw = new SwarmEngine(900, this.W, this.H);
+    this.world = {
+      predators: [],
+      obstacles: [],
+      lure: { x: this.W / 2, y: this.H / 2, power: 0, active: false },
+    };
+    this.pointer = { x: this.W / 2, y: this.H / 2, down: false, everDown: false };
+    this.bindInput();
+    this.beat = 0;
+    this.beatTime = 0;
+    this.progress = 0;
+    this.rescued = 0;
+    this.target = 0;
+    this.state = 'intro';
+    this.time = 0;
+    this.acc = 0;
+    this.last = performance.now();
+    this.shake = 0;
+    this.flash = 0;
+    this.showTech = false;
+    this.fps = 60; this.fpsAcc = 0; this.fpsN = 0;
+    this.particles = [];
+    this.goals = [];
+    this.best = { pol: 0, peak: 0 };
+    this.bindTech();
+    this.startBeat(0);
+    requestAnimationFrame(t => this.loop(t));
+  }
+  resize() {
+    const w = window.innerWidth, h = window.innerHeight;
+    this.W = w; this.H = h;
+    this.cv.width = Math.floor(w * this.dpr);
+    this.cv.height = Math.floor(h * this.dpr);
+    this.g.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    if (this.sw) this.sw.resize(w, h);
+  }
+  bindInput() {
+    const pos = e => {
+      const t = e.touches ? e.touches[0] : e;
+      const r = this.cv.getBoundingClientRect();
+      return { x: t.clientX - r.left, y: t.clientY - r.top };
+    };
+    const down = e => {
+      e.preventDefault();
+      Sfx.unlock();
+      const p = pos(e);
+      this.pointer.x = p.x; this.pointer.y = p.y;
+      this.pointer.down = true; this.pointer.everDown = true;
+      this.el.hand.classList.remove('on');
+      if (this.state === 'intro') this.state = 'play';
+    };
+    const move = e => {
+      e.preventDefault();
+      const p = pos(e);
+      this.pointer.x = p.x; this.pointer.y = p.y;
+    };
+    const up = e => { e.preventDefault(); this.pointer.down = false; };
+    this.cv.addEventListener('mousedown', down);
+    this.cv.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+    this.cv.addEventListener('touchstart', down, { passive: false });
+    this.cv.addEventListener('touchmove', move, { passive: false });
+    window.addEventListener('touchend', up, { passive: false });
+  }
+  bindTech() {
+    this.el.techBtn.addEventListener('click', () => {
+      this.showTech = !this.showTech;
+      this.el.tech.classList.toggle('on', this.showTech);
+      this.el.techBtn.classList.toggle('on', this.showTech);
+    });
+    document.querySelectorAll('#tech input[data-p]').forEach(inp => {
+      const key = inp.dataset.p;
+      inp.value = this.sw.p[key];
+      inp.parentElement.querySelector('i').textContent = (+inp.value).toFixed(2);
+      inp.addEventListener('input', () => {
+        this.sw.p[key] = parseFloat(inp.value);
+        inp.parentElement.querySelector('i').textContent = (+inp.value).toFixed(2);
+      });
+    });
+    document.getElementById('replay').addEventListener('click', () => location.reload());
+    document.getElementById('cta').addEventListener('click', () => {
+      window.open('https://example.com/lumen', '_blank');
+    });
+  }
+  startBeat(n) {
+    this.beat = n;
+    this.beatTime = 0;
+    this.progress = 0;
+    this.world.predators.length = 0;
+    this.world.obstacles.length = 0;
+    this.goals.length = 0;
+    this.sw.n = 0;
+    const P = this.sw.p;
+    if (n === 0) {
+      this.el.beat.textContent = 'RULE 01 — COHESION';
+      this.el.obj.textContent = 'Gather the lost school';
+      this.target = 60;
+      this.rescued = 0;
+      P.wCoh = 0.95; P.wAli = 1.05; P.wSep = 2.10;
+      for (let k = 0; k < 9; k++) {
+        const a = (k / 9) * TAU + 0.4;
+        const cx = this.W / 2 + Math.cos(a) * this.W * 0.40;
+        const cy = this.H / 2 + Math.sin(a) * this.H * 0.36;
+        for (let i = 0; i < 9; i++) {
+          this.sw.spawn(cx + (Math.random() - 0.5) * 60, cy + (Math.random() - 0.5) * 60);
+        }
+      }
+      this.sanctuary = { x: this.W / 2, y: this.H / 2, r: 82 };
+      this.toast('COHESION', 'Hold to shine. They steer toward the centre of mass.');
+      this.hintAt(this.W * 0.5, this.H * 0.72);
+    } else if (n === 1) {
+      this.el.beat.textContent = 'RULE 02 — SEPARATION';
+      this.el.obj.textContent = 'Thread the reef — keep them apart';
+      this.target = 1;
+      P.wSep = 3.2;
+      const cx = this.W * 0.16, cy = this.H * 0.5;
+      for (let i = 0; i < 80; i++) {
+        this.sw.spawn(cx + (Math.random() - 0.5) * 110, cy + (Math.random() - 0.5) * 150);
+      }
+      const rows = 5;
+      for (let r = 0; r < rows; r++) {
+        const gx = this.W * (0.34 + r * 0.125);
+        const gap = this.H * (0.30 + Math.sin(r * 1.7) * 0.16);
+        for (let s = 0; s < 2; s++) {
+          const gy = s === 0 ? gap - this.H * 0.30 : gap + this.H * 0.30;
+          this.world.obstacles.push({
+            x: gx, y: clamp(gy, 40, this.H - 40),
+            r: 44 + (r % 2) * 16, spin: r * 0.6,
+          });
+        }
+      }
+      this.gate = { x: this.W * 0.90, y: this.H * 0.5, r: 96 };
+      this.toast('SEPARATION', 'Inverse-square crowding keeps them off the rocks.');
+      this.hintAt(this.W * 0.30, this.H * 0.5);
+    } else {
+      this.el.beat.textContent = 'RULE 03 — ALIGNMENT';
+      this.el.obj.textContent = 'Stay polarised — outrun the hunter';
+      this.target = 1;
+      P.wAli = 1.9;
+      for (let i = 0; i < 130; i++) {
+        this.sw.spawn(this.W * 0.5 + (Math.random() - 0.5) * 240,
+                      this.H * 0.5 + (Math.random() - 0.5) * 200);
+      }
+      this.world.predators.push({
+        x: -140, y: this.H * 0.5, vx: 0, vy: 0,
+        active: true, scare: 1.5, t: 0,
+      });
+      this.holdTime = 0;
+      this.toast('ALIGNMENT', 'Match your neighbours. Order φ is your shield.');
+      this.hintAt(this.W * 0.62, this.H * 0.42);
+    }
+  }
+  toast(t, s) {
+    this.el.toastT.textContent = t;
+    this.el.toastS.textContent = s;
+    this.el.toast.classList.add('on');
+    clearTimeout(this._tt);
+    this._tt = setTimeout(() => this.el.toast.classList.remove('on'), 2600);
+    Sfx.swell();
+  }
+  hintAt(x, y) {
+    if (this.pointer.everDown) return;
+    this.el.hand.style.left = x + 'px';
+    this.el.hand.style.top = y + 'px';
+    this.el.hand.classList.add('on');
+  }
+  loop(now) {
+    const raw = (now - this.last) / 1000;
+    this.last = now;
+    const dt = Math.min(raw, 0.05);
+    this.time += dt;
+    this.fpsAcc += raw; this.fpsN++;
+    if (this.fpsAcc > 0.4) { this.fps = this.fpsN / this.fpsAcc; this.fpsAcc = 0; this.fpsN = 0; }
+    this.acc += dt;
+    const H = 1 / 60;
+    let guard = 0;
+    while (this.acc >= H && guard++ < 5) {
+      this.update(H);
+      this.acc -= H;
+    }
+    this.render();
+    requestAnimationFrame(t => this.loop(t));
+  }
+  update(dt) {
+    this.beatTime += dt;
+    const L = this.world.lure;
+    L.x = lerp(L.x, this.pointer.x, 0.28);
+    L.y = lerp(L.y, this.pointer.y, 0.28);
+    const want = this.pointer.down ? 1 : 0.22;
+    L.power = lerp(L.power, want, 0.12);
+    L.active = L.power > 0.03;
+    if (this.state === 'play' || this.state === 'intro') {
+      this.sw.step(dt, this.world);
+      this.beatLogic(dt);
+    } else {
+      this.sw.step(dt, this.world);
+    }
+    this.shake = Math.max(0, this.shake - dt * 3.2);
+    this.flash = Math.max(0, this.flash - dt * 2.4);
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      const p = this.particles[i];
+      p.t += dt;
+      p.x += p.vx * dt; p.y += p.vy * dt;
+      p.vx *= 0.94; p.vy *= 0.94;
+      if (p.t > p.life) this.particles.splice(i, 1);
+    }
+    const pol = this.sw.polarisation();
+    if (pol > this.best.pol) this.best.pol = pol;
+    if (this.sw.n > this.best.peak) this.best.peak = this.sw.n;
+    this.el.meterFill.style.width = (this.progress * 100).toFixed(1) + '%';
+  }
+  burst(x, y, n, hue) {
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * TAU, s = 40 + Math.random() * 180;
+      this.particles.push({
+        x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s,
+        t: 0, life: 0.5 + Math.random() * 0.5, hue: hue || 185,
+      });
+    }
+  }
+  beatLogic(dt) {
+    const sw = this.sw;
+    if (this.beat === 0) {
+      const S = this.sanctuary;
+      let inside = 0;
+      for (let i = 0; i < sw.n; i++) {
+        const dx = sw.px[i] - S.x, dy = sw.py[i] - S.y;
+        if (dx * dx + dy * dy < S.r * S.r) inside++;
+      }
+      if (inside > this.rescued) {
+        if (inside - this.rescued >= 1) Sfx.pickup(inside);
+        this.burst(S.x, S.y, 4, 165);
+      }
+      this.rescued = inside;
+      this.el.count.textContent = inside + '/' + this.target;
+      this.progress = clamp(inside / this.target, 0, 1);
+      if (inside >= this.target) this.clearBeat();
+    } else if (this.beat === 1) {
+      for (const o of this.world.obstacles) o.spin += dt * 0.5;
+      const G = this.gate;
+      let through = 0;
+      for (let i = 0; i < sw.n; i++) {
+        if (sw.px[i] > G.x - G.r) through++;
+      }
+      for (let i = sw.n - 1; i >= 0; i--) {
+        for (const o of this.world.obstacles) {
+          const dx = sw.px[i] - o.x, dy = sw.py[i] - o.y;
+          if (dx * dx + dy * dy < (o.r - 4) * (o.r - 4)) {
+            this.burst(sw.px[i], sw.py[i], 5, 12);
+            this.shake = Math.min(1, this.shake + 0.25);
+            Sfx.hit();
+            sw.removeAt(i);
+            break;
+          }
+        }
+      }
+      this.el.count.textContent = through + '/' + Math.max(1, Math.round(sw.n * 0.55));
+      this.progress = clamp(through / Math.max(1, sw.n * 0.55), 0, 1);
+      if (this.progress >= 1 && sw.n > 12) this.clearBeat();
+    } else {
+      const P = this.world.predators[0];
+      P.t += dt;
+      const c = sw.centroid({ x: 0, y: 0 });
+      const dx = c.x - P.x, dy = c.y - P.y;
+      const d = Math.hypot(dx, dy) || 1;
+      const chase = 118 + Math.min(P.t * 9, 70);
+      P.vx = lerp(P.vx, (dx / d) * chase, 0.03);
+      P.vy = lerp(P.vy, (dy / d) * chase, 0.03);
+      P.x += P.vx * dt; P.y += P.vy * dt;
+      const pol = sw.polarisation();
+      if (pol > 0.72) this.holdTime += dt;
+      else this.holdTime = Math.max(0, this.holdTime - dt * 0.7);
+      for (let i = sw.n - 1; i >= 0; i--) {
+        const ex = sw.px[i] - P.x, ey = sw.py[i] - P.y;
+        if (ex * ex + ey * ey < 26 * 26) {
+          this.burst(sw.px[i], sw.py[i], 6, 8);
+          this.shake = Math.min(1, this.shake + 0.3);
+          Sfx.hit();
+          sw.removeAt(i);
+        }
+      }
+      this.el.count.textContent = 'φ ' + pol.toFixed(2);
+      this.progress = clamp(this.holdTime / 7, 0, 1);
+      if (this.progress >= 1) this.clearBeat();
+      if (sw.n < 25) this.clearBeat();
+    }
+  }
+  clearBeat() {
+    this.flash = 1;
+    Sfx.win();
+    this.burst(this.W / 2, this.H / 2, 40, 170);
+    if (this.beat < 2) {
+      const nx = this.beat + 1;
+      this.state = 'wait';
+      setTimeout(() => { this.startBeat(nx); this.state = 'play'; }, 900);
+    } else {
+      this.state = 'end';
+      const s = this.sw.stat;
+      this.el.stats.innerHTML =
+        'PEAK AGENTS <b>' + this.best.peak + '</b> &nbsp;·&nbsp; BEST ORDER φ <b>' +
+        this.best.pol.toFixed(2) + '</b><br>' +
+        'NEIGHBOUR TESTS/FRAME <b>' + s.neighbourTests.toLocaleString() + '</b><br>' +
+        'SIM <b>' + s.simMs.toFixed(2) + ' ms</b> &nbsp;·&nbsp; <b>' +
+        this.fps.toFixed(0) + ' FPS</b>';
+      setTimeout(() => this.el.end.classList.add('on'), 700);
+    }
+  }
+  render() {
+    const g = this.g, W = this.W, H = this.H, sw = this.sw;
+    g.save();
+    if (this.shake > 0.01) {
+      const s = this.shake * 9;
+      g.translate((Math.random() - 0.5) * s, (Math.random() - 0.5) * s);
+    }
+    const bg = g.createRadialGradient(W * 0.5, H * 0.42, 20, W * 0.5, H * 0.5, Math.max(W, H) * 0.8);
+    bg.addColorStop(0, '#0a2144');
+    bg.addColorStop(0.55, '#051229');
+    bg.addColorStop(1, '#02060f');
+    g.fillStyle = bg;
+    g.fillRect(-30, -30, W + 60, H + 60);
+    g.globalAlpha = 0.05;
+    g.fillStyle = '#7fd8ff';
+    for (let i = 0; i < 6; i++) {
+      const x = ((i * 0.19 + this.time * 0.012) % 1.2 - 0.1) * W;
+      g.beginPath();
+      g.moveTo(x, -20); g.lineTo(x + 70, -20);
+      g.lineTo(x + 190, H + 20); g.lineTo(x + 40, H + 20);
+      g.closePath(); g.fill();
+    }
+    g.globalAlpha = 1;
+    if (this.beat === 0) this.drawSanctuary(g);
+    if (this.beat === 1) { this.drawGate(g); this.drawObstacles(g); }
+    this.drawLure(g);
+    this.drawSwarm(g);
+    if (this.beat === 2) this.drawPredator(g);
+    this.drawParticles(g);
+    if (this.showTech) this.drawDebugVectors(g);
+    if (this.flash > 0.01) {
+      g.globalAlpha = this.flash * 0.35;
+      g.fillStyle = '#bff4ff';
+      g.fillRect(-30, -30, W + 60, H + 60);
+      g.globalAlpha = 1;
+    }
+    g.restore();
+    if (this.showTech) this.updateTechPanel();
+  }
+  drawSanctuary(g) {
+    const S = this.sanctuary;
+    const pulse = 1 + Math.sin(this.time * 2) * 0.04;
+    const gr = g.createRadialGradient(S.x, S.y, 4, S.x, S.y, S.r * pulse);
+    gr.addColorStop(0, 'rgba(90,255,210,0.20)');
+    gr.addColorStop(0.7, 'rgba(60,210,190,0.07)');
+    gr.addColorStop(1, 'rgba(60,210,190,0)');
+    g.fillStyle = gr;
+    g.beginPath(); g.arc(S.x, S.y, S.r * pulse, 0, TAU); g.fill();
+    g.strokeStyle = 'rgba(120,255,220,0.45)';
+    g.lineWidth = 1.5; g.setLineDash([6, 9]);
+    g.lineDashOffset = -this.time * 22;
+    g.beginPath(); g.arc(S.x, S.y, S.r, 0, TAU); g.stroke();
+    g.setLineDash([]);
+  }
+  drawGate(g) {
+    const G = this.gate;
+    const gr = g.createRadialGradient(G.x, G.y, 6, G.x, G.y, G.r);
+    gr.addColorStop(0, 'rgba(120,255,190,0.22)');
+    gr.addColorStop(1, 'rgba(120,255,190,0)');
+    g.fillStyle = gr;
+    g.beginPath(); g.arc(G.x, G.y, G.r, 0, TAU); g.fill();
+  }
+  drawObstacles(g) {
+    for (const o of this.world.obstacles) {
+      g.save();
+      g.translate(o.x, o.y); g.rotate(o.spin);
+      const gr = g.createRadialGradient(0, -o.r * 0.3, 4, 0, 0, o.r);
+      gr.addColorStop(0, '#2a4468');
+      gr.addColorStop(1, '#0c1a2e');
+      g.fillStyle = gr;
+      g.beginPath();
+      for (let k = 0; k < 9; k++) {
+        const a = (k / 9) * TAU;
+        const rr = o.r * (0.86 + ((k * 37) % 11) / 46);
+        const px = Math.cos(a) * rr, py = Math.sin(a) * rr;
+        k ? g.lineTo(px, py) : g.moveTo(px, py);
+      }
+      g.closePath(); g.fill();
+      g.strokeStyle = 'rgba(130,200,255,0.22)';
+      g.lineWidth = 1.2; g.stroke();
+      g.restore();
+    }
+  }
+  drawLure(g) {
+    const L = this.world.lure;
+    if (L.power < 0.03) return;
+    const R = this.sw.p.rLure * L.power;
+    const gr = g.createRadialGradient(L.x, L.y, 2, L.x, L.y, R);
+    gr.addColorStop(0, 'rgba(200,250,255,' + (0.5 * L.power).toFixed(3) + ')');
+    gr.addColorStop(0.25, 'rgba(90,215,255,' + (0.16 * L.power).toFixed(3) + ')');
+    gr.addColorStop(1, 'rgba(60,180,255,0)');
+    g.fillStyle = gr;
+    g.beginPath(); g.arc(L.x, L.y, R, 0, TAU); g.fill();
+    g.strokeStyle = 'rgba(190,245,255,' + (0.30 * L.power).toFixed(3) + ')';
+    g.lineWidth = 1;
+    g.beginPath();
+    g.arc(L.x, L.y, 16 + Math.sin(this.time * 4) * 3, 0, TAU);
+    g.stroke();
+  }
+  drawSwarm(g) {
+    const sw = this.sw, n = sw.n;
+    g.lineCap = 'round';
+    for (let i = 0; i < n; i++) {
+      const x = sw.px[i], y = sw.py[i];
+      const st = sw.stress[i];
+      const vx = sw.vx[i], vy = sw.vy[i];
+      const sp = Math.hypot(vx, vy) || 1;
+      const dx = vx / sp, dy = vy / sp;
+      const hue = lerp(188, 32, st);
+      const lit = lerp(62, 74, st);
+      g.strokeStyle = 'hsla(' + hue + ',95%,' + lit + '%,0.30)';
+      g.lineWidth = 2.1;
+      g.beginPath();
+      g.moveTo(sw.tx[i], sw.ty[i]);
+      g.lineTo(x, y);
+      g.stroke();
+      const wig = Math.sin(sw.phase[i]) * 3.1;
+      const nx = -dy, ny = dx;
+      g.fillStyle = 'hsla(' + hue + ',96%,' + lit + '%,0.95)';
+      g.beginPath();
+      g.moveTo(x + dx * 7.5, y + dy * 7.5);
+      g.lineTo(x + nx * 3.0 - dx * 3.5, y + ny * 3.0 - dy * 3.5);
+      g.lineTo(x - dx * 6 + nx * wig, y - dy * 6 + ny * wig);
+      g.lineTo(x - nx * 3.0 - dx * 3.5, y - ny * 3.0 - dy * 3.5);
+      g.closePath();
+      g.fill();
+    }
+    g.globalCompositeOperation = 'lighter';
+    g.globalAlpha = 0.14;
+    for (let i = 0; i < n; i += 3) {
+      const hue = lerp(188, 32, sw.stress[i]);
+      g.fillStyle = 'hsl(' + hue + ',100%,60%)';
+      g.beginPath(); g.arc(sw.px[i], sw.py[i], 7, 0, TAU); g.fill();
+    }
+    g.globalAlpha = 1;
+    g.globalCompositeOperation = 'source-over';
+  }
+  drawPredator(g) {
+    const P = this.world.predators[0];
+    if (!P) return;
+    const a = Math.atan2(P.vy, P.vx);
+    g.save();
+    g.translate(P.x, P.y); g.rotate(a);
+    const gr = g.createRadialGradient(0, 0, 4, 0, 0, 90);
+    gr.addColorStop(0, 'rgba(255,80,60,0.24)');
+    gr.addColorStop(1, 'rgba(255,60,40,0)');
+    g.fillStyle = gr;
+    g.beginPath(); g.arc(0, 0, 90, 0, TAU); g.fill();
+    g.fillStyle = '#16212f';
+    g.beginPath();
+    g.moveTo(34, 0); g.lineTo(2, 13); g.lineTo(-26, 6);
+    g.lineTo(-34, 17); g.lineTo(-20, 0); g.lineTo(-34, -17);
+    g.lineTo(-26, -6); g.lineTo(2, -13);
+    g.closePath(); g.fill();
+    g.strokeStyle = 'rgba(255,120,90,0.65)';
+    g.lineWidth = 1.4; g.stroke();
+    g.fillStyle = '#ff6a4a';
+    g.beginPath(); g.arc(14, -4, 2.6, 0, TAU); g.fill();
+    g.restore();
+  }
+  drawParticles(g) {
+    g.globalCompositeOperation = 'lighter';
+    for (const p of this.particles) {
+      const a = 1 - p.t / p.life;
+      g.fillStyle = 'hsla(' + p.hue + ',100%,65%,' + (a * 0.75).toFixed(3) + ')';
+      g.beginPath(); g.arc(p.x, p.y, 2.4 * a + 0.6, 0, TAU); g.fill();
+    }
+    g.globalCompositeOperation = 'source-over';
+  }
+  drawDebugVectors(g) {
+    const sw = this.sw;
+    const i = sw.debugIndex;
+    if (i >= sw.n) return;
+    const x = sw.px[i], y = sw.py[i], d = sw.dbg;
+    const K = 0.34;
+    g.save();
+    g.lineWidth = 2;
+    const arrow = (vx, vy, col) => {
+      const m = Math.hypot(vx, vy);
+      if (m < 1) return;
+      const ex = x + vx * K, ey = y + vy * K;
+      g.strokeStyle = col;
+      g.beginPath(); g.moveTo(x, y); g.lineTo(ex, ey); g.stroke();
+      const a = Math.atan2(vy, vx);
+      g.fillStyle = col;
+      g.beginPath();
+      g.moveTo(ex, ey);
+      g.lineTo(ex - Math.cos(a - 0.4) * 7, ey - Math.sin(a - 0.4) * 7);
+      g.lineTo(ex - Math.cos(a + 0.4) * 7, ey - Math.sin(a + 0.4) * 7);
+      g.closePath(); g.fill();
+    };
+    arrow(d.sx, d.sy, '#ff5d7a');
+    arrow(d.ax, d.ay, '#7dff9b');
+    arrow(d.cx, d.cy, '#69c7ff');
+    g.setLineDash([3, 5]);
+    g.lineWidth = 1;
+    g.strokeStyle = 'rgba(255,93,122,0.5)';
+    g.beginPath(); g.arc(x, y, sw.p.rSep, 0, TAU); g.stroke();
+    g.strokeStyle = 'rgba(105,199,255,0.4)';
+    g.beginPath(); g.arc(x, y, sw.p.rCoh, 0, TAU); g.stroke();
+    g.setLineDash([]);
+    g.restore();
+  }
+  updateTechPanel() {
+    const s = this.sw.stat, sw = this.sw;
+    const naive = sw.n * sw.n;
+    const saved = naive > 0 ? (1 - s.neighbourTests / naive) * 100 : 0;
+    document.getElementById('tAgents').textContent = sw.n;
+    document.getElementById('tFps').textContent = this.fps.toFixed(0);
+    document.getElementById('tSim').textContent = s.simMs.toFixed(2) + ' ms';
+    document.getElementById('tGrid').textContent = s.gridMs.toFixed(2) + ' ms';
+    document.getElementById('tTests').textContent = s.neighbourTests.toLocaleString();
+    document.getElementById('tNaive').textContent =
+      naive.toLocaleString() + '  (−' + saved.toFixed(1) + '%)';
+    document.getElementById('tCells').textContent =
+      s.occupied + ' / ' + (sw.cols * sw.rows);
+    document.getElementById('tPol').textContent = sw.polarisation().toFixed(3);
+    document.getElementById('tNb').textContent = sw.dbg.count;
+  }
+}
+window.addEventListener('load', () => { window.GAME = new Game(document.getElementById('stage')); });
+})();</script>
+</body>
+</html>

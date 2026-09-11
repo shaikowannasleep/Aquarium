@@ -1,0 +1,49 @@
+name: Rebuild aquarium
+
+on:
+  schedule:
+    # every 6 hours; GitHub may delay cron on busy runners, that is fine
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'tools/**'
+      - '.github/workflows/aquarium.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  bake:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '20'
+
+      - name: Verify the engine still behaves
+        run: node test/headless.js
+
+      - name: Bake the aquarium
+        env:
+          # the default token only needs public read; it is injected by
+          # Actions and never stored in the repository
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_USER: ${{ github.repository_owner }}
+        run: node tools/bake-svg.js "$GH_USER"
+
+      - name: Commit if the swim changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/aquarium.svg
+          if git diff --staged --quiet; then
+            echo "no change"
+          else
+            git commit -m "chore: rebake aquarium [skip ci]"
+            git push
+          fi
