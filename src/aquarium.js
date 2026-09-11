@@ -79,6 +79,15 @@ for (let i = 0; i < 90; i++) {
   });
 }
 
+const bubbles = [];
+for (let i = 0; i < 24; i++) {
+  bubbles.push({
+    x: Math.random() * 2000, y: Math.random() * 1200,
+    v: 13 + Math.random() * 24, r: 1.5 + Math.random() * 4,
+    drift: (Math.random() - 0.5) * 14, a: 0.16 + Math.random() * 0.26,
+  });
+}
+
 function localOrder() {
   let tot = 0, cnt = 0;
   const r2 = sw.p.rAli * sw.p.rAli;
@@ -124,17 +133,37 @@ function frame(now) {
   if (ordT > 0.25) { ordEl.textContent = localOrder().toFixed(2); ordT = 0; }
 
   /* ---- draw ---- */
-  const bg = g.createRadialGradient(W * 0.5, H * 0.38, 20, W * 0.5, H * 0.5, Math.max(W, H) * 0.8);
-  bg.addColorStop(0, '#0d2b52'); bg.addColorStop(0.55, '#061630'); bg.addColorStop(1, '#020712');
+  const bg = g.createRadialGradient(W * 0.5, H * 0.2, 20, W * 0.5, H * 0.54, Math.max(W, H) * 0.8);
+  bg.addColorStop(0, '#1c7392'); bg.addColorStop(0.32, '#0b4165'); bg.addColorStop(0.74, '#06233f'); bg.addColorStop(1, '#031329');
   g.fillStyle = bg; g.fillRect(0, 0, W, H);
 
-  g.globalAlpha = 0.04; g.fillStyle = '#69c7ff';
+  const surface = g.createLinearGradient(0, 0, 0, 58);
+  surface.addColorStop(0, 'rgba(168,239,255,.42)'); surface.addColorStop(1, 'rgba(57,185,215,0)');
+  g.fillStyle = surface; g.fillRect(0, 0, W, 58);
+  g.strokeStyle = 'rgba(213,251,255,.34)'; g.lineWidth = 2; g.beginPath();
+  for (let x = 0; x <= W + 70; x += 70) {
+    const y = 23 + Math.sin(t * 0.9 + x * 0.04) * 6;
+    if (x === 0) g.moveTo(x, y); else g.quadraticCurveTo(x - 35, 23 - (y - 23), x, y);
+  }
+  g.stroke();
+
+  g.fillStyle = '#b8f4ff';
   for (let i = 0; i < 6; i++) {
     const x = ((i * 0.19 + t * 0.01) % 1.2 - 0.1) * W;
+    g.globalAlpha = 0.045 + Math.sin(t * 0.4 + i) * 0.025;
     g.beginPath(); g.moveTo(x, 0); g.lineTo(x + 60, 0);
     g.lineTo(x + 170, H); g.lineTo(x + 30, H); g.closePath(); g.fill();
   }
   g.globalAlpha = 1;
+
+  g.fillStyle = '#0a5449';
+  for (let i = 0; i < 12; i++) {
+    const x = 24 + i * (W - 48) / 11;
+    const h = 45 + (i % 5) * 14;
+    const bend = Math.sin(t * (1.1 + i % 3 * 0.16) + i * 1.7) * (9 + i % 3 * 4);
+    g.beginPath(); g.moveTo(x - 5, H); g.quadraticCurveTo(x + bend - 12, H - h * 0.35, x + bend, H - h);
+    g.quadraticCurveTo(x + bend + 15, H - h * 0.42, x + 6, H); g.closePath(); g.fill();
+  }
 
   for (const s of snow) {
     s.y += s.v * dt; s.x += s.drift * dt;
@@ -143,6 +172,16 @@ function frame(now) {
     g.fillStyle = 'rgba(207,234,255,' + s.a + ')';
     g.beginPath(); g.arc(s.x, s.y, s.r, 0, TAU); g.fill();
   }
+
+  g.lineWidth = 1;
+  for (const bubble of bubbles) {
+    bubble.y -= bubble.v * dt; bubble.x += bubble.drift * dt;
+    if (bubble.y < -bubble.r - 4) { bubble.y = H + bubble.r + 4; bubble.x = Math.random() * W; }
+    if (bubble.x > W + 12) bubble.x = -12; if (bubble.x < -12) bubble.x = W + 12;
+    g.globalAlpha = bubble.a;
+    g.strokeStyle = '#d8faff'; g.beginPath(); g.arc(bubble.x, bubble.y, bubble.r, 0, TAU); g.stroke();
+  }
+  g.globalAlpha = 1;
 
   for (let i = 0; i < RIPPLE_COUNT; i++) {
     const ripple = world.ripples[i];

@@ -179,9 +179,15 @@ function buildSvg(data, tracks) {
 
   parts.push('<defs>');
   parts.push('<radialGradient id="bg" cx="50%" cy="34%" r="78%">' +
-             '<stop offset="0%" stop-color="#0d2b52"/>' +
-             '<stop offset="55%" stop-color="#061630"/>' +
-             '<stop offset="100%" stop-color="#020712"/></radialGradient>');
+             '<stop offset="0%" stop-color="#1c7392"/>' +
+             '<stop offset="32%" stop-color="#0b4165"/>' +
+             '<stop offset="74%" stop-color="#06233f"/>' +
+             '<stop offset="100%" stop-color="#031329"/></radialGradient>');
+  parts.push('<linearGradient id="surface" x1="0" x2="0" y1="0" y2="1">' +
+             '<stop stop-color="#a8efff" stop-opacity=".42"/>' +
+             '<stop offset="1" stop-color="#39b9d7" stop-opacity="0"/></linearGradient>');
+  parts.push('<linearGradient id="weed" x1="0" x2="0" y1="1" y2="0">' +
+             '<stop stop-color="#063c3a"/><stop offset="1" stop-color="#32ad80"/></linearGradient>');
   parts.push('<filter id="glow" x="-70%" y="-70%" width="240%" height="240%">' +
              '<feGaussianBlur stdDeviation="3.2" result="b"/>' +
              '<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>' +
@@ -193,16 +199,50 @@ function buildSvg(data, tracks) {
   parts.push('</defs>');
 
   parts.push('<rect width="' + W + '" height="' + H + '" fill="url(#bg)"/>');
+  parts.push('<rect width="' + W + '" height="42" fill="url(#surface)"/>');
+  parts.push('<path d="M0,23 Q55,13 110,23 T220,23 T330,23 T440,23 T550,23 T660,23 T770,23 T880,23" ' +
+             'fill="none" stroke="#d5fbff" stroke-opacity=".34" stroke-width="2">' +
+             '<animate attributeName="d" dur="7s" repeatCount="indefinite" values="' +
+             'M0,23 Q55,13 110,23 T220,23 T330,23 T440,23 T550,23 T660,23 T770,23 T880,23;' +
+             'M0,23 Q55,31 110,23 T220,23 T330,23 T440,23 T550,23 T660,23 T770,23 T880,23;' +
+             'M0,23 Q55,13 110,23 T220,23 T330,23 T440,23 T550,23 T660,23 T770,23 T880,23"/>' +
+             '</path>');
 
-  // light shafts from the surface
+  // sunlight shafts from the surface
   for (let i = 0; i < 5; i++) {
     const x = 60 + i * 175;
     parts.push('<polygon points="' + x + ',0 ' + (x + 54) + ',0 ' +
                (x + 150) + ',' + H + ' ' + (x + 28) + ',' + H +
-               '" fill="#69c7ff" opacity="0.035"/>');
+               '" fill="#b8f4ff" opacity="0.075">' +
+               '<animate attributeName="opacity" values=".04;.10;.04" dur="' + (8 + i) + 's" repeatCount="indefinite"/></polygon>');
   }
 
-  // marine snow: pure drift, no flocking - cheap and sells the depth
+  // seaweed stays behind fish; sway repeats at the same endpoint
+  for (let i = 0; i < 12; i++) {
+    const x = 24 + i * 76;
+    const h = 35 + (i % 5) * 12;
+    const w = 9 + (i % 3) * 3;
+    parts.push('<path d="M' + x + ',' + H + ' Q' + (x - w) + ',' + (H - h * 0.35) + ' ' + x + ',' + (H - h) +
+               ' Q' + (x + w) + ',' + (H - h * 0.38) + ' ' + x + ',' + H + '" fill="url(#weed)" opacity=".72">' +
+               '<animateTransform attributeName="transform" type="skewX" values="-5;5;-5" dur="' + (4 + i % 4) +
+               's" repeatCount="indefinite"/></path>');
+  }
+
+  // bubbles and marine snow use separate slow drift layers
+  const bubbleRnd = mulberry32(731);
+  for (let i = 0; i < 18; i++) {
+    const x = bubbleRnd() * W;
+    const r = 1.8 + bubbleRnd() * 4;
+    const delay = (bubbleRnd() * 12).toFixed(2);
+    const d = (8 + bubbleRnd() * 8).toFixed(2);
+    parts.push('<circle r="' + r.toFixed(1) + '" fill="none" stroke="#d8faff" stroke-width=".8" opacity=".42">' +
+               '<animateMotion dur="' + d + 's" repeatCount="indefinite" begin="-' + delay + 's" path="M' +
+               x.toFixed(1) + ',' + (H + 12) + ' C' + (x - 18).toFixed(1) + ',' + (H * 0.64).toFixed(1) + ' ' +
+               (x + 20).toFixed(1) + ',' + (H * 0.28).toFixed(1) + ' ' + (x - 8).toFixed(1) + ',-12"/>' +
+               '<animate attributeName="opacity" values="0;.44;.44;0" dur="' + d + 's" repeatCount="indefinite" begin="-' + delay + 's"/></circle>');
+  }
+
+  // marine snow: pure drift, no flocking - cheap and sells depth
   const snowRnd = mulberry32(90210);
   for (let i = 0; i < 46; i++) {
     const x = snowRnd() * W;
