@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DinDun — Aquarium</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden;background:#02060f;
+  font-family:ui-monospace,Menlo,Consolas,monospace;color:#cfeaff}
+canvas{display:block;width:100%;height:100%;cursor:crosshair}
+#hud{position:fixed;top:14px;left:16px;font-size:11px;line-height:1.9;
+  opacity:.72;pointer-events:none;text-shadow:0 2px 8px #000}
+#hud b{color:#8fe4ff}
+#tip{position:fixed;padding:7px 11px;border-radius:7px;font-size:11px;
+  background:rgba(6,18,36,.94);border:1px solid rgba(120,220,255,.35);
+  pointer-events:none;opacity:0;transition:opacity .15s;white-space:nowrap;
+  box-shadow:0 6px 24px rgba(0,0,0,.6)}
+#tip.on{opacity:1}
+#foot{position:fixed;bottom:14px;left:16px;font-size:10px;opacity:.4}
+#foot a{color:#8fe4ff}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="hud">
+  <div><b>DinDun</b> · 46 repos · 2 followers</div>
+  <div>27 fish · hover to identify · move to lead them</div>
+  <div>local order <b><span id="ord">0.00</span></b> · <span id="fps">60</span> fps</div>
+</div>
+<div id="tip"></div>
+<div id="foot">boids · reynolds 1987 · <a href="https://github.com/shaikowannasleep/Aquarium">source</a></div>
+<script>
+const FISH_DATA = [{"name":"Shooter","lang":"C#","color":"#178600","stars":2,"forks":0,"size":7.621320343559643,"pace":0.45,"dormant":true,"ageDays":1232},{"name":"Idle-Army-Trading-Weapons","lang":"TypeScript","color":"#3178c6","stars":1,"forks":0,"size":7,"pace":1,"dormant":false,"ageDays":44},{"name":"JavaProject","lang":"Java","color":"#b07219","stars":1,"forks":0,"size":7,"pace":0.45,"dormant":true,"ageDays":1379},{"name":"MyDiscordBot","lang":"TypeScript","color":"#3178c6","stars":0,"forks":0,"size":5.5,"pace":1,"dormant":false,"ageDays":7},{"name":"shaikowannasleep","lang":"Other","color":"#7fd8ff","stars":0,"forks":0,"size":5.5,"pace":1,"dormant":false,"ageDays":122},{"name":"Re-Prompt-tool","lang":"HTML","color":"#e34c26","stars":0,"forks":0,"size":5.5,"pace":1,"dormant":false,"ageDays":268},{"name":"BlockBlastDrop-Playable","lang":"Other","color":"#7fd8ff","stars":0,"forks":0,"size":5.5,"pace":1,"dormant":false,"ageDays":270},{"name":"Rename-tools","lang":"HTML","color":"#e34c26","stars":0,"forks":0,"size":5.5,"pace":1,"dormant":false,"ageDays":298},{"name":"Mesh-Simplifier-and-Auto-LOD-","lang":"Other","color":"#7fd8ff","stars":0,"forks":0,"size":5.5,"pace":1,"dormant":false,"ageDays":303},{"name":"nodejs_blog","lang":"HTML","color":"#e34c26","stars":0,"forks":0,"size":5.5,"pace":0.45,"dormant":true,"ageDays":560},{"name":"3D-RPG-Fight-LOL","lang":"C#","color":"#178600","stars":0,"forks":0,"size":5.5,"pace":0.45,"dormant":true,"ageDays":669},{"name":"FlashCard-2D","lang":"Other","color":"#7fd8ff","stars":0,"forks":0,"size":5.5,"pace":0.45,"dormant":true,"ageDays":680},{"name":"Project_Dino","lang":"C#","color":"#178600","stars":0,"forks":0,"size":5.5,"pace":0.45,"dormant":true,"ageDays":794},{"name":"ZengaExercies2","lang":"C#","color":"#178600","stars":0,"forks":0,"size":5.5,"pace":0.45,"dormant":true,"ageDays":889},{"name":"ZengaExercies","lang":"Other","color":"#7fd8ff","stars":0,"forks":0,"size":5.5,"pace":0.45,"dormant":true,"ageDays":889},{"name":"Brick-Breaker-2D","lang":"C#","color":"#178600","stars":0,"forks":0,"size":5.5,"pace":0.45,"dormant":true,"ageDays":940},{"name":"Booking","lang":"JavaScript","color":"#f1e05a","stars":0,"forks":0,"size":5.5,"pace":0.45,"dormant":true,"ageDays":1024},{"name":"shaikowannasleep.github-io","lang":"Other","color":"#7fd8ff","stars":0,"forks":0,"size":5.5,"pace":0.45,"dormant":true,"ageDays":1039},{"name":"VR1-project","lang":"ShaderLab","color":"#222c37","stars":0,"forks":0,"size":5.5,"pace":0.45,"dormant":true,"ageDays":1286},{"name":"network_programming_ex","lang":"C++","color":"#f34b7d","stars":0,"forks":0,"size":5.5,"pace":0.45,"dormant":true,"ageDays":1308},{"name":"ContactApp","lang":"Java","color":"#b07219","stars":0,"forks":0,"size":5.5,"pace":0.45,"dormant":true,"ageDays":1339},{"name":"MappRPGResoucre","lang":"Other","color":"#7fd8ff","stars":0,"forks":0,"size":5.5,"pace":0.45,"dormant":true,"ageDays":1374},{"name":"Chess-Simple","lang":"Python","color":"#3572A5","stars":0,"forks":0,"size":5.5,"pace":0.45,"dormant":true,"ageDays":1379},{"name":"MovieManager","lang":"Java","color":"#b07219","stars":0,"forks":0,"size":5.5,"pace":0.45,"dormant":true,"ageDays":1379},{"name":"SIE-Android-Assignment1","lang":"Kotlin","color":"#A97BFF","stars":0,"forks":0,"size":5.5,"pace":0.45,"dormant":true,"ageDays":1412},{"name":"IT4060Q_20198222_VanDinhDung","lang":"C++","color":"#f34b7d","stars":0,"forks":0,"size":5.5,"pace":0.45,"dormant":true,"ageDays":1517},{"name":"Homework","lang":"C++","color":"#f34b7d","stars":0,"forks":0,"size":5.5,"pace":0.45,"dormant":true,"ageDays":1602}];
+'use strict';
+(function (global) {
+const TAU = Math.PI * 2;
+function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+function lerp(a, b, t) { return a + (b - a) * t; }
+function rand(a, b) { return a + Math.random() * (b - a); }
+function defaultParams() {
+  return {
+    rSep: 18, rAli: 42, rCoh: 52,
+    fov: -0.35,
+    wSep: 2.10, wAli: 1.05, wCoh: 0.95,
+    wFlee: 4.60, wAvoid: 5.20, wLure: 2.40, wBounds: 3.40,
+    minSpeed: 46, maxSpeed: 132, maxForce: 260,
+    panicSpeedBoost: 1.55,
+    rFlee: 132, rLure: 210,
+    maxNeighbours: 7,
+    margin: 54,
+    stressDecay: 1.9,
+  };
+}
+class SwarmEngine {
+  constructor(capacity, width, height) {
+    const c = capacity | 0;
+    this.cap = c;
+    this.n = 0;
+    this.w = width;
+    this.h = height;
+    this.p = defaultParams();
+    this.px = new Float32Array(c);
+    this.py = new Float32Array(c);
+    this.vx = new Float32Array(c);
+    this.vy = new Float32Array(c);
+    this.ax = new Float32Array(c);
+    this.ay = new Float32Array(c);
+    this.tx = new Float32Array(c);
+    this.ty = new Float32Array(c);
+    this.stress = new Float32Array(c);
+    this.phase = new Float32Array(c);
+    this.speedScale = new Float32Array(c);
+    this.alive = new Uint8Array(c);
+    this.cell = Math.max(16, this.p.rCoh);
+    this.cols = 1; this.rows = 1;
+    this.cellOf = new Int32Array(c);
+    this.sorted = new Int32Array(c);
+    this.counts = new Int32Array(1);
+    this.resize(width, height);
+    this.stat = {
+      neighbourTests: 0, neighbourHits: 0,
+      simMs: 0, gridMs: 0, occupied: 0,
+    };
+    this.debugIndex = 0;
+    this.dbg = { sx: 0, sy: 0, ax: 0, ay: 0, cx: 0, cy: 0, count: 0 };
+  }
+  resize(w, h) {
+    this.w = w; this.h = h;
+    this.cell = Math.max(16, this.p.rCoh);
+    this.cols = Math.max(1, Math.ceil(w / this.cell) + 1);
+    this.rows = Math.max(1, Math.ceil(h / this.cell) + 1);
+    const nc = this.cols * this.rows;
+    if (this.counts.length < nc + 1) this.counts = new Int32Array(nc + 1);
+  }
+  spawn(x, y, speed) {
+    if (this.n >= this.cap) return -1;
+    const i = this.n++;
+    const a = Math.random() * TAU;
+    const s = speed !== undefined ? speed : rand(this.p.minSpeed, this.p.maxSpeed);
+    this.px[i] = x; this.py[i] = y;
+    this.vx[i] = Math.cos(a) * s; this.vy[i] = Math.sin(a) * s;
+    this.tx[i] = x; this.ty[i] = y;
+    this.stress[i] = 0;
+    this.phase[i] = Math.random() * TAU;
+    this.speedScale[i] = 1;
+    this.alive[i] = 1;
+    return i;
+  }
+  removeAt(i) {
+    const last = --this.n;
+    if (i !== last) {
+      this.px[i] = this.px[last]; this.py[i] = this.py[last];
+      this.vx[i] = this.vx[last]; this.vy[i] = this.vy[last];
+      this.tx[i] = this.tx[last]; this.ty[i] = this.ty[last];
+      this.stress[i] = this.stress[last];
+      this.phase[i] = this.phase[last];
+      this.speedScale[i] = this.speedScale[last];
+    }
+  }
+  buildGrid() {
+    const t0 = performance.now();
+    const n = this.n, cols = this.cols, rows = this.rows, cs = this.cell;
+    const nc = cols * rows;
+    const counts = this.counts;
+    counts.fill(0, 0, nc + 1);
+    for (let i = 0; i < n; i++) {
+      const cx = clamp((this.px[i] / cs) | 0, 0, cols - 1);
+      const cy = clamp((this.py[i] / cs) | 0, 0, rows - 1);
+      const c = cy * cols + cx;
+      this.cellOf[i] = c;
+      counts[c + 1]++;
+    }
+    let occupied = 0;
+    for (let c = 0; c < nc; c++) {
+      if (counts[c + 1] > 0) occupied++;
+      counts[c + 1] += counts[c];
+    }
+    const cursor = this.sorted;
+    for (let i = 0; i < n; i++) {
+      const c = this.cellOf[i];
+      cursor[counts[c]++] = i;
+    }
+    for (let c = nc; c > 0; c--) counts[c] = counts[c - 1];
+    counts[0] = 0;
+    this.stat.occupied = occupied;
+    this.stat.gridMs = performance.now() - t0;
+  }
+  step(dt, world) {
+    const t0 = performance.now();
+    this.buildGrid();
+    const p = this.p, n = this.n;
+    const cols = this.cols, rows = this.rows, cs = this.cell;
+    const counts = this.counts;
+    const sorted = this.sorted;
+    const rSep2 = p.rSep * p.rSep, rAli2 = p.rAli * p.rAli, rCoh2 = p.rCoh * p.rCoh;
+    const maxN = p.maxNeighbours;
+    let tests = 0, hits = 0;
+    for (let i = 0; i < n; i++) {
+      const x = this.px[i], y = this.py[i];
+      const vxi = this.vx[i], vyi = this.vy[i];
+      const sp = Math.hypot(vxi, vyi) || 1e-6;
+      const fwx = vxi / sp, fwy = vyi / sp;
+      let sepX = 0, sepY = 0, aliX = 0, aliY = 0, cohX = 0, cohY = 0;
+      let nAli = 0, nCoh = 0, seen = 0;
+      const gx = clamp((x / cs) | 0, 0, cols - 1);
+      const gy = clamp((y / cs) | 0, 0, rows - 1);
+      const x0 = gx > 0 ? gx - 1 : 0, x1 = gx < cols - 1 ? gx + 1 : cols - 1;
+      const y0 = gy > 0 ? gy - 1 : 0, y1 = gy < rows - 1 ? gy + 1 : rows - 1;
+      outer:
+      for (let cy = y0; cy <= y1; cy++) {
+        const rowBase = cy * cols;
+        for (let cx = x0; cx <= x1; cx++) {
+          const c = rowBase + cx;
+          const s = counts[c], e = counts[c + 1];
+          for (let k = s; k < e; k++) {
+            const j = sorted[k];
+            if (j === i) continue;
+            const dx = this.px[j] - x, dy = this.py[j] - y;
+            const d2 = dx * dx + dy * dy;
+            tests++;
+            if (d2 > rCoh2 || d2 < 1e-8) continue;
+            const inv = 1 / Math.sqrt(d2);
+            if (fwx * dx * inv + fwy * dy * inv < p.fov) continue;
+            hits++;
+            if (d2 < rSep2) {
+              const w = 1 / d2;
+              sepX -= dx * w; sepY -= dy * w;
+            }
+            if (d2 < rAli2) { aliX += this.vx[j]; aliY += this.vy[j]; nAli++; }
+            cohX += this.px[j]; cohY += this.py[j]; nCoh++;
+            if (++seen >= maxN) break outer;
+          }
+        }
+      }
+      let fx = 0, fy = 0;
+      let dsx = 0, dsy = 0, dax = 0, day = 0, dcx = 0, dcy = 0;
+      if (sepX || sepY) {
+        const m = Math.hypot(sepX, sepY);
+        dsx = (sepX / m) * p.maxSpeed - vxi;
+        dsy = (sepY / m) * p.maxSpeed - vyi;
+        fx += dsx * p.wSep; fy += dsy * p.wSep;
+      }
+      if (nAli) {
+        const mx = aliX / nAli, my = aliY / nAli;
+        const m = Math.hypot(mx, my) || 1;
+        dax = (mx / m) * p.maxSpeed - vxi;
+        day = (my / m) * p.maxSpeed - vyi;
+        fx += dax * p.wAli; fy += day * p.wAli;
+      }
+      if (nCoh) {
+        const mx = cohX / nCoh - x, my = cohY / nCoh - y;
+        const m = Math.hypot(mx, my) || 1;
+        dcx = (mx / m) * p.maxSpeed - vxi;
+        dcy = (my / m) * p.maxSpeed - vyi;
+        fx += dcx * p.wCoh; fy += dcy * p.wCoh;
+      }
+      if (i === this.debugIndex) {
+        this.dbg.sx = dsx; this.dbg.sy = dsy;
+        this.dbg.ax = dax; this.dbg.ay = day;
+        this.dbg.cx = dcx; this.dbg.cy = dcy;
+        this.dbg.count = seen;
+      }
+      let panic = 0;
+      const preds = world.predators;
+      for (let q = 0; q < preds.length; q++) {
+        const P = preds[q];
+        if (!P.active) continue;
+        const dx = x - P.x, dy = y - P.y;
+        const d = Math.hypot(dx, dy);
+        const R = p.rFlee * (P.scare || 1);
+        if (d < R && d > 1e-4) {
+          const t = 1 - d / R;
+          const w = t * t;
+          fx += (dx / d) * p.maxSpeed * p.wFlee * w;
+          fy += (dy / d) * p.maxSpeed * p.wFlee * w;
+          if (w > panic) panic = w;
+        }
+      }
+      const obs = world.obstacles;
+      for (let q = 0; q < obs.length; q++) {
+        const O = obs[q];
+        const ahx = x + fwx * 26, ahy = y + fwy * 26;
+        const dx = ahx - O.x, dy = ahy - O.y;
+        const d = Math.hypot(dx, dy);
+        const R = O.r + 22;
+        if (d < R && d > 1e-4) {
+          const t = 1 - d / R;
+          fx += (dx / d) * p.maxSpeed * p.wAvoid * t;
+          fy += (dy / d) * p.maxSpeed * p.wAvoid * t;
+        }
+      }
+      const L = world.lure;
+      if (L && L.active) {
+        const dx = L.x - x, dy = L.y - y;
+        const d = Math.hypot(dx, dy);
+        const R = p.rLure * L.power;
+        if (d < R && d > 1e-4) {
+          const t = 1 - d / R;
+          const core = d < 34 ? -1.1 : 1;
+          fx += (dx / d) * p.maxSpeed * p.wLure * t * L.power * core;
+          fy += (dy / d) * p.maxSpeed * p.wLure * t * L.power * core;
+        }
+      }
+      const m0 = p.margin;
+      if (x < m0) fx += (m0 - x) * p.wBounds;
+      else if (x > this.w - m0) fx -= (x - (this.w - m0)) * p.wBounds;
+      if (y < m0) fy += (m0 - y) * p.wBounds;
+      else if (y > this.h - m0) fy -= (y - (this.h - m0)) * p.wBounds;
+      const fm = Math.hypot(fx, fy);
+      if (fm > p.maxForce) { const k = p.maxForce / fm; fx *= k; fy *= k; }
+      let nvx = vxi + fx * dt;
+      let nvy = vyi + fy * dt;
+      const st = Math.max(this.stress[i] - p.stressDecay * dt, panic);
+      this.stress[i] = clamp(st, 0, 1);
+      const sc = this.speedScale[i] || 1;
+      const vmax = p.maxSpeed * sc * lerp(1, p.panicSpeedBoost, this.stress[i]);
+      const vmin = p.minSpeed * sc;
+      const nsp = Math.hypot(nvx, nvy);
+      if (nsp > vmax) { const k = vmax / nsp; nvx *= k; nvy *= k; }
+      else if (nsp < vmin) {
+        const k = vmin / (nsp || 1e-6); nvx *= k; nvy *= k;
+      }
+      this.vx[i] = nvx; this.vy[i] = nvy;
+      const nx = this.px[i] + nvx * dt;
+      const ny = this.py[i] + nvy * dt;
+      this.tx[i] = lerp(this.tx[i], this.px[i], 0.45);
+      this.ty[i] = lerp(this.ty[i], this.py[i], 0.45);
+      this.px[i] = clamp(nx, -40, this.w + 40);
+      this.py[i] = clamp(ny, -40, this.h + 40);
+      this.phase[i] += dt * (6 + nsp * 0.05);
+    }
+    this.stat.neighbourTests = tests;
+    this.stat.neighbourHits = hits;
+    this.stat.simMs = performance.now() - t0;
+  }
+  polarisation() {
+    let sx = 0, sy = 0;
+    const n = this.n;
+    if (!n) return 0;
+    for (let i = 0; i < n; i++) {
+      const s = Math.hypot(this.vx[i], this.vy[i]) || 1;
+      sx += this.vx[i] / s; sy += this.vy[i] / s;
+    }
+    return Math.hypot(sx, sy) / n;
+  }
+  centroid(out) {
+    let sx = 0, sy = 0; const n = this.n;
+    for (let i = 0; i < n; i++) { sx += this.px[i]; sy += this.py[i]; }
+    out.x = n ? sx / n : 0; out.y = n ? sy / n : 0;
+    return out;
+  }
+}
+global.SwarmEngine = SwarmEngine;
+})(typeof window !== 'undefined' ? window : globalThis);
+'use strict';
+(function () {
+const TAU = Math.PI * 2;
+const cv = document.getElementById('cv');
+const g = cv.getContext('2d');
+const tip = document.getElementById('tip');
+const ordEl = document.getElementById('ord');
+const fpsEl = document.getElementById('fps');
+let W = 0, H = 0, dpr = Math.min(window.devicePixelRatio || 1, 2);
+function resize() {
+  W = window.innerWidth; H = window.innerHeight;
+  cv.width = Math.floor(W * dpr); cv.height = Math.floor(H * dpr);
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (sw) sw.resize(W, H);
+}
+const sw = new SwarmEngine(Math.max(FISH_DATA.length, 8), 800, 600);
+resize();
+window.addEventListener('resize', resize);
+FISH_DATA.forEach(f => {
+  sw.spawn(40 + Math.random() * (W - 80), 60 + Math.random() * (H - 160));
+  sw.speedScale[sw.n - 1] = f.pace;
+});
+const p = sw.p;
+p.rCoh = 84; p.rAli = 64; p.rSep = 30;
+p.wCoh = 0.7; p.wAli = 1.2; p.wSep = 2.2;
+p.minSpeed = 18; p.maxSpeed = 62; p.maxForce = 140;
+p.margin = 56; p.maxNeighbours = 6; p.rLure = 240;
+const world = {
+  predators: [], obstacles: [],
+  lure: { x: W / 2, y: H / 2, power: 0, active: false },
+};
+let mx = W / 2, my = H / 2, hovering = false;
+cv.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY; hovering = true;
+});
+cv.addEventListener('mouseleave', () => { hovering = false; });
+cv.addEventListener('touchmove', e => {
+  e.preventDefault();
+  mx = e.touches[0].clientX; my = e.touches[0].clientY; hovering = true;
+}, { passive: false });
+const snow = [];
+for (let i = 0; i < 90; i++) {
+  snow.push({
+    x: Math.random() * 2000, y: Math.random() * 1200,
+    v: 8 + Math.random() * 16, r: 0.6 + Math.random() * 1.5,
+    a: 0.15 + Math.random() * 0.3, drift: (Math.random() - 0.5) * 6,
+  });
+}
+function localOrder() {
+  let tot = 0, cnt = 0;
+  const r2 = sw.p.rAli * sw.p.rAli;
+  for (let i = 0; i < sw.n; i++) {
+    const si = Math.hypot(sw.vx[i], sw.vy[i]) || 1;
+    for (let j = i + 1; j < sw.n; j++) {
+      const dx = sw.px[j] - sw.px[i], dy = sw.py[j] - sw.py[i];
+      if (dx * dx + dy * dy > r2) continue;
+      const sj = Math.hypot(sw.vx[j], sw.vy[j]) || 1;
+      tot += (sw.vx[i] * sw.vx[j] + sw.vy[i] * sw.vy[j]) / (si * sj);
+      cnt++;
+    }
+  }
+  return cnt ? tot / cnt : 0;
+}
+let last = performance.now(), acc = 0, fps = 60, fa = 0, fn = 0, t = 0, ordT = 0;
+function frame(now) {
+  const raw = (now - last) / 1000; last = now;
+  const dt = Math.min(raw, 0.05); t += dt;
+  fa += raw; fn++;
+  if (fa > 0.5) { fps = fn / fa; fa = 0; fn = 0; fpsEl.textContent = fps.toFixed(0); }
+  const L = world.lure;
+  L.x += (mx - L.x) * 0.15; L.y += (my - L.y) * 0.15;
+  L.power += ((hovering ? 0.85 : 0) - L.power) * 0.08;
+  L.active = L.power > 0.03;
+  acc += dt;
+  let guard = 0;
+  while (acc >= 1 / 60 && guard++ < 5) {
+    sw.step(1 / 60, world);
+    acc -= 1 / 60;
+  }
+  ordT += dt;
+  if (ordT > 0.25) { ordEl.textContent = localOrder().toFixed(2); ordT = 0; }
+  const bg = g.createRadialGradient(W * 0.5, H * 0.38, 20, W * 0.5, H * 0.5, Math.max(W, H) * 0.8);
+  bg.addColorStop(0, '#0d2b52'); bg.addColorStop(0.55, '#061630'); bg.addColorStop(1, '#020712');
+  g.fillStyle = bg; g.fillRect(0, 0, W, H);
+  g.globalAlpha = 0.04; g.fillStyle = '#69c7ff';
+  for (let i = 0; i < 6; i++) {
+    const x = ((i * 0.19 + t * 0.01) % 1.2 - 0.1) * W;
+    g.beginPath(); g.moveTo(x, 0); g.lineTo(x + 60, 0);
+    g.lineTo(x + 170, H); g.lineTo(x + 30, H); g.closePath(); g.fill();
+  }
+  g.globalAlpha = 1;
+  for (const s of snow) {
+    s.y += s.v * dt; s.x += s.drift * dt;
+    if (s.y > H + 10) { s.y = -10; s.x = Math.random() * W; }
+    if (s.x > W + 10) s.x = -10; if (s.x < -10) s.x = W + 10;
+    g.fillStyle = 'rgba(207,234,255,' + s.a + ')';
+    g.beginPath(); g.arc(s.x, s.y, s.r, 0, TAU); g.fill();
+  }
+  if (world.lure.active) {
+    const R = 200 * world.lure.power;
+    const gr = g.createRadialGradient(world.lure.x, world.lure.y, 2, world.lure.x, world.lure.y, R);
+    gr.addColorStop(0, 'rgba(180,240,255,' + (0.16 * world.lure.power).toFixed(3) + ')');
+    gr.addColorStop(1, 'rgba(80,190,255,0)');
+    g.fillStyle = gr;
+    g.beginPath(); g.arc(world.lure.x, world.lure.y, R, 0, TAU); g.fill();
+  }
+  let hoverIdx = -1, hoverD = 1e9;
+  for (let i = 0; i < sw.n; i++) {
+    const f = FISH_DATA[i]; if (!f) continue;
+    const x = sw.px[i], y = sw.py[i];
+    const vx = sw.vx[i], vy = sw.vy[i];
+    const sp = Math.hypot(vx, vy) || 1;
+    const dx = vx / sp, dy = vy / sp;
+    const nx = -dy, ny = dx;
+    const b = f.size, tl = b * 0.75;
+    const op = f.dormant ? 0.74 : 0.95;
+    if (hovering) {
+      const d = Math.hypot(x - mx, y - my);
+      if (d < b + 12 && d < hoverD) { hoverD = d; hoverIdx = i; }
+    }
+    g.globalAlpha = op;
+    g.shadowBlur = f.dormant ? 14 : 9; g.shadowColor = f.color;
+    g.fillStyle = f.color;
+    g.beginPath();
+    g.ellipse(x, y, b, b * 0.52, Math.atan2(dy, dx), 0, TAU);
+    g.fill();
+    const wig = Math.sin(sw.phase[i]) * tl * 0.34;
+    g.beginPath();
+    g.moveTo(x - dx * b, y - dy * b);
+    g.lineTo(x - dx * (b + tl) + nx * (tl * 0.6 + wig), y - dy * (b + tl) + ny * (tl * 0.6 + wig));
+    g.lineTo(x - dx * (b + tl) - nx * (tl * 0.6 - wig), y - dy * (b + tl) - ny * (tl * 0.6 - wig));
+    g.closePath(); g.fill();
+    g.shadowBlur = 0;
+    g.fillStyle = '#04121f';
+    g.beginPath();
+    g.arc(x + dx * b * 0.45 + nx * b * 0.16, y + dy * b * 0.45 + ny * b * 0.16,
+          Math.max(1.1, b * 0.13), 0, TAU);
+    g.fill();
+    g.globalAlpha = 1;
+  }
+  if (hoverIdx >= 0) {
+    const f = FISH_DATA[hoverIdx];
+    tip.textContent = f.name + '  ·  ' + f.lang + '  ·  ' + f.stars + '\u2605' +
+      (f.dormant ? '  ·  resting ' + f.ageDays + 'd' : '');
+    tip.style.left = Math.min(mx + 16, W - 230) + 'px';
+    tip.style.top = (my + 16) + 'px';
+    tip.classList.add('on');
+  } else tip.classList.remove('on');
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

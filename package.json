@@ -1,0 +1,14 @@
+{
+  "name": "abyssal-aquarium",
+  "version": "1.0.0",
+  "description": "A GitHub profile aquarium where every fish is a repository, driven by Reynolds boids and baked to SMIL SVG.",
+  "scripts": {
+    "test": "node test/headless.js",
+    "bake": "node tools/bake-svg.js",
+    "pages": "node tools/build-pages.js",
+    "build": "node tools/bake-svg.js && node tools/build-pages.js",
+    "serve": "python3 -m http.server 8090 -d docs"
+  },
+  "license": "MIT",
+  "private": false
+}
