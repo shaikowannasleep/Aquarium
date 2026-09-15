@@ -16,6 +16,29 @@ const TAU = Math.PI * 2;
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const lerp = (a, b, t) => a + (b - a) * t;
 
+const Sprites = (() => {
+  const images = {};
+  const sources = window.SPRITE_SOURCES || {};
+  Object.keys(sources).forEach(name => {
+    const image = new Image();
+    image.src = sources[name];
+    images[name] = image;
+  });
+  return {
+    draw(g, name, x, y, width, angle, alpha) {
+      const image = images[name];
+      if (!image || !image.complete || !image.naturalWidth) return false;
+      const height = width * image.naturalHeight / image.naturalWidth;
+      g.save();
+      g.globalAlpha = alpha === undefined ? 1 : alpha;
+      g.translate(x, y); g.rotate(angle);
+      g.drawImage(image, -width * 0.5, -height * 0.5, width, height);
+      g.restore();
+      return true;
+    },
+  };
+})();
+
 /* ------------------------------------------------------------- tuning */
 /* The lamp holds five charges. Spending one is cheap; running dry is the
  * expensive part, because the recharge only starts once the last charge
@@ -825,6 +848,7 @@ class AbyssalDive {
 
   drawSchool(g) {
     const sw = this.sw;
+    const schoolSprites = ['schoolA', 'schoolB', 'schoolC'];
     for (let i = 0; i < sw.n; i++) {
       const x = sw.px[i], y = sw.py[i];
       const st = sw.stress[i];
@@ -838,14 +862,17 @@ class AbyssalDive {
       g.lineWidth = 2;
       g.beginPath(); g.moveTo(sw.tx[i], sw.ty[i]); g.lineTo(x, y); g.stroke();
 
-      const wig = Math.sin(sw.phase[i]) * 3;
-      g.fillStyle = 'hsla(' + hue + ',96%,' + lerp(64, 72, st) + '%,0.96)';
-      g.beginPath();
-      g.moveTo(x + dx * 7, y + dy * 7);
-      g.lineTo(x + nx * 2.9 - dx * 3.2, y + ny * 2.9 - dy * 3.2);
-      g.lineTo(x - dx * 5.6 + nx * wig, y - dy * 5.6 + ny * wig);
-      g.lineTo(x - nx * 2.9 - dx * 3.2, y - ny * 2.9 - dy * 3.2);
-      g.closePath(); g.fill();
+      if (!Sprites.draw(g, schoolSprites[i % schoolSprites.length], x, y,
+                        25, Math.atan2(dy, dx), 0.96)) {
+        const wig = Math.sin(sw.phase[i]) * 3;
+        g.fillStyle = 'hsla(' + hue + ',96%,' + lerp(64, 72, st) + '%,0.96)';
+        g.beginPath();
+        g.moveTo(x + dx * 7, y + dy * 7);
+        g.lineTo(x + nx * 2.9 - dx * 3.2, y + ny * 2.9 - dy * 3.2);
+        g.lineTo(x - dx * 5.6 + nx * wig, y - dy * 5.6 + ny * wig);
+        g.lineTo(x - nx * 2.9 - dx * 3.2, y - ny * 2.9 - dy * 3.2);
+        g.closePath(); g.fill();
+      }
     }
     g.globalCompositeOperation = 'lighter';
     g.globalAlpha = 0.12;
@@ -895,17 +922,19 @@ class AbyssalDive {
     if (frenzied) g.scale(1.12, 1.12);
     else if (exhausted) g.scale(0.94, 0.94);
 
-    g.fillStyle = dazzled ? '#22394f' : (frenzied ? '#2a1014' : '#131e2c');
-    g.beginPath();
-    g.moveTo(36, 0); g.lineTo(2, 14); g.lineTo(-28, 7);
-    g.lineTo(-37, 18); g.lineTo(-22, 0); g.lineTo(-37, -18);
-    g.lineTo(-28, -7); g.lineTo(2, -14);
-    g.closePath(); g.fill();
-    g.strokeStyle = 'rgba(' + col + ',0.7)';
-    g.lineWidth = 1.5; g.stroke();
-
-    g.fillStyle = dazzled ? '#bfe8ff' : '#ff6a4a';
-    g.beginPath(); g.arc(15, -4, 2.8, 0, TAU); g.fill();
+    if (!Sprites.draw(g, 'hunter', 0, 0, frenzied ? 94 : 84, 0,
+                      exhausted ? 0.62 : 1)) {
+      g.fillStyle = dazzled ? '#22394f' : (frenzied ? '#2a1014' : '#131e2c');
+      g.beginPath();
+      g.moveTo(36, 0); g.lineTo(2, 14); g.lineTo(-28, 7);
+      g.lineTo(-37, 18); g.lineTo(-22, 0); g.lineTo(-37, -18);
+      g.lineTo(-28, -7); g.lineTo(2, -14);
+      g.closePath(); g.fill();
+      g.strokeStyle = 'rgba(' + col + ',0.7)';
+      g.lineWidth = 1.5; g.stroke();
+      g.fillStyle = dazzled ? '#bfe8ff' : '#ff6a4a';
+      g.beginPath(); g.arc(15, -4, 2.8, 0, TAU); g.fill();
+    }
     if (H.stunFlash > 0) {
       g.globalAlpha = H.stunFlash;
       g.fillStyle = '#ffffff';

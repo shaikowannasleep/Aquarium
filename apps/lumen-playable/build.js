@@ -9,6 +9,13 @@ const html = fs.readFileSync(path.join(src, 'index.html'), 'utf8');
 const css = fs.readFileSync(path.join(src, 'style.css'), 'utf8');
 const engine = fs.readFileSync(path.join(src, 'engine.js'), 'utf8');
 const game = fs.readFileSync(path.join(src, 'game.js'), 'utf8');
+const spriteNames = {
+  school: 'cyan_fish.png', predator: 'hammerhead_shark.png', reef: 'sea_anemone.png',
+};
+const sprites = Object.fromEntries(Object.entries(spriteNames).map(([name, file]) => {
+  const png = fs.readFileSync(path.join(__dirname, '../../docs/assets/sprites', file));
+  return [name, 'data:image/png;base64,' + png.toString('base64')];
+}));
 
 /* Conservative minifier: safe on this codebase (no regex literals, no ASI
  * hazards introduced because we keep all newlines that end statements). */
@@ -24,8 +31,10 @@ function squeeze(js) {
 const out = html
   .replace('<link rel="stylesheet" href="style.css">',
            '<style>' + css.replace(/\s*\n\s*/g, '') + '</style>')
-  .replace('<script src="engine.js"></script>\n<script src="game.js"></script>',
-           '<script>' + squeeze(engine) + '\n' + squeeze(game) + '</script>');
+  .replace(/<script>\s*window\.SPRITE_SOURCES\s*=[\s\S]*?<\/script>/,
+           '<script>window.SPRITE_SOURCES=' + JSON.stringify(sprites) + ';</script>')
+  .replace(/<script src="(?:engine|game)\.js"><\/script>\s*/g, '')
+  .replace('</body>', '<script>' + squeeze(engine) + '\n' + squeeze(game) + '</script>\n</body>');
 
 /* Guard: the inlined bundle must parse as a single script.
  * Concatenating two files that both declare top-level `const TAU` is a

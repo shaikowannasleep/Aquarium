@@ -18,9 +18,20 @@ function squeeze(js) {
 
 const files = ['oceanography.js', 'flowfield.js', 'level.js', 'engine.js', 'game.js'];
 const bundle = files.map(f => squeeze(fs.readFileSync(path.join(src, f), 'utf8'))).join('\n');
+const spriteNames = {
+  schoolA: 'blue_tang.png', schoolB: 'purple_fish.png',
+  schoolC: 'damselfish.png', hunter: 'blue_shark.png',
+};
+const sprites = Object.fromEntries(Object.entries(spriteNames).map(([name, file]) => {
+  const png = fs.readFileSync(path.join(__dirname, '../../docs/assets/sprites', file));
+  return [name, 'data:image/png;base64,' + png.toString('base64')];
+}));
 
-const tags = files.map(f => '<script src="' + f + '"></script>').join('\n');
-const out = html.replace(tags, '<script>' + bundle + '</script>');
+const sourceTag = /<script>\s*window\.SPRITE_SOURCES\s*=[\s\S]*?<\/script>/;
+const out = html
+  .replace(sourceTag, '<script>window.SPRITE_SOURCES=' + JSON.stringify(sprites) + ';</script>')
+  .replace(/<script src="(?:oceanography|flowfield|level|engine|game)\.js"><\/script>\s*/g, '')
+  .replace('</body>', '<script>' + bundle + '</script>\n</body>');
 
 if (out.indexOf('<script src=') !== -1) {
   console.error('BUILD FAILED - a script tag survived inlining');

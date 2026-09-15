@@ -17,6 +17,29 @@ const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const lerp = (a, b, t) => a + (b - a) * t;
 const ease = t => t * t * (3 - 2 * t);
 
+const Sprites = (() => {
+  const images = {};
+  const sources = window.SPRITE_SOURCES || {};
+  Object.keys(sources).forEach(name => {
+    const image = new Image();
+    image.src = sources[name];
+    images[name] = image;
+  });
+  return {
+    draw(g, name, x, y, width, angle, alpha) {
+      const image = images[name];
+      if (!image || !image.complete || !image.naturalWidth) return false;
+      const height = width * image.naturalHeight / image.naturalWidth;
+      g.save();
+      g.globalAlpha = alpha === undefined ? 1 : alpha;
+      g.translate(x, y); g.rotate(angle);
+      g.drawImage(image, -width * 0.5, -height * 0.5, width, height);
+      g.restore();
+      return true;
+    },
+  };
+})();
+
 /* ---------------------------------------------------------------- audio */
 /* One AudioContext, oscillator-per-shot, no assets => tiny build. */
 const Sfx = (() => {
@@ -508,6 +531,7 @@ class Game {
 
   drawObstacles(g) {
     for (const o of this.world.obstacles) {
+      if (Sprites.draw(g, 'reef', o.x, o.y, o.r * 2.1, o.spin, 0.88)) continue;
       g.save();
       g.translate(o.x, o.y); g.rotate(o.spin);
       const gr = g.createRadialGradient(0, -o.r * 0.3, 4, 0, 0, o.r);
@@ -568,17 +592,17 @@ class Game {
       g.lineTo(x, y);
       g.stroke();
 
-      // body: a dart aligned to velocity, tail wiggling with phase
-      const wig = Math.sin(sw.phase[i]) * 3.1;
-      const nx = -dy, ny = dx;
-      g.fillStyle = 'hsla(' + hue + ',96%,' + lit + '%,0.95)';
-      g.beginPath();
-      g.moveTo(x + dx * 7.5, y + dy * 7.5);
-      g.lineTo(x + nx * 3.0 - dx * 3.5, y + ny * 3.0 - dy * 3.5);
-      g.lineTo(x - dx * 6 + nx * wig, y - dy * 6 + ny * wig);
-      g.lineTo(x - nx * 3.0 - dx * 3.5, y - ny * 3.0 - dy * 3.5);
-      g.closePath();
-      g.fill();
+      if (!Sprites.draw(g, 'school', x, y, 26, Math.atan2(dy, dx), 0.95)) {
+        const wig = Math.sin(sw.phase[i]) * 3.1;
+        const nx = -dy, ny = dx;
+        g.fillStyle = 'hsla(' + hue + ',96%,' + lit + '%,0.95)';
+        g.beginPath();
+        g.moveTo(x + dx * 7.5, y + dy * 7.5);
+        g.lineTo(x + nx * 3.0 - dx * 3.5, y + ny * 3.0 - dy * 3.5);
+        g.lineTo(x - dx * 6 + nx * wig, y - dy * 6 + ny * wig);
+        g.lineTo(x - nx * 3.0 - dx * 3.5, y - ny * 3.0 - dy * 3.5);
+        g.closePath(); g.fill();
+      }
     }
 
     // bloom pass: cheap additive glow over the densest region
@@ -606,16 +630,18 @@ class Game {
     g.fillStyle = gr;
     g.beginPath(); g.arc(0, 0, 90, 0, TAU); g.fill();
 
-    g.fillStyle = '#16212f';
-    g.beginPath();
-    g.moveTo(34, 0); g.lineTo(2, 13); g.lineTo(-26, 6);
-    g.lineTo(-34, 17); g.lineTo(-20, 0); g.lineTo(-34, -17);
-    g.lineTo(-26, -6); g.lineTo(2, -13);
-    g.closePath(); g.fill();
-    g.strokeStyle = 'rgba(255,120,90,0.65)';
-    g.lineWidth = 1.4; g.stroke();
-    g.fillStyle = '#ff6a4a';
-    g.beginPath(); g.arc(14, -4, 2.6, 0, TAU); g.fill();
+    if (!Sprites.draw(g, 'predator', 0, 0, 86, 0, 1)) {
+      g.fillStyle = '#16212f';
+      g.beginPath();
+      g.moveTo(34, 0); g.lineTo(2, 13); g.lineTo(-26, 6);
+      g.lineTo(-34, 17); g.lineTo(-20, 0); g.lineTo(-34, -17);
+      g.lineTo(-26, -6); g.lineTo(2, -13);
+      g.closePath(); g.fill();
+      g.strokeStyle = 'rgba(255,120,90,0.65)';
+      g.lineWidth = 1.4; g.stroke();
+      g.fillStyle = '#ff6a4a';
+      g.beginPath(); g.arc(14, -4, 2.6, 0, TAU); g.fill();
+    }
     g.restore();
   }
 
