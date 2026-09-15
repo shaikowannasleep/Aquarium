@@ -1,0 +1,1016 @@
+{
+  "sheet1": {
+    "width": 1024,
+    "height": 512,
+    "file": "sheet1.png",
+    "sprites": [
+      {
+        "id": "sheet1_0_0",
+        "name": "blue_shark",
+        "sheet": "sheet1",
+        "file": "blue_shark.png",
+        "x": 5,
+        "y": 30,
+        "w": 105,
+        "h": 76
+      },
+      {
+        "id": "sheet1_0_1",
+        "name": "spotted_shark",
+        "sheet": "sheet1",
+        "file": "spotted_shark.png",
+        "x": 114,
+        "y": 44,
+        "w": 92,
+        "h": 60
+      },
+      {
+        "id": "sheet1_0_2",
+        "name": "orca",
+        "sheet": "sheet1",
+        "file": "orca.png",
+        "x": 208,
+        "y": 32,
+        "w": 100,
+        "h": 74
+      },
+      {
+        "id": "sheet1_0_3",
+        "name": "blue_dolphin",
+        "sheet": "sheet1",
+        "file": "blue_dolphin.png",
+        "x": 310,
+        "y": 33,
+        "w": 98,
+        "h": 73
+      },
+      {
+        "id": "sheet1_0_4",
+        "name": "pink_dolphin",
+        "sheet": "sheet1",
+        "file": "pink_dolphin.png",
+        "x": 410,
+        "y": 35,
+        "w": 100,
+        "h": 70
+      },
+      {
+        "id": "sheet1_0_5",
+        "name": "blue_whale",
+        "sheet": "sheet1",
+        "file": "blue_whale.png",
+        "x": 511,
+        "y": 22,
+        "w": 103,
+        "h": 88
+      },
+      {
+        "id": "sheet1_0_6",
+        "name": "beluga",
+        "sheet": "sheet1",
+        "file": "beluga.png",
+        "x": 616,
+        "y": 47,
+        "w": 103,
+        "h": 59
+      },
+      {
+        "id": "sheet1_0_7",
+        "name": "stingray",
+        "sheet": "sheet1",
+        "file": "stingray.png",
+        "x": 721,
+        "y": 36,
+        "w": 96,
+        "h": 68
+      },
+      {
+        "id": "sheet1_0_8",
+        "name": "spotted_ray",
+        "sheet": "sheet1",
+        "file": "spotted_ray.png",
+        "x": 824,
+        "y": 34,
+        "w": 88,
+        "h": 73
+      },
+      {
+        "id": "sheet1_0_9",
+        "name": "swordfish",
+        "sheet": "sheet1",
+        "file": "swordfish.png",
+        "x": 916,
+        "y": 34,
+        "w": 106,
+        "h": 69
+      },
+      {
+        "id": "sheet1_1_0",
+        "name": "clownfish",
+        "sheet": "sheet1",
+        "file": "clownfish.png",
+        "x": 7,
+        "y": 127,
+        "w": 96,
+        "h": 70
+      },
+      {
+        "id": "sheet1_1_1",
+        "name": "blue_tang",
+        "sheet": "sheet1",
+        "file": "blue_tang.png",
+        "x": 111,
+        "y": 128,
+        "w": 92,
+        "h": 65
+      },
+      {
+        "id": "sheet1_1_2",
+        "name": "yellow_tang",
+        "sheet": "sheet1",
+        "file": "yellow_tang.png",
+        "x": 213,
+        "y": 129,
+        "w": 91,
+        "h": 72
+      },
+      {
+        "id": "sheet1_1_3",
+        "name": "purple_fish",
+        "sheet": "sheet1",
+        "file": "purple_fish.png",
+        "x": 313,
+        "y": 130,
+        "w": 92,
+        "h": 66
+      },
+      {
+        "id": "sheet1_1_4",
+        "name": "flame_angelfish",
+        "sheet": "sheet1",
+        "file": "flame_angelfish.png",
+        "x": 417,
+        "y": 128,
+        "w": 93,
+        "h": 72
+      },
+      {
+        "id": "sheet1_1_5",
+        "name": "moorish_idol",
+        "sheet": "sheet1",
+        "file": "moorish_idol.png",
+        "x": 524,
+        "y": 126,
+        "w": 81,
+        "h": 77
+      },
+      {
+        "id": "sheet1_1_6",
+        "name": "damselfish",
+        "sheet": "sheet1",
+        "file": "damselfish.png",
+        "x": 621,
+        "y": 131,
+        "w": 92,
+        "h": 73
+      },
+      {
+        "id": "sheet1_1_7",
+        "name": "butterflyfish",
+        "sheet": "sheet1",
+        "file": "butterflyfish.png",
+        "x": 727,
+        "y": 129,
+        "w": 92,
+        "h": 75
+      },
+      {
+        "id": "sheet1_1_8",
+        "name": "striped_angelfish",
+        "sheet": "sheet1",
+        "file": "striped_angelfish.png",
+        "x": 825,
+        "y": 124,
+        "w": 88,
+        "h": 83
+      },
+      {
+        "id": "sheet1_1_9",
+        "name": "lionfish",
+        "sheet": "sheet1",
+        "file": "lionfish.png",
+        "x": 918,
+        "y": 119,
+        "w": 99,
+        "h": 93
+      },
+      {
+        "id": "sheet1_2_0",
+        "name": "green_turtle",
+        "sheet": "sheet1",
+        "file": "green_turtle.png",
+        "x": 4,
+        "y": 221,
+        "w": 101,
+        "h": 75
+      },
+      {
+        "id": "sheet1_2_1",
+        "name": "brown_turtle",
+        "sheet": "sheet1",
+        "file": "brown_turtle.png",
+        "x": 107,
+        "y": 224,
+        "w": 101,
+        "h": 69
+      },
+      {
+        "id": "sheet1_2_2",
+        "name": "green_pufferfish",
+        "sheet": "sheet1",
+        "file": "green_pufferfish.png",
+        "x": 213,
+        "y": 215,
+        "w": 90,
+        "h": 84
+      },
+      {
+        "id": "sheet1_2_3",
+        "name": "orange_pufferfish",
+        "sheet": "sheet1",
+        "file": "orange_pufferfish.png",
+        "x": 315,
+        "y": 218,
+        "w": 87,
+        "h": 80
+      },
+      {
+        "id": "sheet1_2_4",
+        "name": "blue_porcupinefish",
+        "sheet": "sheet1",
+        "file": "blue_porcupinefish.png",
+        "x": 417,
+        "y": 218,
+        "w": 89,
+        "h": 72
+      },
+      {
+        "id": "sheet1_2_5",
+        "name": "orange_seahorse",
+        "sheet": "sheet1",
+        "file": "orange_seahorse.png",
+        "x": 531,
+        "y": 211,
+        "w": 66,
+        "h": 100
+      },
+      {
+        "id": "sheet1_2_6",
+        "name": "pink_seahorse",
+        "sheet": "sheet1",
+        "file": "pink_seahorse.png",
+        "x": 629,
+        "y": 212,
+        "w": 62,
+        "h": 97
+      },
+      {
+        "id": "sheet1_2_7",
+        "name": "red_octopus",
+        "sheet": "sheet1",
+        "file": "red_octopus.png",
+        "x": 711,
+        "y": 214,
+        "w": 108,
+        "h": 95
+      },
+      {
+        "id": "sheet1_2_8",
+        "name": "pink_squid",
+        "sheet": "sheet1",
+        "file": "pink_squid.png",
+        "x": 832,
+        "y": 212,
+        "w": 82,
+        "h": 98
+      },
+      {
+        "id": "sheet1_2_9",
+        "name": "moray_eel",
+        "sheet": "sheet1",
+        "file": "moray_eel.png",
+        "x": 918,
+        "y": 231,
+        "w": 101,
+        "h": 61
+      },
+      {
+        "id": "sheet1_3_0",
+        "name": "red_lobster",
+        "sheet": "sheet1",
+        "file": "red_lobster.png",
+        "x": 6,
+        "y": 308,
+        "w": 100,
+        "h": 93
+      },
+      {
+        "id": "sheet1_3_1",
+        "name": "red_crab",
+        "sheet": "sheet1",
+        "file": "red_crab.png",
+        "x": 111,
+        "y": 320,
+        "w": 96,
+        "h": 79
+      },
+      {
+        "id": "sheet1_3_2",
+        "name": "mantis_shrimp",
+        "sheet": "sheet1",
+        "file": "mantis_shrimp.png",
+        "x": 212,
+        "y": 318,
+        "w": 97,
+        "h": 77
+      },
+      {
+        "id": "sheet1_3_3",
+        "name": "blue_jellyfish",
+        "sheet": "sheet1",
+        "file": "blue_jellyfish.png",
+        "x": 318,
+        "y": 305,
+        "w": 80,
+        "h": 101
+      },
+      {
+        "id": "sheet1_3_4",
+        "name": "pink_jellyfish",
+        "sheet": "sheet1",
+        "file": "pink_jellyfish.png",
+        "x": 413,
+        "y": 307,
+        "w": 83,
+        "h": 97
+      },
+      {
+        "id": "sheet1_3_5",
+        "name": "sea_anemone",
+        "sheet": "sheet1",
+        "file": "sea_anemone.png",
+        "x": 511,
+        "y": 317,
+        "w": 104,
+        "h": 87
+      },
+      {
+        "id": "sheet1_3_6",
+        "name": "sea_urchin",
+        "sheet": "sheet1",
+        "file": "sea_urchin.png",
+        "x": 623,
+        "y": 319,
+        "w": 88,
+        "h": 83
+      },
+      {
+        "id": "sheet1_3_7",
+        "name": "orange_starfish",
+        "sheet": "sheet1",
+        "file": "orange_starfish.png",
+        "x": 724,
+        "y": 318,
+        "w": 91,
+        "h": 84
+      },
+      {
+        "id": "sheet1_3_8",
+        "name": "blue_starfish",
+        "sheet": "sheet1",
+        "file": "blue_starfish.png",
+        "x": 825,
+        "y": 318,
+        "w": 88,
+        "h": 83
+      },
+      {
+        "id": "sheet1_3_9",
+        "name": "sea_cucumber",
+        "sheet": "sheet1",
+        "file": "sea_cucumber.png",
+        "x": 920,
+        "y": 334,
+        "w": 96,
+        "h": 54
+      },
+      {
+        "id": "sheet1_4_0",
+        "name": "pink_clam",
+        "sheet": "sheet1",
+        "file": "pink_clam.png",
+        "x": 10,
+        "y": 412,
+        "w": 89,
+        "h": 85
+      },
+      {
+        "id": "sheet1_4_1",
+        "name": "brown_clam",
+        "sheet": "sheet1",
+        "file": "brown_clam.png",
+        "x": 108,
+        "y": 412,
+        "w": 89,
+        "h": 83
+      },
+      {
+        "id": "sheet1_4_2",
+        "name": "banded_shrimp",
+        "sheet": "sheet1",
+        "file": "banded_shrimp.png",
+        "x": 201,
+        "y": 406,
+        "w": 105,
+        "h": 89
+      },
+      {
+        "id": "sheet1_4_3",
+        "name": "orange_shrimp",
+        "sheet": "sheet1",
+        "file": "orange_shrimp.png",
+        "x": 308,
+        "y": 413,
+        "w": 90,
+        "h": 85
+      },
+      {
+        "id": "sheet1_4_4",
+        "name": "yellow_striped_fish",
+        "sheet": "sheet1",
+        "file": "yellow_striped_fish.png",
+        "x": 414,
+        "y": 420,
+        "w": 91,
+        "h": 73
+      },
+      {
+        "id": "sheet1_4_5",
+        "name": "parrotfish",
+        "sheet": "sheet1",
+        "file": "parrotfish.png",
+        "x": 516,
+        "y": 417,
+        "w": 93,
+        "h": 74
+      },
+      {
+        "id": "sheet1_4_6",
+        "name": "cyan_fish",
+        "sheet": "sheet1",
+        "file": "cyan_fish.png",
+        "x": 615,
+        "y": 419,
+        "w": 98,
+        "h": 68
+      },
+      {
+        "id": "sheet1_4_7",
+        "name": "pink_fish",
+        "sheet": "sheet1",
+        "file": "pink_fish.png",
+        "x": 721,
+        "y": 414,
+        "w": 94,
+        "h": 80
+      },
+      {
+        "id": "sheet1_4_8",
+        "name": "multicolor_fish",
+        "sheet": "sheet1",
+        "file": "multicolor_fish.png",
+        "x": 824,
+        "y": 413,
+        "w": 92,
+        "h": 82
+      },
+      {
+        "id": "sheet1_4_9",
+        "name": "violet_fish",
+        "sheet": "sheet1",
+        "file": "violet_fish.png",
+        "x": 926,
+        "y": 413,
+        "w": 89,
+        "h": 77
+      }
+    ]
+  },
+  "sheet2": {
+    "width": 1024,
+    "height": 512,
+    "file": "sheet2.png",
+    "sprites": [
+      {
+        "id": "sheet2_0_0",
+        "name": "grey_shark",
+        "sheet": "sheet2",
+        "file": "grey_shark.png",
+        "x": 10,
+        "y": 48,
+        "w": 99,
+        "h": 77
+      },
+      {
+        "id": "sheet2_0_1",
+        "name": "hammerhead_shark",
+        "sheet": "sheet2",
+        "file": "hammerhead_shark.png",
+        "x": 109,
+        "y": 54,
+        "w": 104,
+        "h": 72
+      },
+      {
+        "id": "sheet2_0_2",
+        "name": "whale_shark",
+        "sheet": "sheet2",
+        "file": "whale_shark.png",
+        "x": 211,
+        "y": 55,
+        "w": 108,
+        "h": 73
+      },
+      {
+        "id": "sheet2_0_3",
+        "name": "killer_whale",
+        "sheet": "sheet2",
+        "file": "killer_whale.png",
+        "x": 318,
+        "y": 50,
+        "w": 97,
+        "h": 77
+      },
+      {
+        "id": "sheet2_0_4",
+        "name": "dolphin",
+        "sheet": "sheet2",
+        "file": "dolphin.png",
+        "x": 416,
+        "y": 53,
+        "w": 92,
+        "h": 75
+      },
+      {
+        "id": "sheet2_0_5",
+        "name": "beluga_whale",
+        "sheet": "sheet2",
+        "file": "beluga_whale.png",
+        "x": 509,
+        "y": 56,
+        "w": 103,
+        "h": 72
+      },
+      {
+        "id": "sheet2_0_6",
+        "name": "blue_whale_v2",
+        "sheet": "sheet2",
+        "file": "blue_whale_v2.png",
+        "x": 610,
+        "y": 62,
+        "w": 112,
+        "h": 65
+      },
+      {
+        "id": "sheet2_0_7",
+        "name": "humpback_whale",
+        "sheet": "sheet2",
+        "file": "humpback_whale.png",
+        "x": 720,
+        "y": 56,
+        "w": 103,
+        "h": 74
+      },
+      {
+        "id": "sheet2_0_8",
+        "name": "narwhal",
+        "sheet": "sheet2",
+        "file": "narwhal.png",
+        "x": 818,
+        "y": 42,
+        "w": 119,
+        "h": 87
+      },
+      {
+        "id": "sheet2_0_9",
+        "name": "manta_ray",
+        "sheet": "sheet2",
+        "file": "manta_ray.png",
+        "x": 914,
+        "y": 54,
+        "w": 97,
+        "h": 70
+      },
+      {
+        "id": "sheet2_1_0",
+        "name": "electric_ray",
+        "sheet": "sheet2",
+        "file": "electric_ray.png",
+        "x": 9,
+        "y": 142,
+        "w": 93,
+        "h": 71
+      },
+      {
+        "id": "sheet2_1_1",
+        "name": "spotted_eagle_ray",
+        "sheet": "sheet2",
+        "file": "spotted_eagle_ray.png",
+        "x": 107,
+        "y": 137,
+        "w": 99,
+        "h": 78
+      },
+      {
+        "id": "sheet2_1_2",
+        "name": "sawfish",
+        "sheet": "sheet2",
+        "file": "sawfish.png",
+        "x": 209,
+        "y": 146,
+        "w": 137,
+        "h": 70
+      },
+      {
+        "id": "sheet2_1_3",
+        "name": "spotted_moray",
+        "sheet": "sheet2",
+        "file": "spotted_moray.png",
+        "x": 322,
+        "y": 148,
+        "w": 96,
+        "h": 77
+      },
+      {
+        "id": "sheet2_1_4",
+        "name": "electric_eel",
+        "sheet": "sheet2",
+        "file": "electric_eel.png",
+        "x": 416,
+        "y": 158,
+        "w": 106,
+        "h": 51
+      },
+      {
+        "id": "sheet2_1_5",
+        "name": "octopus_v2",
+        "sheet": "sheet2",
+        "file": "octopus_v2.png",
+        "x": 528,
+        "y": 138,
+        "w": 96,
+        "h": 87
+      },
+      {
+        "id": "sheet2_1_6",
+        "name": "blue_ringed_octopus",
+        "sheet": "sheet2",
+        "file": "blue_ringed_octopus.png",
+        "x": 631,
+        "y": 145,
+        "w": 87,
+        "h": 75
+      },
+      {
+        "id": "sheet2_1_7",
+        "name": "squid_v2",
+        "sheet": "sheet2",
+        "file": "squid_v2.png",
+        "x": 727,
+        "y": 137,
+        "w": 81,
+        "h": 90
+      },
+      {
+        "id": "sheet2_1_8",
+        "name": "cuttlefish",
+        "sheet": "sheet2",
+        "file": "cuttlefish.png",
+        "x": 817,
+        "y": 154,
+        "w": 111,
+        "h": 70
+      },
+      {
+        "id": "sheet2_1_9",
+        "name": "nautilus",
+        "sheet": "sheet2",
+        "file": "nautilus.png",
+        "x": 943,
+        "y": 145,
+        "w": 74,
+        "h": 76
+      },
+      {
+        "id": "sheet2_2_0",
+        "name": "yellow_pufferfish",
+        "sheet": "sheet2",
+        "file": "yellow_pufferfish.png",
+        "x": 9,
+        "y": 233,
+        "w": 86,
+        "h": 77
+      },
+      {
+        "id": "sheet2_2_1",
+        "name": "spiny_pufferfish",
+        "sheet": "sheet2",
+        "file": "spiny_pufferfish.png",
+        "x": 109,
+        "y": 231,
+        "w": 88,
+        "h": 83
+      },
+      {
+        "id": "sheet2_2_2",
+        "name": "clownfish_v2",
+        "sheet": "sheet2",
+        "file": "clownfish_v2.png",
+        "x": 205,
+        "y": 235,
+        "w": 98,
+        "h": 74
+      },
+      {
+        "id": "sheet2_2_3",
+        "name": "blue_tang_v2",
+        "sheet": "sheet2",
+        "file": "blue_tang_v2.png",
+        "x": 311,
+        "y": 237,
+        "w": 94,
+        "h": 71
+      },
+      {
+        "id": "sheet2_2_4",
+        "name": "yellow_tang_v2",
+        "sheet": "sheet2",
+        "file": "yellow_tang_v2.png",
+        "x": 417,
+        "y": 234,
+        "w": 90,
+        "h": 75
+      },
+      {
+        "id": "sheet2_2_5",
+        "name": "angelfish_v2",
+        "sheet": "sheet2",
+        "file": "angelfish_v2.png",
+        "x": 517,
+        "y": 231,
+        "w": 91,
+        "h": 86
+      },
+      {
+        "id": "sheet2_2_6",
+        "name": "butterflyfish_v2",
+        "sheet": "sheet2",
+        "file": "butterflyfish_v2.png",
+        "x": 621,
+        "y": 238,
+        "w": 91,
+        "h": 71
+      },
+      {
+        "id": "sheet2_2_7",
+        "name": "lionfish_v2",
+        "sheet": "sheet2",
+        "file": "lionfish_v2.png",
+        "x": 721,
+        "y": 230,
+        "w": 90,
+        "h": 87
+      },
+      {
+        "id": "sheet2_2_8",
+        "name": "rainbow_fish",
+        "sheet": "sheet2",
+        "file": "rainbow_fish.png",
+        "x": 820,
+        "y": 238,
+        "w": 96,
+        "h": 73
+      },
+      {
+        "id": "sheet2_2_9",
+        "name": "black_triggerfish",
+        "sheet": "sheet2",
+        "file": "black_triggerfish.png",
+        "x": 926,
+        "y": 232,
+        "w": 90,
+        "h": 78
+      },
+      {
+        "id": "sheet2_3_0",
+        "name": "seahorse_v2",
+        "sheet": "sheet2",
+        "file": "seahorse_v2.png",
+        "x": 27,
+        "y": 320,
+        "w": 52,
+        "h": 89
+      },
+      {
+        "id": "sheet2_3_1",
+        "name": "green_turtle_v2",
+        "sheet": "sheet2",
+        "file": "green_turtle_v2.png",
+        "x": 85,
+        "y": 331,
+        "w": 111,
+        "h": 72
+      },
+      {
+        "id": "sheet2_3_2",
+        "name": "leatherback_turtle",
+        "sheet": "sheet2",
+        "file": "leatherback_turtle.png",
+        "x": 192,
+        "y": 325,
+        "w": 117,
+        "h": 85
+      },
+      {
+        "id": "sheet2_3_3",
+        "name": "spiny_lobster",
+        "sheet": "sheet2",
+        "file": "spiny_lobster.png",
+        "x": 310,
+        "y": 321,
+        "w": 92,
+        "h": 91
+      },
+      {
+        "id": "sheet2_3_4",
+        "name": "king_prawn",
+        "sheet": "sheet2",
+        "file": "king_prawn.png",
+        "x": 396,
+        "y": 320,
+        "w": 114,
+        "h": 91
+      },
+      {
+        "id": "sheet2_3_5",
+        "name": "hermit_crab",
+        "sheet": "sheet2",
+        "file": "hermit_crab.png",
+        "x": 517,
+        "y": 335,
+        "w": 90,
+        "h": 76
+      },
+      {
+        "id": "sheet2_3_6",
+        "name": "shore_crab",
+        "sheet": "sheet2",
+        "file": "shore_crab.png",
+        "x": 615,
+        "y": 327,
+        "w": 95,
+        "h": 79
+      },
+      {
+        "id": "sheet2_3_7",
+        "name": "blue_crab",
+        "sheet": "sheet2",
+        "file": "blue_crab.png",
+        "x": 716,
+        "y": 327,
+        "w": 107,
+        "h": 82
+      },
+      {
+        "id": "sheet2_3_8",
+        "name": "mantis_shrimp_v2",
+        "sheet": "sheet2",
+        "file": "mantis_shrimp_v2.png",
+        "x": 827,
+        "y": 331,
+        "w": 93,
+        "h": 70
+      },
+      {
+        "id": "sheet2_3_9",
+        "name": "horseshoe_crab",
+        "sheet": "sheet2",
+        "file": "horseshoe_crab.png",
+        "x": 917,
+        "y": 326,
+        "w": 93,
+        "h": 84
+      },
+      {
+        "id": "sheet2_4_0",
+        "name": "pink_jellyfish_v2",
+        "sheet": "sheet2",
+        "file": "pink_jellyfish_v2.png",
+        "x": 14,
+        "y": 413,
+        "w": 84,
+        "h": 94
+      },
+      {
+        "id": "sheet2_4_1",
+        "name": "blue_jellyfish_v2",
+        "sheet": "sheet2",
+        "file": "blue_jellyfish_v2.png",
+        "x": 113,
+        "y": 412,
+        "w": 86,
+        "h": 95
+      },
+      {
+        "id": "sheet2_4_2",
+        "name": "moon_jellyfish",
+        "sheet": "sheet2",
+        "file": "moon_jellyfish.png",
+        "x": 219,
+        "y": 418,
+        "w": 78,
+        "h": 88
+      },
+      {
+        "id": "sheet2_4_3",
+        "name": "red_anemone",
+        "sheet": "sheet2",
+        "file": "red_anemone.png",
+        "x": 312,
+        "y": 418,
+        "w": 93,
+        "h": 85
+      },
+      {
+        "id": "sheet2_4_4",
+        "name": "starfish_v2",
+        "sheet": "sheet2",
+        "file": "starfish_v2.png",
+        "x": 417,
+        "y": 418,
+        "w": 85,
+        "h": 80
+      },
+      {
+        "id": "sheet2_4_5",
+        "name": "purple_urchin",
+        "sheet": "sheet2",
+        "file": "purple_urchin.png",
+        "x": 514,
+        "y": 421,
+        "w": 93,
+        "h": 82
+      },
+      {
+        "id": "sheet2_4_6",
+        "name": "sea_cucumber_v2",
+        "sheet": "sheet2",
+        "file": "sea_cucumber_v2.png",
+        "x": 613,
+        "y": 431,
+        "w": 96,
+        "h": 64
+      },
+      {
+        "id": "sheet2_4_7",
+        "name": "giant_clam",
+        "sheet": "sheet2",
+        "file": "giant_clam.png",
+        "x": 716,
+        "y": 430,
+        "w": 108,
+        "h": 74
+      },
+      {
+        "id": "sheet2_4_8",
+        "name": "cleaner_shrimp",
+        "sheet": "sheet2",
+        "file": "cleaner_shrimp.png",
+        "x": 823,
+        "y": 413,
+        "w": 106,
+        "h": 91
+      },
+      {
+        "id": "sheet2_4_9",
+        "name": "peppermint_shrimp",
+        "sheet": "sheet2",
+        "file": "peppermint_shrimp.png",
+        "x": 920,
+        "y": 413,
+        "w": 97,
+        "h": 92
+      }
+    ]
+  }
+}

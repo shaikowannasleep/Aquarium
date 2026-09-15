@@ -19,17 +19,27 @@ const LANG_COLOR = {
 };
 
 const SPECIES = [
-  { name: 'neon-tetra', sprite: 'tetra', schooling: true, depth: 0.30 },
-  { name: 'clownfish', sprite: 'clownfish', schooling: true, depth: 0.48 },
-  { name: 'yellow-tang', sprite: 'tang', schooling: true, depth: 0.62 },
-  { name: 'butterflyfish', sprite: 'butterflyfish', schooling: false, depth: 0.56 },
-  { name: 'angelfish', sprite: 'angelfish', schooling: false, depth: 0.70 },
-  { name: 'seahorse', sprite: 'seahorse', schooling: false, depth: 0.78 },
+  { name: 'clownfish', sprite: 'clownfish', group: 0, schooling: true, depth: 0.45 },
+  { name: 'yellow-tang', sprite: 'yellow_tang', group: 1, schooling: true, depth: 0.55 },
+  { name: 'blue-tang', sprite: 'blue_tang', group: 1, schooling: true, depth: 0.55 },
+  { name: 'neon-tetra', sprite: 'cyan_fish', group: 2, schooling: true, depth: 0.32 },
+  { name: 'damselfish', sprite: 'damselfish', group: 2, schooling: true, depth: 0.35 },
+  { name: 'angelfish', sprite: 'striped_angelfish', group: 3, schooling: true, depth: 0.65 },
+  { name: 'butterflyfish', sprite: 'butterflyfish', group: 3, schooling: true, depth: 0.60 },
+  { name: 'seahorse', sprite: 'orange_seahorse', group: 4, schooling: true, depth: 0.78 },
+  { name: 'pink-seahorse', sprite: 'pink_seahorse', group: 4, schooling: true, depth: 0.82 },
+  { name: 'sea-turtle', sprite: 'green_turtle', group: 5, schooling: false, depth: 0.50 },
+  { name: 'manta-ray', sprite: 'manta_ray', group: 5, schooling: true, depth: 0.40 },
+  { name: 'dolphin', sprite: 'blue_dolphin', group: 6, schooling: true, depth: 0.25 },
+  { name: 'blue-whale', sprite: 'blue_whale', group: 6, schooling: false, depth: 0.30 },
+  { name: 'pufferfish', sprite: 'green_pufferfish', group: 7, schooling: true, depth: 0.70 },
+  { name: 'jellyfish', sprite: 'blue_jellyfish', group: 7, schooling: true, depth: 0.75 },
+  { name: 'blue-shark', sprite: 'blue_shark', group: 6, schooling: false, depth: 0.35 },
 ];
 
-function speciesFor(language) {
+function speciesFor(language, name) {
   let hash = 0;
-  const source = language || 'Other';
+  const source = (name || '') + (language || 'Other');
   for (let i = 0; i < source.length; i++) hash = (hash * 31 + source.charCodeAt(i)) | 0;
   return SPECIES[(hash >>> 0) % SPECIES.length];
 }
@@ -63,26 +73,29 @@ function repoToFish(r, now) {
   const pushed = new Date(r.pushed_at || r.updated_at || now).getTime();
   const ageDays = (now - pushed) / 86400000;
 
-  // size: sublinear in stars so one viral repo does not eat the screen
-  const size = 5.5 + Math.min(Math.sqrt(stars) * 1.5, 13);
+  // Commits count approximation from repo code size and activity
+  const commits = r.commits || Math.max(3, Math.round((r.size || 80) / 10) + stars * 4 + (r.forks_count || 0) * 8);
 
-  // A repo left alone for a year swims slowly. That is the whole of it.
-  // Nothing sinks, nothing dies: the point of an aquarium is that the
-  // fish are alive.
+  // Size directly driven by commits and project volume:
+  // Base 5.5px + logarithmic-linear scaling of commits count
+  const size = 5.5 + Math.min(Math.cbrt(commits) * 2.2 + Math.sqrt(stars) * 1.1, 16.5);
+
   const dormant = ageDays > 365;
   const pace = dormant ? 0.45 : 1;
-  const species = speciesFor(r.language);
+  const species = speciesFor(r.language, r.name);
 
   return {
     name: r.name,
     lang: r.language || 'Other',
     color: LANG_COLOR[r.language] || '#7fd8ff',
     stars,
+    commits,
     forks: r.forks_count || 0,
     size,
     pace,
     species: species.name,
     sprite: species.sprite,
+    groupId: species.group,
     schooling: species.schooling,
     depth: species.depth,
     dormant,

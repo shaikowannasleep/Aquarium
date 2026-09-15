@@ -70,6 +70,7 @@ class SwarmEngine {
     this.stress = new Float32Array(c);
     this.phase = new Float32Array(c); // tail wiggle offset
     this.speedScale = new Float32Array(c); // per-agent pace multiplier
+    this.species = new Int32Array(c);  // species group ID for schooling
     this.alive = new Uint8Array(c);
 
     // --- spatial hash ---
@@ -98,7 +99,7 @@ class SwarmEngine {
     if (this.counts.length < nc + 1) this.counts = new Int32Array(nc + 1);
   }
 
-  spawn(x, y, speed) {
+  spawn(x, y, speed, speciesId) {
     if (this.n >= this.cap) return -1;
     const i = this.n++;
     const a = Math.random() * TAU;
@@ -109,6 +110,7 @@ class SwarmEngine {
     this.stress[i] = 0;
     this.phase[i] = Math.random() * TAU;
     this.speedScale[i] = 1;
+    this.species[i] = speciesId || 0;
     this.alive[i] = 1;
     return i;
   }
@@ -123,6 +125,7 @@ class SwarmEngine {
       this.stress[i] = this.stress[last];
       this.phase[i] = this.phase[last];
       this.speedScale[i] = this.speedScale[last];
+      this.species[i] = this.species[last];
     }
   }
 
@@ -213,12 +216,18 @@ class SwarmEngine {
             if (fwx * dx * inv + fwy * dy * inv < p.fov) continue;
 
             hits++;
+            const sameSpecies = (this.species[i] === this.species[j]);
             if (d2 < rSep2) {
-              const w = 1 / d2;           // inverse-square crowding response
-              sepX -= dx * w; sepY -= dy * w;
+              const w = 1 / d2;
+              const sepMult = sameSpecies ? 0.9 : 1.7;
+              sepX -= dx * w * sepMult; sepY -= dy * w * sepMult;
             }
-            if (d2 < rAli2) { aliX += this.vx[j]; aliY += this.vy[j]; nAli++; }
-            cohX += this.px[j]; cohY += this.py[j]; nCoh++;
+            if (sameSpecies) {
+              if (d2 < rAli2) { aliX += this.vx[j] * 2.2; aliY += this.vy[j] * 2.2; nAli += 2; }
+              cohX += this.px[j] * 1.8; cohY += this.py[j] * 1.8; nCoh += 2;
+            } else {
+              if (d2 < rAli2 * 0.45) { aliX += this.vx[j] * 0.4; aliY += this.vy[j] * 0.4; nAli++; }
+            }
 
             if (++seen >= maxN) break outer;   // topological, not metric
           }
@@ -308,18 +317,41 @@ class SwarmEngine {
         }
       }
 
-      /* ---- the player's light : an attractor with a soft core ----- */
+      /* ---- the player's light / mouse cursor attractor ----- */
       const L = world.lure;
       if (L && L.active) {
         const dx = L.x - x, dy = L.y - y;
         const d = Math.hypot(dx, dy);
-        const R = p.rLure * L.power;
+        const R = (p.rLure || 240) * (L.power || 1);
         if (d < R && d > 1e-4) {
-          // attract from afar, but refuse to collapse into a singularity
           const t = 1 - d / R;
-          const core = d < 34 ? -1.1 : 1;
-          fx += (dx / d) * p.maxSpeed * p.wLure * t * L.power * core;
-          fy += (dy / d) * p.maxSpeed * p.wLure * t * L.power * core;
+          const core = d < 48 ? -0.7 : 1.0;
+          fx += (dx / d) * p.maxSpeed * (p.wLure || 2.4) * t * (L.power || 1) * core;
+          fy += (dy / d) * p.maxSpeed * (p.wLure || 2.4) * t * (L.power || 1) * core;
+        }
+      }
+
+      /* ---- fish food pellets attraction ------------------------- */
+      const foods = world.foods;
+      if (foods && foods.length > 0) {
+        let bestFood = null, bestD2 = 122500; // 350px detection radius
+        for (let q = 0; q < foods.length; q++) {
+          const F = foods[q];
+          if (!F.active) continue;
+          const fdx = F.x - x, fdy = F.y - y;
+          const fd2 = fdx * fdx + fdy * fdy;
+          if (fd2 < bestD2) {
+            bestD2 = fd2;
+            bestFood = F;
+          }
+        }
+        if (bestFood) {
+          const fd = Math.sqrt(bestD2) || 1;
+          const fdx = (bestFood.x - x) / fd;
+          const fdy = (bestFood.y - y) / fd;
+          const hunger = 3.2;
+          fx += fdx * p.maxSpeed * hunger;
+          fy += fdy * p.maxSpeed * hunger;
         }
       }
 

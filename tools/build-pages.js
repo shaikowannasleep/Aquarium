@@ -65,10 +65,18 @@ ${squeeze(client)}
 </body>
 </html>`;
 
-  const out = path.join(__dirname, '../docs/index.html');
-  fs.mkdirSync(path.dirname(out), { recursive: true });
-  fs.writeFileSync(out, html);
-  console.log('docs/index.html  ' + (Buffer.byteLength(html) / 1024).toFixed(1) + ' KB  (' + data.fish.length + ' fish)');
+  const rootDir = path.resolve(__dirname, '..');
+  const isSubApp = path.basename(rootDir) === 'aquarium';
+  const projectRoot = isSubApp ? path.resolve(rootDir, '../..') : rootDir;
+  const targets = [
+    path.join(projectRoot, 'docs/apps/aquarium/index.html'),
+    path.join(projectRoot, 'apps/aquarium/docs/index.html')
+  ];
+  targets.forEach(t => {
+    fs.mkdirSync(path.dirname(t), { recursive: true });
+    fs.writeFileSync(t, html);
+    console.log(t + '  ' + (Buffer.byteLength(html) / 1024).toFixed(1) + ' KB  (' + data.fish.length + ' fish)');
+  });
 }
 
 if (require.main === module) main();

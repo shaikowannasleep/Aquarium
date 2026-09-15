@@ -1,12 +1,8 @@
 'use strict';
 /* =====================================================================
  * Runs the boids engine headless, records every agent's path, and bakes
- * it into an SVG with SMIL <animateMotion>.
- *
- * Why SMIL: GitHub strips <script> from README images but renders SMIL,
- * which is how the well-known "snake eats the contribution graph" trick
- * works. So the fish really are simulated - just simulated at build time
- * instead of in the reader's browser.
+ * it into an SVG with SMIL <animateMotion> and cubic spline interpolation.
+ * Uses the authentic high-resolution cartoon sprites embedded as Base64.
  * ===================================================================== */
 
 const fs = require('fs');
@@ -17,7 +13,9 @@ const { fetchProfile, fallback } = require('./fetch-github');
 const W = 880, H = 360;
 const FRAMES = 420;          // 14 s at 30 fps
 const FPS = 30;
-const SAMPLE = 5;            // keyframe every 5th frame -> smaller file
+const SAMPLE = 4;            // 105 samples for buttery smooth motion
+
+const SPRITE_META = {"blue_shark": {"w": 105, "h": 76}, "spotted_shark": {"w": 92, "h": 60}, "orca": {"w": 100, "h": 74}, "blue_dolphin": {"w": 98, "h": 73}, "pink_dolphin": {"w": 100, "h": 70}, "blue_whale": {"w": 103, "h": 88}, "beluga": {"w": 103, "h": 59}, "stingray": {"w": 96, "h": 68}, "spotted_ray": {"w": 88, "h": 73}, "swordfish": {"w": 106, "h": 69}, "clownfish": {"w": 96, "h": 70}, "blue_tang": {"w": 92, "h": 65}, "yellow_tang": {"w": 91, "h": 72}, "purple_fish": {"w": 92, "h": 66}, "flame_angelfish": {"w": 93, "h": 72}, "moorish_idol": {"w": 81, "h": 77}, "damselfish": {"w": 92, "h": 73}, "butterflyfish": {"w": 92, "h": 75}, "striped_angelfish": {"w": 88, "h": 83}, "lionfish": {"w": 99, "h": 93}, "green_turtle": {"w": 101, "h": 75}, "brown_turtle": {"w": 101, "h": 69}, "green_pufferfish": {"w": 90, "h": 84}, "orange_pufferfish": {"w": 87, "h": 80}, "blue_porcupinefish": {"w": 89, "h": 72}, "orange_seahorse": {"w": 66, "h": 100}, "pink_seahorse": {"w": 62, "h": 97}, "red_octopus": {"w": 108, "h": 95}, "pink_squid": {"w": 82, "h": 98}, "moray_eel": {"w": 101, "h": 61}, "red_lobster": {"w": 100, "h": 93}, "red_crab": {"w": 96, "h": 79}, "mantis_shrimp": {"w": 97, "h": 77}, "blue_jellyfish": {"w": 80, "h": 101}, "pink_jellyfish": {"w": 83, "h": 97}, "sea_anemone": {"w": 104, "h": 87}, "sea_urchin": {"w": 88, "h": 83}, "orange_starfish": {"w": 91, "h": 84}, "blue_starfish": {"w": 88, "h": 83}, "sea_cucumber": {"w": 96, "h": 54}, "pink_clam": {"w": 89, "h": 85}, "brown_clam": {"w": 89, "h": 83}, "banded_shrimp": {"w": 105, "h": 89}, "orange_shrimp": {"w": 90, "h": 85}, "yellow_striped_fish": {"w": 91, "h": 73}, "parrotfish": {"w": 93, "h": 74}, "cyan_fish": {"w": 98, "h": 68}, "pink_fish": {"w": 94, "h": 80}, "multicolor_fish": {"w": 92, "h": 82}, "violet_fish": {"w": 89, "h": 77}, "grey_shark": {"w": 99, "h": 77}, "hammerhead_shark": {"w": 104, "h": 72}, "whale_shark": {"w": 108, "h": 73}, "killer_whale": {"w": 97, "h": 77}, "dolphin": {"w": 92, "h": 75}, "beluga_whale": {"w": 103, "h": 72}, "blue_whale_v2": {"w": 112, "h": 65}, "humpback_whale": {"w": 103, "h": 74}, "narwhal": {"w": 119, "h": 87}, "manta_ray": {"w": 97, "h": 70}, "electric_ray": {"w": 93, "h": 71}, "spotted_eagle_ray": {"w": 99, "h": 78}, "sawfish": {"w": 137, "h": 70}, "spotted_moray": {"w": 96, "h": 77}, "electric_eel": {"w": 106, "h": 51}, "octopus_v2": {"w": 96, "h": 87}, "blue_ringed_octopus": {"w": 87, "h": 75}, "squid_v2": {"w": 81, "h": 90}, "cuttlefish": {"w": 111, "h": 70}, "nautilus": {"w": 74, "h": 76}, "yellow_pufferfish": {"w": 86, "h": 77}, "spiny_pufferfish": {"w": 88, "h": 83}, "clownfish_v2": {"w": 98, "h": 74}, "blue_tang_v2": {"w": 94, "h": 71}, "yellow_tang_v2": {"w": 90, "h": 75}, "angelfish_v2": {"w": 91, "h": 86}, "butterflyfish_v2": {"w": 91, "h": 71}, "lionfish_v2": {"w": 90, "h": 87}, "rainbow_fish": {"w": 96, "h": 73}, "black_triggerfish": {"w": 90, "h": 78}, "seahorse_v2": {"w": 52, "h": 89}, "green_turtle_v2": {"w": 111, "h": 72}, "leatherback_turtle": {"w": 117, "h": 85}, "spiny_lobster": {"w": 92, "h": 91}, "king_prawn": {"w": 114, "h": 91}, "hermit_crab": {"w": 90, "h": 76}, "shore_crab": {"w": 95, "h": 79}, "blue_crab": {"w": 107, "h": 82}, "mantis_shrimp_v2": {"w": 93, "h": 70}, "horseshoe_crab": {"w": 93, "h": 84}, "pink_jellyfish_v2": {"w": 84, "h": 94}, "blue_jellyfish_v2": {"w": 86, "h": 95}, "moon_jellyfish": {"w": 78, "h": 88}, "red_anemone": {"w": 93, "h": 85}, "starfish_v2": {"w": 85, "h": 80}, "purple_urchin": {"w": 93, "h": 82}, "sea_cucumber_v2": {"w": 96, "h": 64}, "giant_clam": {"w": 108, "h": 74}, "cleaner_shrimp": {"w": 106, "h": 91}, "peppermint_shrimp": {"w": 97, "h": 92}};
 
 function loadEngine() {
   const sandbox = {
@@ -34,8 +32,6 @@ function loadEngine() {
   return sandbox.SwarmEngine;
 }
 
-/* Deterministic PRNG so the same profile always bakes the same swim,
- * which keeps the committed SVG stable and the git diff small. */
 function mulberry32(seed) {
   let a = seed >>> 0;
   return function () {
@@ -57,39 +53,37 @@ function simulate(data) {
   const n = data.fish.length;
   const sw = new SwarmEngine(Math.max(n, 8), W, H);
 
-  // everyone swims in open water together; a dormant repo is simply a
-  // slower fish, not a sinking one
-  data.fish.forEach(f => {
-    sw.spawn(40 + rnd() * (W - 80), 50 + rnd() * (H - 130));
+  data.fish.forEach((f, idx) => {
+    const gid = f.groupId !== undefined ? f.groupId : (idx % 8);
+    sw.spawn(50 + rnd() * (W - 100), 50 + rnd() * (H - 120), undefined, gid);
     sw.speedScale[sw.n - 1] = f.pace;
   });
 
   const p = sw.p;
-  p.rCoh = 74; p.rAli = 58; p.rSep = 26;
-  p.wCoh = 0.72; p.wAli = 1.15; p.wSep = 2.2;
-  p.minSpeed = 16; p.maxSpeed = 52; p.maxForce = 120;
-  p.margin = 46; p.maxNeighbours = 6;
+  p.rCoh = 90; p.rAli = 70; p.rSep = 26;
+  p.wCoh = 0.82; p.wAli = 1.30; p.wSep = 2.1;
+  p.minSpeed = 22; p.maxSpeed = 58; p.maxForce = 140;
+  p.margin = 52; p.maxNeighbours = 7;
   sw.resize(W, H);
 
   const world = {
     predators: [],
     obstacles: [],
-    // a slow wandering point of interest keeps the school from going static
-    lure: { x: W * 0.5, y: H * 0.5, power: 0.55, active: true },
+    lure: { x: W * 0.5, y: H * 0.5, power: 0.85, active: true },
   };
 
-  // settle the flock before we start recording
-  for (let f = 0; f < 240; f++) {
-    world.lure.x = W * 0.5 + Math.cos(f * 0.012) * W * 0.3;
-    world.lure.y = H * 0.5 + Math.sin(f * 0.017) * H * 0.28;
+  // settle the flock before recording
+  for (let f = 0; f < 200; f++) {
+    world.lure.x = W * 0.5 + Math.cos(f * 0.015) * W * 0.32;
+    world.lure.y = H * 0.5 + Math.sin(f * 0.018) * H * 0.28;
     sw.step(1 / FPS, world);
   }
 
   const tracks = data.fish.map(() => []);
   for (let f = 0; f < FRAMES; f++) {
     const t = (f / FRAMES) * Math.PI * 2;
-    world.lure.x = W * 0.5 + Math.cos(t) * W * 0.30;
-    world.lure.y = H * 0.5 + Math.sin(t * 1.3) * H * 0.26;
+    world.lure.x = W * 0.5 + Math.cos(t) * W * 0.32;
+    world.lure.y = H * 0.5 + Math.sin(t * 1.4) * H * 0.26;
     sw.step(1 / FPS, world);
 
     if (f % SAMPLE === 0) {
@@ -106,38 +100,97 @@ function simulate(data) {
   return tracks;
 }
 
+/* Catmull-Rom to Cubic B?zier conversion for mathematically smooth C1 path */
 function loopPathFrom(track) {
-  const first = track[0], second = track[1];
-  const penultimate = track[track.length - 2], last = track[track.length - 1];
-  const inX = last[0] - penultimate[0], inY = last[1] - penultimate[1];
-  const outX = second[0] - first[0], outY = second[1] - first[1];
-  const bridge = Math.max(42, Math.hypot(last[0] - first[0], last[1] - first[1]) * 0.42);
-  const inLength = Math.hypot(inX, inY) || 1;
-  const outLength = Math.hypot(outX, outY) || 1;
+  const n = track.length;
+  if (n < 3) return '';
 
-  let d = 'M' + first[0] + ',' + first[1];
-  for (let i = 1; i < track.length; i++) d += 'L' + track[i][0] + ',' + track[i][1];
-  d += 'C' + (last[0] + inX / inLength * bridge).toFixed(1) + ',' +
-       (last[1] + inY / inLength * bridge).toFixed(1) + ' ' +
-       (first[0] - outX / outLength * bridge).toFixed(1) + ',' +
-       (first[1] - outY / outLength * bridge).toFixed(1) + ' ' +
-       first[0] + ',' + first[1];
+  let d = 'M' + track[0][0].toFixed(1) + ',' + track[0][1].toFixed(1);
+  for (let i = 0; i < n; i++) {
+    const p0 = track[(i - 1 + n) % n];
+    const p1 = track[i];
+    const p2 = track[(i + 1) % n];
+    const p3 = track[(i + 2) % n];
+
+    const cp1x = (p1[0] + (p2[0] - p0[0]) / 6).toFixed(1);
+    const cp1y = (p1[1] + (p2[1] - p0[1]) / 6).toFixed(1);
+    const cp2x = (p2[0] - (p3[0] - p1[0]) / 6).toFixed(1);
+    const cp2y = (p2[1] - (p3[1] - p1[1]) / 6).toFixed(1);
+    const endX = p2[0].toFixed(1);
+    const endY = p2[1].toFixed(1);
+
+    d += ' C' + cp1x + ',' + cp1y + ' ' + cp2x + ',' + cp2y + ' ' + endX + ',' + endY;
+  }
+  d += 'Z';
   return d;
 }
 
-function loopContinuity(track) {
-  const first = track[0], second = track[1];
-  const penultimate = track[track.length - 2], last = track[track.length - 1];
-  const inX = last[0] - penultimate[0], inY = last[1] - penultimate[1];
-  const outX = second[0] - first[0], outY = second[1] - first[1];
-  const inLength = Math.hypot(inX, inY) || 1;
-  const outLength = Math.hypot(outX, outY) || 1;
+/* DoTween style smoothed facing & pitch calculations */
+function bakeFishTransforms(track, phaseOffset) {
+  const n = track.length;
+  const rawScales = [];
+  const rawAngles = [];
+
+  // Default sprite orientation is facing LEFT (facing = 1)
+  // When swimming left: scaleX = 1 (faces left)
+  // When swimming right: scaleX = -1 (horizontally mirrored to face right)
+  let facing = 1;
+
+  for (let i = 0; i < n; i++) {
+    const prev = track[(i - 1 + n) % n];
+    const next = track[(i + 1) % n];
+    const vx = next[0] - prev[0];
+    const vy = next[1] - prev[1];
+
+    // Hysteresis threshold to prevent flickering when swimming vertically
+    if (vx < -0.3) {
+      facing = 1;  // swimming left -> keep default left-facing sprite
+    } else if (vx > 0.3) {
+      facing = -1; // swimming right -> mirror horizontally to face right
+    }
+    rawScales.push(facing);
+
+    // Natural swimming pitch: head tilts up when swimming up (vy < 0 in SVG), tilts down when swimming down (vy > 0)
+    const pitchRad = Math.atan2(-vy, Math.abs(vx) || 1);
+    const pitchDeg = Math.max(-14, Math.min(14, pitchRad * (180 / Math.PI) * 0.55));
+    const wiggleDeg = Math.sin((i / n) * Math.PI * 6 + (phaseOffset || 0)) * 2.8;
+    rawAngles.push(pitchDeg + wiggleDeg);
+  }
+
+  const smoothedScaleStrs = new Array(n);
+  const smoothedAngleStrs = new Array(n);
+  let curScale = rawScales[0];
+  let curAngle = rawAngles[0];
+
+  for (let pass = 0; pass < 3; pass++) {
+    for (let i = 0; i < n; i++) {
+      curScale += (rawScales[i] - curScale) * 0.35;
+      curAngle += (rawAngles[i] - curAngle) * 0.45;
+      if (pass === 2) {
+        let sx = Math.round(curScale * 100) / 100;
+        // Avoid singular matrix at sx = 0
+        if (Math.abs(sx) < 0.08) sx = Math.sign(sx || 1) * 0.08;
+        // CRITICAL FIX: Explicit 2D scale with sy STRICTLY 1!
+        // Prevents SVG SMIL from parsing -1 as scale(-1, -1) which turns fish upside down 180?!
+        smoothedScaleStrs[i] = sx.toFixed(2) + ' 1';
+        smoothedAngleStrs[i] = (Math.round(curAngle * 10) / 10).toFixed(1);
+      }
+    }
+  }
+
+  // Seamless loop wrap-around
+  smoothedScaleStrs[n - 1] = smoothedScaleStrs[0];
+  smoothedAngleStrs[n - 1] = smoothedAngleStrs[0];
+
+  const keyTimes = [];
+  for (let i = 0; i < n; i++) {
+    keyTimes.push((i / (n - 1)).toFixed(3));
+  }
+
   return {
-    positionGap: 0,
-    tangentDot: Math.min(
-      (inX * inX + inY * inY) / (inLength * inLength),
-      (outX * outX + outY * outY) / (outLength * outLength)
-    ),
+    scaleValues: smoothedScaleStrs.join(';'),
+    angleValues: smoothedAngleStrs.join(';'),
+    keyTimes: keyTimes.join(';')
   };
 }
 
@@ -147,101 +200,13 @@ function esc(s) {
   ));
 }
 
-/* ---------------------------------------------------------------------
- * 2.5D shading, in vector.
- *
- * Bitmap sprites were the obvious idea and the wrong one: GitHub only
- * renders SVG in a README, animateMotion rotate="auto" would smear a
- * raster, and one PNG per language colour does not scale. So depth comes
- * from layering instead - a lit dorsal gradient, a shadowed belly, a
- * translucent fin over the body, a specular highlight and a contact
- * shadow underneath. Same trick a 2.5D game uses, no pixels involved.
- * ------------------------------------------------------------------- */
-
-/* Shift a hex colour toward white or black. Used to derive the lit and
- * shaded tones from whatever colour the repository's language gave us,
- * so every fish stays on-palette without a hand-picked ramp. */
-function shade(hex, amt) {
-  const h = hex.replace('#', '');
-  const n = h.length === 3
-    ? h.split('').map(c => parseInt(c + c, 16))
-    : [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
-  const mix = amt > 0 ? 255 : 0;
-  const t = Math.abs(amt);
-  return '#' + n.map(v => {
-    const out = Math.round(v + (mix - v) * t);
-    return Math.max(0, Math.min(255, out)).toString(16).padStart(2, '0');
-  }).join('');
-}
-
-/* Per-fish gradients and the soft shadow that sells the volume. */
-function fishDefs(f, id) {
-  const lit = shade(f.color, 0.42);
-  const dark = shade(f.color, -0.45);
-  return '<linearGradient id="fb' + id + '" x1="0" y1="0" x2="0" y2="1">' +
-           '<stop offset="0%" stop-color="' + lit + '"/>' +
-           '<stop offset="42%" stop-color="' + f.color + '"/>' +
-           '<stop offset="100%" stop-color="' + dark + '"/>' +
-         '</linearGradient>' +
-         '<linearGradient id="ff' + id + '" x1="0" y1="0" x2="1" y2="0">' +
-           '<stop offset="0%" stop-color="' + lit + '" stop-opacity=".85"/>' +
-           '<stop offset="100%" stop-color="' + f.color + '" stop-opacity=".35"/>' +
-         '</linearGradient>';
-}
-
-function fishSilhouette(f, id) {
-  const body = f.size;
-  const tail = body * 0.8;
-  const gid = id === undefined ? 0 : id;
-
-  /* An eye with a catchlight reads as wet and alive; a flat dot does not. */
-  const ex = body * 0.42, ey = -body * 0.16;
-  const er = Math.max(1.2, body * 0.15);
-  const eye =
-    '<circle cx="' + ex.toFixed(1) + '" cy="' + ey.toFixed(1) + '" r="' + er.toFixed(1) +
-      '" fill="#f2fbff" opacity=".92"/>' +
-    '<circle cx="' + ex.toFixed(1) + '" cy="' + ey.toFixed(1) + '" r="' + (er * 0.62).toFixed(1) +
-      '" fill="#06131f"/>' +
-    '<circle cx="' + (ex + er * 0.3).toFixed(1) + '" cy="' + (ey - er * 0.32).toFixed(1) +
-      '" r="' + (er * 0.26).toFixed(1) + '" fill="#ffffff" opacity=".95"/>';
-
-  /* Contact shadow: a squashed ellipse under the belly, no blur filter -
-   * filters are expensive when 29 of them animate at once. */
-  const shadow = '<ellipse cx="' + (-body * 0.1).toFixed(1) + '" cy="' + (body * 0.62).toFixed(1) +
-    '" rx="' + (body * 0.85).toFixed(1) + '" ry="' + (body * 0.2).toFixed(1) +
-    '" fill="#010a14" opacity=".22"/>';
-
-  /* Specular streak along the lit dorsal edge. */
-  const gloss = '<ellipse cx="' + (body * 0.1).toFixed(1) + '" cy="' + (-body * 0.42).toFixed(1) +
-    '" rx="' + (body * 0.5).toFixed(1) + '" ry="' + (body * 0.13).toFixed(1) +
-    '" fill="#ffffff" opacity=".26"/>';
-
-  /* Pectoral fin, translucent and slightly ahead of centre: this single
-   * overlapping shape does most of the work of reading as 3D. */
-  const pec = '<path d="M' + (body * 0.05).toFixed(1) + ',' + (body * 0.05).toFixed(1) +
-    ' q' + (-body * 0.5).toFixed(1) + ',' + (body * 0.42).toFixed(1) + ' ' +
-    (-body * 0.08).toFixed(1) + ',' + (body * 0.56).toFixed(1) +
-    ' q' + (body * 0.3).toFixed(1) + ',' + (-body * 0.2).toFixed(1) + ' ' +
-    (body * 0.12).toFixed(1) + ',' + (-body * 0.58).toFixed(1) + 'Z"' +
-    ' fill="url(#ff' + gid + ')" opacity=".75"/>';
-
-  const fill = ' fill="url(#fb' + gid + ')"';
-  const extras = shadow;
-  const overlay = gloss + pec + eye;
-  switch (f.sprite) {
-    case 'angelfish':
-      return extras + '<path d="M' + (-body) + ',0 Q0,' + (-body * 1.15) + ' ' + body + ',0 Q0,' + body * 1.15 + ' ' + (-body) + ',0 L' + (-body - tail) + ',' + (-tail * 0.6) + ' L' + (-body - tail) + ',' + (tail * 0.6) + 'Z"' + fill + '/>' + overlay;
-    case 'butterflyfish':
-      return extras + '<path d="M' + (-body * 0.9) + ',0 Q0,' + (-body * 0.95) + ' ' + body + ',0 Q0,' + body * 0.95 + ' ' + (-body * 0.9) + ',0 L' + (-body - tail) + ',' + (-tail * 0.52) + ' L' + (-body - tail) + ',' + (tail * 0.52) + 'Z"' + fill + '/>' + overlay;
-    case 'seahorse':
-      return extras + '<path d="M' + (body * 0.45) + ',' + (-body * 0.7) + ' q' + (body * 0.7) + ',' + (body * 0.55) + ' 0,' + body + ' q' + (-body * 0.95) + ',' + (body * 1.0) + ' ' + (-body * 0.3) + ',' + (body * 1.65) + ' q' + (body * 0.85) + ',' + (body * 0.65) + ' ' + (-body * 0.22) + ',' + (body * 1.18) + ' q' + (-body * 0.6) + ',' + (body * 0.25) + ' ' + (-body * 0.6) + ',' + (-body * 0.38) + ' q0,' + (-body * 0.55) + ' ' + (body * 0.52) + ',' + (-body * 0.66) + ' q' + (-body * 0.78) + ',' + (-body * 1.0) + ' ' + (-body * 0.15) + ',' + (-body * 1.54) + 'Z"' + fill + '/>' + overlay;
-    case 'tang':
-      return extras + '<path d="M' + (-body) + ',0 Q' + (-body * 0.15) + ',' + (-body * 1.05) + ' ' + body + ',0 Q' + (-body * 0.15) + ',' + body * 1.05 + ' ' + (-body) + ',0 L' + (-body - tail) + ',' + (-tail * 0.72) + ' L' + (-body - tail) + ',' + (tail * 0.72) + 'Z"' + fill + '/>' + overlay;
-    case 'clownfish':
-      return extras + '<path d="M' + (-body) + ',0 Q0,' + (-body * 0.72) + ' ' + body + ',0 Q0,' + body * 0.72 + ' ' + (-body) + ',0 L' + (-body - tail) + ',' + (-tail * 0.7) + ' L' + (-body - tail) + ',' + (tail * 0.7) + 'Z"' + fill + '/><path d="M' + (-body * 0.15).toFixed(1) + ',' + (-body * 0.61).toFixed(1) + ' L' + (body * 0.1).toFixed(1) + ',' + (-body * 0.55).toFixed(1) + ' L' + (body * 0.1).toFixed(1) + ',' + (body * 0.55).toFixed(1) + ' L' + (-body * 0.15).toFixed(1) + ',' + (body * 0.61).toFixed(1) + 'Z" fill="#f4f1dd" opacity=".84"/>' + overlay;
-    default:
-      return extras + '<path d="M' + (-body) + ',0 Q0,' + (-body * 0.52) + ' ' + body + ',0 Q0,' + body * 0.52 + ' ' + (-body) + ',0 L' + (-body - tail) + ',' + (-tail * 0.62) + ' L' + (-body - tail) + ',' + (tail * 0.62) + 'Z"' + fill + '/>' + overlay;
+function getSpriteBase64(spriteName) {
+  const p = path.join(__dirname, '../docs/assets/sprites/' + spriteName + '.png');
+  if (fs.existsSync(p)) {
+    return 'data:image/png;base64,' + fs.readFileSync(p).toString('base64');
   }
+  const fallback = path.join(__dirname, '../docs/assets/sprites/clownfish.png');
+  return 'data:image/png;base64,' + fs.readFileSync(fallback).toString('base64');
 }
 
 function buildSvg(data, tracks) {
@@ -253,64 +218,54 @@ function buildSvg(data, tracks) {
              esc(data.name) + ' GitHub aquarium">');
 
   parts.push('<defs>');
-  /* Enhanced deep ocean gradient — brighter top center */
+  /* Enhanced deep ocean gradient */
   parts.push('<radialGradient id="bg" cx="50%" cy="18%" r="82%">' +
              '<stop offset="0%" stop-color="#1a8aaa"/>' +
              '<stop offset="18%" stop-color="#0e5f82"/>' +
              '<stop offset="45%" stop-color="#08375a"/>' +
              '<stop offset="75%" stop-color="#041e3a"/>' +
              '<stop offset="100%" stop-color="#020c1e"/></radialGradient>');
-  /* Bright surface gradient */
+  /* Surface gradient */
   parts.push('<linearGradient id="surface" x1="0" x2="0" y1="0" y2="1">' +
              '<stop offset="0%" stop-color="#c8f8ff" stop-opacity=".55"/>' +
              '<stop offset="30%" stop-color="#82e1f5" stop-opacity=".32"/>' +
              '<stop offset="70%" stop-color="#3cb4d7" stop-opacity=".12"/>' +
              '<stop offset="100%" stop-color="#1e78aa" stop-opacity="0"/></linearGradient>');
-  /* Seaweed gradients — multiple shades */
-  parts.push('<linearGradient id="weed1" x1="0" x2="0" y1="1" y2="0">' +
-             '<stop stop-color="#0a4a3a"/><stop offset=".5" stop-color="#1a7a50"/>' +
-             '<stop offset="1" stop-color="#38c488"/></linearGradient>');
-  parts.push('<linearGradient id="weed2" x1="0" x2="0" y1="1" y2="0">' +
-             '<stop stop-color="#083a40"/><stop offset=".5" stop-color="#167060"/>' +
-             '<stop offset="1" stop-color="#2aaa7a"/></linearGradient>');
-  parts.push('<linearGradient id="weed3" x1="0" x2="0" y1="1" y2="0">' +
-             '<stop stop-color="#064535"/><stop offset=".5" stop-color="#12804e"/>' +
-             '<stop offset="1" stop-color="#30d890"/></linearGradient>');
   /* God ray gradient */
   parts.push('<linearGradient id="ray" x1="0" x2="0" y1="0" y2="1">' +
              '<stop offset="0%" stop-color="#b4ebff" stop-opacity=".08"/>' +
              '<stop offset="15%" stop-color="#78d2f0" stop-opacity=".05"/>' +
              '<stop offset="50%" stop-color="#46aae0" stop-opacity=".025"/>' +
              '<stop offset="100%" stop-color="#1e64a0" stop-opacity="0"/></linearGradient>');
-  /* Floor caustic radial gradient */
-  parts.push('<radialGradient id="caustic" cx="50%" cy="50%" r="50%">' +
-             '<stop offset="0%" stop-color="#b4f0ff" stop-opacity=".06"/>' +
-             '<stop offset="60%" stop-color="#64c8e6" stop-opacity=".02"/>' +
-             '<stop offset="100%" stop-color="#3296c8" stop-opacity="0"/></radialGradient>');
   /* Floor gradient */
   parts.push('<linearGradient id="floor" x1="0" x2="0" y1="0" y2="1">' +
              '<stop offset="0%" stop-color="#143c50" stop-opacity="0"/>' +
              '<stop offset="30%" stop-color="#123241" stop-opacity=".15"/>' +
              '<stop offset="100%" stop-color="#0c2332" stop-opacity=".3"/></linearGradient>');
-  parts.push('<filter id="glow" x="-70%" y="-70%" width="240%" height="240%">' +
-             '<feGaussianBlur stdDeviation="3.2" result="b"/>' +
+  parts.push('<filter id="glow" x="-50%" y="-50%" width="200%" height="200%">' +
+             '<feGaussianBlur stdDeviation="3.5" result="b"/>' +
              '<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>' +
              '</filter>');
-  parts.push('<filter id="softglow" x="-90%" y="-90%" width="280%" height="280%">' +
+  parts.push('<filter id="softglow" x="-60%" y="-60%" width="220%" height="220%">' +
              '<feGaussianBlur stdDeviation="6" result="b"/>' +
              '<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>' +
              '</filter>');
-  /* One body gradient and one fin gradient per fish, derived from its
-   * language colour. Declared once here rather than inline, so the same
-   * ramp is reused by every frame of that fish's animation. */
-  data.fish.forEach((f, i) => parts.push(fishDefs(f, i)));
+
+  /* Embed Base64 sprite assets for each unique species in the school */
+  const uniqueSprites = new Set(data.fish.map(f => f.sprite || 'clownfish'));
+  uniqueSprites.forEach(spriteKey => {
+    const b64Uri = getSpriteBase64(spriteKey);
+    const meta = SPRITE_META[spriteKey] || { w: 72, h: 54 };
+    parts.push('<image id="sp_' + spriteKey + '" width="' + meta.w + '" height="' + meta.h +
+               '" href="' + b64Uri + '"/>');
+  });
 
   parts.push('</defs>');
 
   /* Background */
   parts.push('<rect width="' + W + '" height="' + H + '" fill="url(#bg)"/>');
 
-  /* God rays — volumetric light shafts with animated opacity */
+  /* God rays */
   const rayRnd = mulberry32(4242);
   for (let i = 0; i < 8; i++) {
     const x = 40 + i * 108 + Math.floor((rayRnd() - 0.5) * 40);
@@ -326,17 +281,12 @@ function buildSvg(data, tracks) {
                '" dur="' + animDur + 's" repeatCount="indefinite"/></polygon>');
   }
 
-  /* Bright water surface */
+  /* Surface waves */
   parts.push('<rect width="' + W + '" height="55" fill="url(#surface)"/>');
-
-  /* Surface wave lines — 3 animated waves */
   for (let wave = 0; wave < 3; wave++) {
     const yBase = 12 + wave * 10;
     const amp = 4 + wave * 2;
-    const opacity = (0.38 - wave * 0.1).toFixed(2);
-    const strokeW = (2.5 - wave * 0.6).toFixed(1);
     const animDur = (6 + wave * 2) + 's';
-    // Build two wave states for animation
     let d1 = 'M0,' + yBase;
     let d2 = 'M0,' + yBase;
     for (let x = 0; x <= W; x += 55) {
@@ -345,216 +295,55 @@ function buildSvg(data, tracks) {
       d1 += ' L' + x + ',' + y1.toFixed(1);
       d2 += ' L' + x + ',' + y2.toFixed(1);
     }
-    parts.push('<path d="' + d1 + '" fill="none" stroke="#d5fbff" stroke-opacity="' + opacity +
-               '" stroke-width="' + strokeW + '">' +
+    parts.push('<path d="' + d1 + '" fill="none" stroke="rgba(180,240,255,' + (0.28 - wave * 0.08) +
+               ')" stroke-width="' + (2.0 - wave * 0.4) + '">' +
                '<animate attributeName="d" dur="' + animDur + '" repeatCount="indefinite" values="' +
                d1 + ';' + d2 + ';' + d1 + '"/></path>');
   }
 
-  /* Surface shimmer highlights */
-  const shimmerRnd = mulberry32(5555);
-  for (let i = 0; i < 12; i++) {
-    const sx = Math.floor(shimmerRnd() * W);
-    const sy = 4 + Math.floor(shimmerRnd() * 14);
-    const rx = 5 + Math.floor(shimmerRnd() * 8);
-    const dur = (3 + shimmerRnd() * 5).toFixed(1);
-    parts.push('<ellipse cx="' + sx + '" cy="' + sy + '" rx="' + rx + '" ry="1.5" fill="#fff" opacity="0">' +
-               '<animate attributeName="opacity" values="0;.15;0" dur="' + dur + 's" repeatCount="indefinite" begin="-' +
-               (shimmerRnd() * 5).toFixed(1) + 's"/></ellipse>');
-  }
-
-  /* Caustic light patches on floor */
-  const causticRnd = mulberry32(7777);
-  for (let i = 0; i < 10; i++) {
-    const cx = Math.floor(causticRnd() * W);
-    const cy = Math.floor(H * 0.82 + causticRnd() * H * 0.18);
-    const r = 15 + Math.floor(causticRnd() * 40);
-    const dur = (6 + causticRnd() * 8).toFixed(1);
-    parts.push('<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="url(#caustic)">' +
-               '<animate attributeName="opacity" values=".3;.8;.3" dur="' + dur + 's" repeatCount="indefinite" begin="-' +
-               (causticRnd() * 6).toFixed(1) + 's"/>' +
-               '<animate attributeName="r" values="' + r + ';' + (r + 8) + ';' + r + '" dur="' + (parseFloat(dur) + 2).toFixed(1) +
-               's" repeatCount="indefinite"/></circle>');
-  }
-
   /* Sandy floor */
-  parts.push('<rect x="0" y="' + Math.floor(H * 0.88) + '" width="' + W + '" height="' + Math.ceil(H * 0.12) +
-             '" fill="url(#floor)"/>');
+  parts.push('<rect y="' + (H - 45) + '" width="' + W + '" height="45" fill="url(#floor)"/>');
 
-  /* Coral, drawn before the weed so the weed reads as nearer the camera.
-   * Depth here comes from the same trick as the fish: a lit crown, a
-   * darker base, and a contact shadow where it meets the floor. */
-  const coralRnd = mulberry32(8899);
-  const coralPalette = [
-    ['#ff7f9c', '#c23f68', '#7d1f42'],
-    ['#ffa864', '#d86a34', '#8c3c1c'],
-    ['#b98cff', '#7b52c8', '#472c7a'],
-    ['#5fe0c8', '#2b9f92', '#145a56'],
-  ];
-  for (let i = 0; i < 7; i++) {
-    const cx = 60 + i * Math.floor((W - 120) / 6) + Math.floor((coralRnd() - 0.5) * 40);
-    const scale = 0.72 + coralRnd() * 0.7;
-    const pal = coralPalette[(coralRnd() * coralPalette.length) | 0];
-    const baseY = H - 4;
-    const gid = 'cor' + i;
-
-    parts.push('<linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1">' +
-               '<stop offset="0%" stop-color="' + pal[0] + '"/>' +
-               '<stop offset="55%" stop-color="' + pal[1] + '"/>' +
-               '<stop offset="100%" stop-color="' + pal[2] + '"/></linearGradient>');
-
-    // contact shadow on the sand
-    parts.push('<ellipse cx="' + cx + '" cy="' + baseY + '" rx="' + (26 * scale).toFixed(1) +
-               '" ry="' + (5 * scale).toFixed(1) + '" fill="#010a14" opacity=".3"/>');
-
-    if (i % 3 === 0) {
-      /* Brain coral: stacked domes with grooves. */
-      const r = 20 * scale;
-      parts.push('<ellipse cx="' + cx + '" cy="' + (baseY - r * 0.55).toFixed(1) +
-                 '" rx="' + r.toFixed(1) + '" ry="' + (r * 0.72).toFixed(1) +
-                 '" fill="url(#' + gid + ')" opacity=".9"/>');
-      for (let k = 0; k < 4; k++) {
-        const gy = baseY - r * 0.95 + k * r * 0.32;
-        parts.push('<path d="M' + (cx - r * 0.78).toFixed(1) + ',' + gy.toFixed(1) +
-                   ' q' + (r * 0.4).toFixed(1) + ',' + (-r * 0.2).toFixed(1) + ' ' +
-                   (r * 0.78).toFixed(1) + ',0 q' + (r * 0.4).toFixed(1) + ',' +
-                   (r * 0.2).toFixed(1) + ' ' + (r * 0.78).toFixed(1) + ',0"' +
-                   ' fill="none" stroke="' + pal[2] + '" stroke-width="1.1" opacity=".45"/>');
-      }
-      parts.push('<ellipse cx="' + (cx - r * 0.28).toFixed(1) + '" cy="' + (baseY - r).toFixed(1) +
-                 '" rx="' + (r * 0.4).toFixed(1) + '" ry="' + (r * 0.2).toFixed(1) +
-                 '" fill="#ffffff" opacity=".2"/>');
-    } else {
-      /* Branching coral: a few tapering arms that drift very slightly. */
-      const arms = 3 + ((coralRnd() * 3) | 0);
-      const sway = (1.2 + coralRnd() * 1.4).toFixed(1);
-      const dur = (5 + coralRnd() * 4).toFixed(1);
-      let d = '';
-      for (let a = 0; a < arms; a++) {
-        const lean = (a - (arms - 1) / 2) * 9 * scale;
-        const hgt = (26 + coralRnd() * 20) * scale;
-        const w0 = 5.5 * scale;
-        d += 'M' + (cx + lean - w0).toFixed(1) + ',' + baseY +
-             ' Q' + (cx + lean * 1.5 - w0 * 0.4).toFixed(1) + ',' + (baseY - hgt * 0.6).toFixed(1) +
-             ' ' + (cx + lean * 1.9).toFixed(1) + ',' + (baseY - hgt).toFixed(1) +
-             ' Q' + (cx + lean * 1.5 + w0 * 0.4).toFixed(1) + ',' + (baseY - hgt * 0.6).toFixed(1) +
-             ' ' + (cx + lean + w0).toFixed(1) + ',' + baseY + 'Z ';
-      }
-      parts.push('<path d="' + d.trim() + '" fill="url(#' + gid + ')" opacity=".88">' +
-                 '<animateTransform attributeName="transform" type="rotate" values="' +
-                 (-sway) + ' ' + cx + ' ' + baseY + ';' + sway + ' ' + cx + ' ' + baseY + ';' +
-                 (-sway) + ' ' + cx + ' ' + baseY +
-                 '" dur="' + dur + 's" repeatCount="indefinite"/></path>');
-      // polyp tips catch the light
-      for (let a = 0; a < arms; a++) {
-        const lean = (a - (arms - 1) / 2) * 9 * scale;
-        parts.push('<circle cx="' + (cx + lean * 1.9).toFixed(1) + '" cy="' +
-                   (baseY - (26 + 10) * scale).toFixed(1) + '" r="' + (2.4 * scale).toFixed(1) +
-                   '" fill="' + pal[0] + '" opacity=".5"/>');
-      }
-    }
-  }
-
-  /* Seaweed — lush multi-segment kelp with leaf shapes */
-  for (let i = 0; i < 16; i++) {
-    const x = 18 + i * Math.floor((W - 36) / 15);
-    const h = 35 + (i % 6) * 12;
-    const w = 7 + (i % 4) * 3;
-    const weedGrd = 'weed' + ((i % 3) + 1);
-    const swayAmt = 5 + (i % 3) * 3;
-    const durSway = (3.5 + i % 5 * 0.8).toFixed(1);
-    
-    /* Main stem */
-    parts.push('<path d="M' + x + ',' + H + ' Q' + (x - w * 0.8) + ',' + (H - h * 0.4) + ' ' + x + ',' + (H - h) +
-               ' Q' + (x + w * 0.9) + ',' + (H - h * 0.45) + ' ' + (x + 2) + ',' + H + 'Z" fill="url(#' + weedGrd + ')" opacity=".82">' +
-               '<animateTransform attributeName="transform" type="rotate" values="' +
-               (-swayAmt) + ' ' + x + ' ' + H + ';' + swayAmt + ' ' + x + ' ' + H + ';' + (-swayAmt) + ' ' + x + ' ' + H +
-               '" dur="' + durSway + 's" repeatCount="indefinite"/></path>');
-
-    /* Leaf shapes on alternating sides */
-    if (i % 2 === 0 && h > 40) {
-      const leafY = H - h * 0.55;
-      const leafLen = w * 1.6;
-      const side = (i % 4 === 0) ? -1 : 1;
-      const leafDur = (parseFloat(durSway) + 0.5).toFixed(1);
-      parts.push('<path d="M' + x + ',' + leafY + ' Q' + (x + side * leafLen * 0.6) + ',' + (leafY - 8) + ' ' +
-                 (x + side * leafLen) + ',' + (leafY - 3) + ' Q' + (x + side * leafLen * 0.5) + ',' + (leafY + 6) + ' ' +
-                 x + ',' + (leafY + 3) + 'Z" fill="url(#' + weedGrd + ')" opacity=".65">' +
-                 '<animateTransform attributeName="transform" type="rotate" values="' +
-                 (-swayAmt * 1.2) + ' ' + x + ' ' + H + ';' + (swayAmt * 1.2) + ' ' + x + ' ' + H + ';' +
-                 (-swayAmt * 1.2) + ' ' + x + ' ' + H +
-                 '" dur="' + leafDur + 's" repeatCount="indefinite"/></path>');
-    }
-  }
-
-  /* Enhanced bubbles with gradient-like opacity */
-  const bubbleRnd = mulberry32(731);
-  for (let i = 0; i < 24; i++) {
-    const x = bubbleRnd() * W;
-    const r = 1.5 + bubbleRnd() * 4.5;
-    const delay = (bubbleRnd() * 12).toFixed(2);
-    const d = (7 + bubbleRnd() * 9).toFixed(2);
-    const wobble = (bubbleRnd() - 0.5) * 30;
-    /* Bubble body */
-    parts.push('<circle r="' + r.toFixed(1) + '" fill="none" stroke="#c8f5ff" stroke-width=".7" opacity="0">' +
-               '<animateMotion dur="' + d + 's" repeatCount="indefinite" begin="-' + delay + 's" path="M' +
-               x.toFixed(1) + ',' + (H + 12) + ' C' + (x - 18 + wobble * 0.3).toFixed(1) + ',' + (H * 0.64).toFixed(1) + ' ' +
-               (x + 20 + wobble * 0.5).toFixed(1) + ',' + (H * 0.28).toFixed(1) + ' ' + (x - 8 + wobble).toFixed(1) + ',-12"/>' +
-               '<animate attributeName="opacity" values="0;.40;.45;.35;0" dur="' + d + 's" repeatCount="indefinite" begin="-' + delay + 's"/></circle>');
-    /* Highlight dot inside larger bubbles */
-    if (r > 3) {
-      parts.push('<circle r="' + (r * 0.2).toFixed(1) + '" fill="#fff" opacity="0">' +
-                 '<animateMotion dur="' + d + 's" repeatCount="indefinite" begin="-' + delay + 's" path="M' +
-                 (x - r * 0.3).toFixed(1) + ',' + (H + 12 - r * 0.3) + ' C' +
-                 (x - 18 + wobble * 0.3 - r * 0.3).toFixed(1) + ',' + (H * 0.64 - r * 0.3).toFixed(1) + ' ' +
-                 (x + 20 + wobble * 0.5 - r * 0.3).toFixed(1) + ',' + (H * 0.28 - r * 0.3).toFixed(1) + ' ' +
-                 (x - 8 + wobble - r * 0.3).toFixed(1) + ',' + (-12 - r * 0.3) + '"/>' +
-                 '<animate attributeName="opacity" values="0;.50;.55;.40;0" dur="' + d + 's" repeatCount="indefinite" begin="-' + delay + 's"/></circle>');
-    }
-  }
-
-  // marine snow: pure drift
-  const snowRnd = mulberry32(90210);
-  for (let i = 0; i < 46; i++) {
-    const x = snowRnd() * W;
-    const r = 0.7 + snowRnd() * 1.5;
-    const delay = (snowRnd() * 16).toFixed(2);
-    const d = (13 + snowRnd() * 12).toFixed(2);
-    parts.push('<circle r="' + r.toFixed(2) + '" fill="#cfeaff" opacity="0.30">' +
-               '<animateMotion dur="' + d + 's" repeatCount="indefinite" begin="-' + delay + 's" ' +
-               'path="M' + x.toFixed(1) + ',-12 L' + (x + (snowRnd() * 40 - 20)).toFixed(1) + ',' + (H + 12) + '"/>' +
-               '<animate attributeName="opacity" values="0;0.42;0.42;0" dur="' + d +
-               's" repeatCount="indefinite" begin="-' + delay + 's"/></circle>');
-  }
-
-  // the fish
+  /* The fish: Real cartoon sprites swimming along DoTween smooth Catmull-Rom splines */
   data.fish.forEach((f, i) => {
     const track = tracks[i];
-    if (!track || track.length < 2) return;
+    if (!track || track.length < 3) return;
     const d = loopPathFrom(track);
-    const op = f.dormant ? 0.72 : 0.95;
+    const transforms = bakeFishTransforms(track, i);
+    const op = f.dormant ? 0.76 : 0.98;
     const filt = f.dormant ? 'softglow' : 'glow';
+    const spriteKey = f.sprite || 'clownfish';
+    const meta = SPRITE_META[spriteKey] || { w: 72, h: 54 };
+    // Balanced, comfortable size (22px - 36px) to avoid crowding or ballooning
+    const drawW = Math.round(18 + Math.min(f.size * 1.5, 18));
+    const drawH = Math.round(drawW * (meta.h / meta.w));
 
+    // Outer container: path translation only
     parts.push('<g opacity="' + op + '" filter="url(#' + filt + ')">');
+    parts.push('<animateMotion dur="' + dur + '" repeatCount="indefinite" path="' + d + '"/>');
+    // Middle container: horizontal facing only (X-axis flip, Y locked to 1, NO additive sum)
     parts.push('<g>');
-    parts.push(fishSilhouette(f, i));
-    parts.push('<title>' + esc(f.name) + ' — ' + esc(f.lang) + ' · ' + f.stars +
-               '★ · ' + (f.dormant ? 'resting, ' + f.ageDays + 'd since last push' : 'active') +
-               '</title>');
+    parts.push('<animateTransform attributeName="transform" type="scale" dur="' + dur +
+               '" repeatCount="indefinite" values="' + transforms.scaleValues +
+               '" keyTimes="' + transforms.keyTimes + '" calcMode="linear"/>');
+    // Inner container: pitch tilt & swimming wiggle around fish center (NO additive sum)
+    parts.push('<g>');
+    parts.push('<animateTransform attributeName="transform" type="rotate" dur="' + dur +
+               '" repeatCount="indefinite" values="' + transforms.angleValues +
+               '" keyTimes="' + transforms.keyTimes + '" calcMode="linear"/>');
+    parts.push('<use href="#sp_' + spriteKey + '" x="' + (-drawW / 2) + '" y="' + (-drawH / 2) +
+               '" width="' + drawW + '" height="' + drawH + '"/>');
+    const commitText = f.commits ? (' ? ' + f.commits + ' commits') : '';
+    parts.push('<title>' + esc(f.name) + ' ? ' + esc(f.species || spriteKey) + ' ? ' + esc(f.lang) + commitText + ' ? ' + f.stars + '?</title>');
     parts.push('</g>');
-    parts.push('<animateMotion dur="' + dur + '" repeatCount="indefinite" rotate="auto" path="' +
-               d + '"/>');
+    parts.push('</g>');
     parts.push('</g>');
   });
 
-  /* Vignette overlay */
-  parts.push('<rect width="' + W + '" height="' + H + '" fill="none"/>');
-
-  // caption
   const caption = data.offline
     ? 'offline sample data'
-    : data.publicRepos + ' repos · ' + data.followers + ' followers · ' +
-      data.fish.length + ' fish · boids simulated at build time';
+    : data.publicRepos + ' repos ? ' + data.followers + ' followers ? ' +
+      data.fish.length + ' fish ? smooth boids bakes';
   parts.push('<text x="16" y="' + (H - 14) + '" font-family="ui-monospace,Menlo,Consolas,monospace" ' +
              'font-size="11" fill="#7fd8ff" opacity="0.55">' + esc(caption) + '</text>');
   parts.push('<text x="' + (W - 16) + '" y="' + (H - 14) + '" text-anchor="end" ' +
@@ -580,14 +369,24 @@ async function main() {
   const tracks = simulate(data);
   const svg = buildSvg(data, tracks);
 
-  const outDir = path.join(__dirname, '../docs');
-  fs.mkdirSync(outDir, { recursive: true });
-  const out = path.join(outDir, 'aquarium.svg');
-  fs.writeFileSync(out, svg);
+  const rootDir = path.resolve(__dirname, '..');
+  const isSubApp = path.basename(rootDir) === 'aquarium';
+  const projectRoot = isSubApp ? path.resolve(rootDir, '../..') : rootDir;
 
-  console.log('docs/aquarium.svg  ' + (Buffer.byteLength(svg) / 1024).toFixed(1) + ' KB');
+  const targets = [
+    path.join(projectRoot, 'docs/aquarium.svg'),
+    path.join(projectRoot, 'docs/apps/aquarium/aquarium.svg'),
+    path.join(projectRoot, 'apps/aquarium/docs/aquarium.svg')
+  ];
+
+  targets.forEach(t => {
+    fs.mkdirSync(path.dirname(t), { recursive: true });
+    fs.writeFileSync(t, svg);
+    console.log(t + '  ' + (Buffer.byteLength(svg) / 1024).toFixed(1) + ' KB');
+  });
+
   console.log('fish: ' + data.fish.length + '  keyframes/fish: ' + tracks[0].length);
 }
 
 if (require.main === module) main();
-module.exports = { simulate, buildSvg, loopPathFrom, loopContinuity };
+module.exports = { simulate, buildSvg, loopPathFrom };

@@ -1,5 +1,5 @@
 'use strict';
-/* Interactive aquarium: same engine as the SVG bake, but stepped live.
+/* Interactive aquarium: boids simulation stepped live with sprite rendering.
  * FISH_DATA is injected by tools/build-pages.js. */
 (function () {
 
@@ -18,58 +18,173 @@ function resize() {
   if (sw) sw.resize(W, H);
 }
 
-const sw = new SwarmEngine(Math.max(FISH_DATA.length, 8), 800, 600);
+/* =========================================================================
+ * Sprite Sheet Setup (100 Sea Creatures: Sharks, Dolphins, Turtles, Fish, etc.)
+ * ========================================================================= */
+const SPRITE_DATA = {"blue_shark": [0, 5, 30, 105, 76], "spotted_shark": [0, 114, 44, 92, 60], "orca": [0, 208, 32, 100, 74], "blue_dolphin": [0, 310, 33, 98, 73], "pink_dolphin": [0, 410, 35, 100, 70], "blue_whale": [0, 511, 22, 103, 88], "beluga": [0, 616, 47, 103, 59], "stingray": [0, 721, 36, 96, 68], "spotted_ray": [0, 824, 34, 88, 73], "swordfish": [0, 916, 34, 106, 69], "clownfish": [0, 7, 127, 96, 70], "blue_tang": [0, 111, 128, 92, 65], "yellow_tang": [0, 213, 129, 91, 72], "purple_fish": [0, 313, 130, 92, 66], "flame_angelfish": [0, 417, 128, 93, 72], "moorish_idol": [0, 524, 126, 81, 77], "damselfish": [0, 621, 131, 92, 73], "butterflyfish": [0, 727, 129, 92, 75], "striped_angelfish": [0, 825, 124, 88, 83], "lionfish": [0, 918, 119, 99, 93], "green_turtle": [0, 4, 221, 101, 75], "brown_turtle": [0, 107, 224, 101, 69], "green_pufferfish": [0, 213, 215, 90, 84], "orange_pufferfish": [0, 315, 218, 87, 80], "blue_porcupinefish": [0, 417, 218, 89, 72], "orange_seahorse": [0, 531, 211, 66, 100], "pink_seahorse": [0, 629, 212, 62, 97], "red_octopus": [0, 711, 214, 108, 95], "pink_squid": [0, 832, 212, 82, 98], "moray_eel": [0, 918, 231, 101, 61], "red_lobster": [0, 6, 308, 100, 93], "red_crab": [0, 111, 320, 96, 79], "mantis_shrimp": [0, 212, 318, 97, 77], "blue_jellyfish": [0, 318, 305, 80, 101], "pink_jellyfish": [0, 413, 307, 83, 97], "sea_anemone": [0, 511, 317, 104, 87], "sea_urchin": [0, 623, 319, 88, 83], "orange_starfish": [0, 724, 318, 91, 84], "blue_starfish": [0, 825, 318, 88, 83], "sea_cucumber": [0, 920, 334, 96, 54], "pink_clam": [0, 10, 412, 89, 85], "brown_clam": [0, 108, 412, 89, 83], "banded_shrimp": [0, 201, 406, 105, 89], "orange_shrimp": [0, 308, 413, 90, 85], "yellow_striped_fish": [0, 414, 420, 91, 73], "parrotfish": [0, 516, 417, 93, 74], "cyan_fish": [0, 615, 419, 98, 68], "pink_fish": [0, 721, 414, 94, 80], "multicolor_fish": [0, 824, 413, 92, 82], "violet_fish": [0, 926, 413, 89, 77], "grey_shark": [1, 10, 48, 99, 77], "hammerhead_shark": [1, 109, 54, 104, 72], "whale_shark": [1, 211, 55, 108, 73], "killer_whale": [1, 318, 50, 97, 77], "dolphin": [1, 416, 53, 92, 75], "beluga_whale": [1, 509, 56, 103, 72], "blue_whale_v2": [1, 610, 62, 112, 65], "humpback_whale": [1, 720, 56, 103, 74], "narwhal": [1, 818, 42, 119, 87], "manta_ray": [1, 914, 54, 97, 70], "electric_ray": [1, 9, 142, 93, 71], "spotted_eagle_ray": [1, 107, 137, 99, 78], "sawfish": [1, 209, 146, 137, 70], "spotted_moray": [1, 322, 148, 96, 77], "electric_eel": [1, 416, 158, 106, 51], "octopus_v2": [1, 528, 138, 96, 87], "blue_ringed_octopus": [1, 631, 145, 87, 75], "squid_v2": [1, 727, 137, 81, 90], "cuttlefish": [1, 817, 154, 111, 70], "nautilus": [1, 943, 145, 74, 76], "yellow_pufferfish": [1, 9, 233, 86, 77], "spiny_pufferfish": [1, 109, 231, 88, 83], "clownfish_v2": [1, 205, 235, 98, 74], "blue_tang_v2": [1, 311, 237, 94, 71], "yellow_tang_v2": [1, 417, 234, 90, 75], "angelfish_v2": [1, 517, 231, 91, 86], "butterflyfish_v2": [1, 621, 238, 91, 71], "lionfish_v2": [1, 721, 230, 90, 87], "rainbow_fish": [1, 820, 238, 96, 73], "black_triggerfish": [1, 926, 232, 90, 78], "seahorse_v2": [1, 27, 320, 52, 89], "green_turtle_v2": [1, 85, 331, 111, 72], "leatherback_turtle": [1, 192, 325, 117, 85], "spiny_lobster": [1, 310, 321, 92, 91], "king_prawn": [1, 396, 320, 114, 91], "hermit_crab": [1, 517, 335, 90, 76], "shore_crab": [1, 615, 327, 95, 79], "blue_crab": [1, 716, 327, 107, 82], "mantis_shrimp_v2": [1, 827, 331, 93, 70], "horseshoe_crab": [1, 917, 326, 93, 84], "pink_jellyfish_v2": [1, 14, 413, 84, 94], "blue_jellyfish_v2": [1, 113, 412, 86, 95], "moon_jellyfish": [1, 219, 418, 78, 88], "red_anemone": [1, 312, 418, 93, 85], "starfish_v2": [1, 417, 418, 85, 80], "purple_urchin": [1, 514, 421, 93, 82], "sea_cucumber_v2": [1, 613, 431, 96, 64], "giant_clam": [1, 716, 430, 108, 74], "cleaner_shrimp": [1, 823, 413, 106, 91], "peppermint_shrimp": [1, 920, 413, 97, 92]};
+const ALL_SPRITE_KEYS = Object.keys(SPRITE_DATA);
+
+const SPECIES_MAP = {
+  'tetra': 'damselfish',
+  'neon-tetra': 'cyan_fish',
+  'clownfish': 'clownfish',
+  'tang': 'yellow_tang',
+  'yellow-tang': 'yellow_tang',
+  'blue-tang': 'blue_tang',
+  'butterflyfish': 'butterflyfish',
+  'angelfish': 'striped_angelfish',
+  'seahorse': 'orange_seahorse',
+  'pink-seahorse': 'pink_seahorse',
+  'shark': 'blue_shark',
+  'blue-shark': 'blue_shark',
+  'dolphin': 'blue_dolphin',
+  'whale': 'blue_whale',
+  'blue-whale': 'blue_whale',
+  'turtle': 'green_turtle',
+  'sea-turtle': 'green_turtle',
+  'pufferfish': 'green_pufferfish',
+  'octopus': 'red_octopus',
+  'squid': 'pink_squid',
+  'jellyfish': 'blue_jellyfish',
+  'crab': 'red_crab',
+  'lobster': 'red_lobster',
+  'starfish': 'orange_starfish',
+  'manta-ray': 'manta_ray',
+  'clam': 'giant_clam',
+  'shrimp': 'cleaner_shrimp',
+  'eel': 'moray_eel'
+};
+
+function getSpriteKey(f, index) {
+  if (f && f.sprite && SPECIES_MAP[f.sprite]) return SPECIES_MAP[f.sprite];
+  if (f && f.species && SPECIES_MAP[f.species]) return SPECIES_MAP[f.species];
+  let h = index || 0;
+  const str = (f ? f.name || '' : '') + (f ? f.lang || '' : '');
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
+  return ALL_SPRITE_KEYS[Math.abs(h) % ALL_SPRITE_KEYS.length];
+}
+
+const sheetImgs = [new Image(), new Image()];
+function setupSheetImage(img, filename) {
+  const paths = [
+    'assets/sprites/' + filename,
+    '../assets/sprites/' + filename,
+    '../../assets/sprites/' + filename,
+    'docs/assets/sprites/' + filename
+  ];
+  let idx = 0;
+  img.onload = function () { img._loaded = true; };
+  img.onerror = function () {
+    idx++;
+    if (idx < paths.length) img.src = paths[idx];
+  };
+  img.src = paths[0];
+}
+setupSheetImage(sheetImgs[0], 'sheet1.png');
+setupSheetImage(sheetImgs[1], 'sheet2.png');
+
+/* Duplicate fish count by 2x for full, lively schools */
+const ALL_FISH = [];
+(FISH_DATA || []).forEach(f => {
+  ALL_FISH.push(f);
+  // Add companion fish in the same school
+  ALL_FISH.push(Object.assign({}, f, {
+    size: Math.max(5.2, f.size * (0.85 + Math.random() * 0.28)),
+    pace: f.pace * (0.92 + Math.random() * 0.16),
+    peer: true
+  }));
+});
+
+const sw = new SwarmEngine(Math.max(ALL_FISH.length, 64), 800, 600);
 resize();
 window.addEventListener('resize', resize);
 
-FISH_DATA.forEach(f => {
-  sw.spawn(40 + Math.random() * (W - 80), 60 + Math.random() * (H - 160));
+ALL_FISH.forEach((f, idx) => {
+  const gid = (f.groupId !== undefined) ? f.groupId : (idx % 8);
+  sw.spawn(40 + Math.random() * (W - 80), 60 + Math.random() * (H - 160), undefined, gid);
   sw.speedScale[sw.n - 1] = f.pace;
 });
 
-const p = sw.p;
-p.rCoh = 84; p.rAli = 64; p.rSep = 30;
-p.wCoh = 0.7; p.wAli = 1.2; p.wSep = 2.2;
-p.minSpeed = 18; p.maxSpeed = 62; p.maxForce = 140;
-p.margin = 56; p.maxNeighbours = 6;
-
-const world = {
-  predators: [], obstacles: [], ripples: [],
-};
-
-let mx = W / 2, my = H / 2, hovering = false, rippleClock = 0;
-const RIPPLE_COUNT = 12;
-for (let i = 0; i < RIPPLE_COUNT; i++) {
-  world.ripples.push({ x: 0, y: 0, radius: 0, speed: 150, strength: 0,
-    age: 0, lifetime: 1.1, band: 30, active: false });
+/* Orientation smoothing states to eliminate rotation jitter */
+const fishFacing = new Float32Array(sw.cap);
+const fishPitch = new Float32Array(sw.cap);
+const fishScaleX = new Float32Array(sw.cap);
+for (let i = 0; i < sw.cap; i++) {
+  fishFacing[i] = Math.random() < 0.5 ? 1 : -1;
+  fishScaleX[i] = fishFacing[i];
 }
 
-function addRipple(x, y, strength) {
-  let ripple = null;
-  for (let i = 0; i < RIPPLE_COUNT; i++) {
-    if (!world.ripples[i].active) { ripple = world.ripples[i]; break; }
+const p = sw.p;
+p.rCoh = 95; p.rAli = 72; p.rSep = 28;
+p.wCoh = 0.85; p.wAli = 1.35; p.wSep = 2.1;
+p.minSpeed = 22; p.maxSpeed = 68; p.maxForce = 150;
+p.margin = 56; p.maxNeighbours = 8;
+
+/* World entities */
+const world = {
+  predators: [], obstacles: [], ripples: [], foods: [], lure: { x: 0, y: 0, power: 1, active: false }
+};
+
+/* Food feeding system */
+const foods = [];
+const crumbs = [];
+
+function dropFood(x, y) {
+  for (let k = 0; k < 3; k++) {
+    foods.push({
+      x: x + (Math.random() - 0.5) * 24,
+      y: y + (Math.random() - 0.5) * 16,
+      vx: (Math.random() - 0.5) * 12,
+      vy: 22 + Math.random() * 26,
+      r: 3.2 + Math.random() * 1.6,
+      active: true,
+      age: 0,
+      maxAge: 16,
+      hue: 35 + Math.random() * 18
+    });
   }
-  if (!ripple) ripple = world.ripples[0];
-  ripple.x = x; ripple.y = y; ripple.radius = 8; ripple.speed = 150;
-  ripple.strength = strength; ripple.age = 0; ripple.lifetime = 1.1; ripple.active = true;
+  spawnCursorBubbles(x, y);
+}
+
+/* Mouse interaction & Rising bubbles */
+let mx = W / 2, my = H / 2, hovering = false;
+
+function spawnCursorBubbles(x, y) {
+  for (let k = 0; k < 2; k++) {
+    bubbles.push({
+      x: x + (Math.random() - 0.5) * 18,
+      y: y + (Math.random() - 0.5) * 18,
+      v: 24 + Math.random() * 34,
+      r: 1.5 + Math.random() * 3.2,
+      drift: (Math.random() - 0.5) * 14,
+      a: 0.38 + Math.random() * 0.35,
+      wobblePhase: Math.random() * TAU,
+      wobbleAmp: 0.8 + Math.random() * 1.2,
+      wobbleFreq: 2 + Math.random() * 2.5,
+    });
+  }
+  if (bubbles.length > 80) bubbles.shift();
 }
 
 function movePointer(x, y) {
-  const distance = Math.hypot(x - mx, y - my);
   mx = x; my = y; hovering = true;
-  if (distance > 16 || rippleClock > 0.18) { addRipple(x, y, Math.min(1, 0.48 + distance / 180)); rippleClock = 0; }
+  world.lure.x = mx; world.lure.y = my; world.lure.power = 1.15; world.lure.active = true;
+  spawnCursorBubbles(x, y);
 }
 
 cv.addEventListener('pointermove', e => movePointer(e.clientX, e.clientY));
-cv.addEventListener('pointerdown', e => { movePointer(e.clientX, e.clientY); addRipple(e.clientX, e.clientY, 1); });
-cv.addEventListener('pointerleave', () => { hovering = false; });
-cv.addEventListener('pointercancel', () => { hovering = false; });
+cv.addEventListener('pointerdown', e => {
+  movePointer(e.clientX, e.clientY);
+  dropFood(e.clientX, e.clientY);
+});
+cv.addEventListener('pointerleave', () => { hovering = false; world.lure.active = false; });
+cv.addEventListener('pointercancel', () => { hovering = false; world.lure.active = false; });
 cv.addEventListener('touchmove', e => {
   e.preventDefault();
   movePointer(e.touches[0].clientX, e.touches[0].clientY);
 }, { passive: false });
 
-/* marine snow: drift only, independent of the flock */
+/* marine snow: drift only */
 const snow = [];
 for (let i = 0; i < 90; i++) {
   snow.push({
@@ -79,7 +194,7 @@ for (let i = 0; i < 90; i++) {
   });
 }
 
-/* enhanced bubbles — more count, varied sizes, with glow */
+/* bubbles */
 const bubbles = [];
 for (let i = 0; i < 40; i++) {
   bubbles.push({
@@ -92,7 +207,7 @@ for (let i = 0; i < 40; i++) {
   });
 }
 
-/* seaweed config — lush multi-segment kelp */
+/* seaweed config */
 const seaweeds = [];
 for (let i = 0; i < 18; i++) {
   const baseX = 16 + i * ((typeof W !== 'undefined' ? Math.max(W, 800) : 800) - 32) / 17;
@@ -103,7 +218,7 @@ for (let i = 0; i < 18; i++) {
     width: 4 + Math.random() * 6,
     phase: Math.random() * TAU,
     speed: 0.7 + Math.random() * 0.6,
-    hue: 100 + Math.random() * 50,  // green to teal
+    hue: 100 + Math.random() * 50,
     sat: 55 + Math.random() * 30,
     lit: 18 + Math.random() * 16,
     leafFreq: 0.3 + Math.random() * 0.4,
@@ -118,67 +233,63 @@ for (let i = 0; i < 8; i++) {
     topW: 30 + Math.random() * 50,
     bottomW: 80 + Math.random() * 160,
     alpha: 0.015 + Math.random() * 0.03,
-    speed: 0.003 + Math.random() * 0.006,
     phase: Math.random() * TAU,
-    alphaPhase: Math.random() * TAU,
-    alphaSpeed: 0.15 + Math.random() * 0.25,
+    speed: 0.2 + Math.random() * 0.3,
   });
 }
 
-/* caustic pattern config */
+/* caustics config */
 const caustics = [];
 for (let i = 0; i < 14; i++) {
   caustics.push({
-    xNorm: Math.random(),
-    yNorm: 0.82 + Math.random() * 0.18,
-    size: 20 + Math.random() * 50,
+    xNorm: 0.04 + i * 0.07 + (Math.random() - 0.5) * 0.04,
+    yNorm: 0.82 + Math.random() * 0.16,
+    size: 25 + Math.random() * 40,
     phase: Math.random() * TAU,
-    speed: 0.3 + Math.random() * 0.5,
-    alpha: 0.02 + Math.random() * 0.04,
+    speed: 0.5 + Math.random() * 0.6,
+    alpha: 0.03 + Math.random() * 0.04,
   });
 }
 
 function localOrder() {
-  let tot = 0, cnt = 0;
-  const r2 = sw.p.rAli * sw.p.rAli;
+  let sx = 0, sy = 0;
   for (let i = 0; i < sw.n; i++) {
-    const si = Math.hypot(sw.vx[i], sw.vy[i]) || 1;
-    for (let j = i + 1; j < sw.n; j++) {
-      const dx = sw.px[j] - sw.px[i], dy = sw.py[j] - sw.py[i];
-      if (dx * dx + dy * dy > r2) continue;
-      const sj = Math.hypot(sw.vx[j], sw.vy[j]) || 1;
-      tot += (sw.vx[i] * sw.vx[j] + sw.vy[i] * sw.vy[j]) / (si * sj);
-      cnt++;
-    }
+    const sp = Math.hypot(sw.vx[i], sw.vy[i]) || 1;
+    sx += sw.vx[i] / sp; sy += sw.vy[i] / sp;
   }
-  return cnt ? tot / cnt : 0;
+  return Math.hypot(sx, sy) / (sw.n || 1);
 }
 
-let last = performance.now(), acc = 0, fps = 60, fa = 0, fn = 0, t = 0, ordT = 0;
+let lastT = performance.now() / 1000, frames = 0, fpsT = 0, ordT = 0;
 
-function frame(now) {
-  const raw = (now - last) / 1000; last = now;
-  const dt = Math.min(raw, 0.05); t += dt;
-  rippleClock += dt;
-  fa += raw; fn++;
-  if (fa > 0.5) { fps = fn / fa; fa = 0; fn = 0; fpsEl.textContent = fps.toFixed(0); }
+function frame() {
+  const now = performance.now() / 1000;
+  const dt = Math.min(now - lastT, 0.05);
+  lastT = now;
+  const t = now;
 
-  for (let i = 0; i < RIPPLE_COUNT; i++) {
-    const ripple = world.ripples[i];
-    if (!ripple.active) continue;
-    ripple.age += dt;
-    ripple.radius += ripple.speed * dt;
-    ripple.strength = Math.max(0, 1 - ripple.age / ripple.lifetime);
-    if (ripple.age >= ripple.lifetime) ripple.active = false;
+  /* update foods */
+  world.foods = foods;
+  for (let fi = foods.length - 1; fi >= 0; fi--) {
+    const fd = foods[fi];
+    if (!fd.active) { foods.splice(fi, 1); continue; }
+    fd.age += dt;
+    if (fd.age > fd.maxAge) { fd.active = false; continue; }
+    if (fd.y < H - 24) {
+      fd.y += fd.vy * dt;
+      fd.x += fd.vx * dt + Math.sin(t * 3 + fd.age * 2) * 6 * dt;
+      fd.vy = Math.min(fd.vy + 12 * dt, 36);
+    }
   }
 
-  acc += dt;
-  let guard = 0;
-  while (acc >= 1 / 60 && guard++ < 5) {
-    sw.step(1 / 60, world);
-    acc -= 1 / 60;
-  }
+  /* update fish engine */
+  sw.step(dt, world);
 
+  frames++; fpsT += dt;
+  if (fpsT > 0.5) {
+    fpsEl.textContent = Math.round(frames / fpsT);
+    frames = 0; fpsT = 0;
+  }
   ordT += dt;
   if (ordT > 0.25) { ordEl.textContent = localOrder().toFixed(2); ordT = 0; }
 
@@ -193,67 +304,49 @@ function frame(now) {
   bg.addColorStop(1, '#020c1e');
   g.fillStyle = bg; g.fillRect(0, 0, W, H);
 
-  /* 2. God rays — volumetric light shafts from above */
+  /* 2. God rays */
   g.save();
   for (let i = 0; i < godRays.length; i++) {
-    const ray = godRays[i];
-    const x = (ray.xNorm + Math.sin(t * ray.speed + ray.phase) * 0.04) * W;
-    const alphaOsc = ray.alpha * (0.6 + 0.4 * Math.sin(t * ray.alphaSpeed + ray.alphaPhase));
-    const grd = g.createLinearGradient(x, 0, x + (ray.bottomW - ray.topW) * 0.3, H);
-    grd.addColorStop(0, 'rgba(180,235,255,' + (alphaOsc * 2.2) + ')');
-    grd.addColorStop(0.15, 'rgba(120,210,240,' + (alphaOsc * 1.5) + ')');
-    grd.addColorStop(0.5, 'rgba(70,170,220,' + (alphaOsc * 0.8) + ')');
-    grd.addColorStop(1, 'rgba(30,100,160,0)');
+    const r = godRays[i];
+    const topX = (r.xNorm + Math.sin(t * r.speed * 0.5 + r.phase) * 0.03) * W;
+    const botX = (r.xNorm + Math.sin(t * r.speed + r.phase) * 0.08) * W;
+    const a = r.alpha * (0.6 + 0.4 * Math.sin(t * r.speed * 1.5 + r.phase));
+    const grd = g.createLinearGradient(topX, 0, botX, H * 0.85);
+    grd.addColorStop(0, 'rgba(180,240,255,' + (a * 2.2) + ')');
+    grd.addColorStop(0.3, 'rgba(120,220,255,' + a + ')');
+    grd.addColorStop(0.7, 'rgba(80,180,230,' + (a * 0.4) + ')');
+    grd.addColorStop(1, 'rgba(40,120,180,0)');
     g.fillStyle = grd;
     g.beginPath();
-    g.moveTo(x - ray.topW / 2, 0);
-    g.lineTo(x + ray.topW / 2, 0);
-    g.lineTo(x + ray.bottomW / 2, H);
-    g.lineTo(x - ray.bottomW / 2, H);
+    g.moveTo(topX - r.topW * 0.5, 0);
+    g.lineTo(topX + r.topW * 0.5, 0);
+    g.lineTo(botX + r.bottomW * 0.5, H * 0.85);
+    g.lineTo(botX - r.bottomW * 0.5, H * 0.85);
     g.closePath();
     g.fill();
   }
   g.restore();
 
-  /* 3. Bright water surface */
-  const surfH = 70;
-  const surface = g.createLinearGradient(0, 0, 0, surfH);
-  surface.addColorStop(0, 'rgba(200,248,255,.55)');
-  surface.addColorStop(0.3, 'rgba(130,225,245,.32)');
-  surface.addColorStop(0.7, 'rgba(60,180,215,.12)');
-  surface.addColorStop(1, 'rgba(30,120,170,0)');
-  g.fillStyle = surface; g.fillRect(0, 0, W, surfH);
-
-  /* Surface ripple wave lines */
+  /* 3. Surface waves */
   g.save();
-  for (let wave = 0; wave < 3; wave++) {
-    g.strokeStyle = 'rgba(213,251,255,' + (0.38 - wave * 0.1) + ')';
-    g.lineWidth = 2.5 - wave * 0.6;
+  for (let w = 0; w < 3; w++) {
+    const waveY = 8 + w * 7;
+    const speed = 0.6 + w * 0.3;
+    const amp = 3 + w * 1.5;
     g.beginPath();
-    const yBase = 14 + wave * 12;
-    const freq = 0.035 + wave * 0.008;
-    const amp = 5 + wave * 2;
-    const spd = 0.8 + wave * 0.3;
-    for (let x = 0; x <= W + 70; x += 4) {
-      const y = yBase + Math.sin(t * spd + x * freq) * amp
-                      + Math.sin(t * 0.6 + x * 0.018 + wave) * (amp * 0.5);
-      if (x === 0) g.moveTo(x, y); else g.lineTo(x, y);
+    g.moveTo(0, waveY);
+    for (let x = 0; x <= W; x += 16) {
+      const y = waveY + Math.sin(x * 0.008 + t * speed + w * 1.8) * amp
+                      + Math.sin(x * 0.018 - t * speed * 0.7) * (amp * 0.4);
+      g.lineTo(x, y);
     }
+    g.strokeStyle = 'rgba(180,240,255,' + (0.12 - w * 0.03) + ')';
+    g.lineWidth = 1.2;
     g.stroke();
-  }
-  /* Bright shimmer highlights on surface */
-  for (let i = 0; i < 20; i++) {
-    const sx = ((i * 0.053 + t * 0.008 + Math.sin(i * 3.7) * 0.02) % 1.1) * W;
-    const sy = 6 + Math.sin(t * 1.2 + i * 2.3) * 4;
-    const shimAlpha = 0.12 + 0.1 * Math.sin(t * 2.5 + i * 1.9);
-    g.fillStyle = 'rgba(255,255,255,' + Math.max(0, shimAlpha) + ')';
-    g.beginPath();
-    g.ellipse(sx, sy, 8 + Math.sin(i) * 4, 1.5, 0, 0, TAU);
-    g.fill();
   }
   g.restore();
 
-  /* 4. Caustic light patterns on the sandy floor */
+  /* 4. Caustic patterns */
   g.save();
   for (let i = 0; i < caustics.length; i++) {
     const c = caustics[i];
@@ -270,7 +363,7 @@ function frame(now) {
   }
   g.restore();
 
-  /* 5. Sandy floor gradient */
+  /* 5. Sandy floor */
   const floorH = H * 0.12;
   const floor = g.createLinearGradient(0, H - floorH, 0, H);
   floor.addColorStop(0, 'rgba(20,60,80,0)');
@@ -278,7 +371,7 @@ function frame(now) {
   floor.addColorStop(1, 'rgba(12,35,50,.3)');
   g.fillStyle = floor; g.fillRect(0, H - floorH, W, floorH);
 
-  /* 6. Seaweed — lush swaying kelp */
+  /* 6. Seaweed */
   g.save();
   for (let si = 0; si < seaweeds.length; si++) {
     const sw2 = seaweeds[si];
@@ -288,19 +381,13 @@ function frame(now) {
     g.lineCap = 'round';
     g.lineJoin = 'round';
 
-    /* draw main stem */
     const pts = [{ x: baseX, y: baseY }];
     for (let s = 1; s <= sw2.segments; s++) {
-      const frac = s / sw2.segments;
       const sway = Math.sin(t * sw2.speed + sw2.phase + s * 0.8) * (9 + s * 3)
                   + Math.sin(t * sw2.speed * 0.6 + s * 1.3) * (4 + s * 1.5);
-      pts.push({
-        x: baseX + sway,
-        y: baseY - s * sw2.segLen,
-      });
+      pts.push({ x: baseX + sway, y: baseY - s * sw2.segLen });
     }
 
-    /* stem stroke gradient */
     const stemGrd = g.createLinearGradient(baseX, baseY, baseX, baseY - sw2.segments * sw2.segLen);
     stemGrd.addColorStop(0, 'hsl(' + sw2.hue + ',' + sw2.sat + '%,' + (sw2.lit + 5) + '%)');
     stemGrd.addColorStop(0.5, 'hsl(' + sw2.hue + ',' + (sw2.sat + 10) + '%,' + (sw2.lit + 10) + '%)');
@@ -311,40 +398,14 @@ function frame(now) {
     g.moveTo(pts[0].x, pts[0].y);
     for (let s = 1; s < pts.length; s++) {
       const prev = pts[s - 1], cur = pts[s];
-      const cpx = (prev.x + cur.x) / 2;
-      const cpy = (prev.y + cur.y) / 2;
-      g.quadraticCurveTo(prev.x, prev.y, cpx, cpy);
+      g.quadraticCurveTo(prev.x, prev.y, (prev.x + cur.x) / 2, (prev.y + cur.y) / 2);
     }
-    const lastPt = pts[pts.length - 1];
-    g.lineTo(lastPt.x, lastPt.y);
+    g.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
     g.stroke();
-
-    /* draw leaf-like shapes along stem */
-    for (let s = 2; s < pts.length; s++) {
-      if (Math.sin(s * 7.1 + si * 3.3) < sw2.leafFreq) continue;
-      const pt = pts[s];
-      const side = (s % 2 === 0) ? 1 : -1;
-      const leafLen = (sw2.width * 1.8 + Math.sin(t * sw2.speed * 0.8 + s) * 3) * (1 - (s / pts.length) * 0.3);
-      const leafSway = Math.sin(t * sw2.speed * 1.2 + s * 1.5 + sw2.phase) * 4;
-
-      g.fillStyle = 'hsla(' + (sw2.hue + 10) + ',' + (sw2.sat + 20) + '%,' + (sw2.lit + 15) + '%,0.7)';
-      g.beginPath();
-      g.moveTo(pt.x, pt.y);
-      g.quadraticCurveTo(
-        pt.x + side * leafLen * 0.6 + leafSway, pt.y - sw2.segLen * 0.3,
-        pt.x + side * leafLen + leafSway, pt.y - sw2.segLen * 0.15
-      );
-      g.quadraticCurveTo(
-        pt.x + side * leafLen * 0.5 + leafSway, pt.y + sw2.segLen * 0.15,
-        pt.x, pt.y + 3
-      );
-      g.closePath();
-      g.fill();
-    }
   }
   g.restore();
 
-  /* 7. Marine snow (falling particles) */
+  /* 7. Marine snow */
   for (const s of snow) {
     s.y += s.v * dt; s.x += s.drift * dt;
     if (s.y > H + 10) { s.y = -10; s.x = Math.random() * W; }
@@ -353,89 +414,172 @@ function frame(now) {
     g.beginPath(); g.arc(s.x, s.y, s.r, 0, TAU); g.fill();
   }
 
-  /* 8. Bubbles — enhanced with gradient fill and highlight */
+  /* 8. Rising Bubbles */
   g.lineWidth = 1;
-  for (const bubble of bubbles) {
+  for (let bi = bubbles.length - 1; bi >= 0; bi--) {
+    const bubble = bubbles[bi];
     bubble.wobblePhase += dt * bubble.wobbleFreq;
     bubble.y -= bubble.v * dt;
     bubble.x += bubble.drift * dt + Math.sin(bubble.wobblePhase) * bubble.wobbleAmp;
-    if (bubble.y < -bubble.r - 4) { bubble.y = H + bubble.r + 4; bubble.x = Math.random() * W; }
-    if (bubble.x > W + 12) bubble.x = -12; if (bubble.x < -12) bubble.x = W + 12;
-
+    if (bubble.y < -bubble.r - 4) {
+      if (bi >= 40) { bubbles.splice(bi, 1); continue; }
+      bubble.y = H + bubble.r + 4; bubble.x = Math.random() * W;
+    }
     const br = bubble.r;
-
-    /* bubble body: transparent with edge highlight */
     g.globalAlpha = bubble.a * 0.6;
     const bGrd = g.createRadialGradient(
       bubble.x - br * 0.25, bubble.y - br * 0.25, br * 0.1,
       bubble.x, bubble.y, br
     );
-    bGrd.addColorStop(0, 'rgba(220,250,255,0.35)');
-    bGrd.addColorStop(0.7, 'rgba(150,220,240,0.1)');
+    bGrd.addColorStop(0, 'rgba(220,250,255,0.4)');
     bGrd.addColorStop(1, 'rgba(120,200,230,0.02)');
     g.fillStyle = bGrd;
     g.beginPath(); g.arc(bubble.x, bubble.y, br, 0, TAU); g.fill();
-
-    /* bubble outline */
-    g.globalAlpha = bubble.a * 0.8;
     g.strokeStyle = 'rgba(200,245,255,0.5)';
     g.beginPath(); g.arc(bubble.x, bubble.y, br, 0, TAU); g.stroke();
+  }
+  g.globalAlpha = 1;
 
-    /* highlight spot */
-    g.globalAlpha = bubble.a * 0.9;
-    g.fillStyle = 'rgba(255,255,255,0.6)';
+  /* 9. Food pellets rendering */
+  for (let fi = 0; fi < foods.length; fi++) {
+    const fd = foods[fi];
+    if (!fd.active) continue;
+    const alpha = Math.min(1, (fd.maxAge - fd.age) * 2.5);
+    g.globalAlpha = alpha;
+    g.fillStyle = 'hsl(' + fd.hue + ', 85%, 52%)';
     g.beginPath();
-    g.arc(bubble.x - br * 0.3, bubble.y - br * 0.3, br * 0.18, 0, TAU);
+    g.arc(fd.x, fd.y, fd.r, 0, TAU);
+    g.fill();
+    g.fillStyle = 'hsl(' + fd.hue + ', 95%, 78%)';
+    g.beginPath();
+    g.arc(fd.x - fd.r * 0.3, fd.y - fd.r * 0.3, fd.r * 0.45, 0, TAU);
     g.fill();
   }
-  g.globalAlpha = 1;
-
-  /* 9. Water ripples from pointer interaction */
-  for (let i = 0; i < RIPPLE_COUNT; i++) {
-    const ripple = world.ripples[i];
-    if (!ripple.active) continue;
-    g.globalAlpha = ripple.strength * 0.32;
-    g.strokeStyle = '#a8eaff'; g.lineWidth = 1.2;
-    g.beginPath(); g.arc(ripple.x, ripple.y, ripple.radius, 0, TAU); g.stroke();
+  /* Food crumbs */
+  for (let ci = crumbs.length - 1; ci >= 0; ci--) {
+    const cr = crumbs[ci];
+    cr.x += cr.vx * dt; cr.y += cr.vy * dt; cr.life -= dt;
+    if (cr.life <= 0) { crumbs.splice(ci, 1); continue; }
+    g.globalAlpha = Math.min(1, cr.life * 2);
+    g.fillStyle = cr.color;
+    g.beginPath(); g.arc(cr.x, cr.y, 1.6, 0, TAU); g.fill();
   }
   g.globalAlpha = 1;
 
-  /* 10. Fish rendering */
+  /* 10. Fish rendering (Zero-jitter, smoothed facing and swimming kinematics) */
   let hoverIdx = -1, hoverD = 1e9;
   for (let i = 0; i < sw.n; i++) {
-    const f = FISH_DATA[i]; if (!f) continue;
+    const f = ALL_FISH[i]; if (!f) continue;
     const x = sw.px[i], y = sw.py[i];
     const vx = sw.vx[i], vy = sw.vy[i];
-    const sp = Math.hypot(vx, vy) || 1;
-    const dx = vx / sp, dy = vy / sp;
-    const nx = -dy, ny = dx;
-    const b = f.size, tl = b * 0.75;
-    const op = f.dormant ? 0.74 : 0.95;
+    const b = f.size;
+    const isDormant = !!f.dormant;
 
-    if (hovering) {
-      const d = Math.hypot(x - mx, y - my);
-      if (d < b + 12 && d < hoverD) { hoverD = d; hoverIdx = i; }
+    /* Check food eating */
+    for (let fi = 0; fi < foods.length; fi++) {
+      const fd = foods[fi];
+      if (!fd.active) continue;
+      const dist = Math.hypot(fd.x - x, fd.y - y);
+      if (dist < b * 1.8 + fd.r + 6) {
+        fd.active = false;
+        for (let c = 0; c < 5; c++) {
+          crumbs.push({
+            x: fd.x, y: fd.y,
+            vx: (Math.random() - 0.5) * 28,
+            vy: (Math.random() - 0.5) * 28,
+            life: 0.5,
+            color: 'hsl(' + fd.hue + ', 85%, 65%)'
+          });
+        }
+        spawnCursorBubbles(x, y - b);
+        break;
+      }
     }
 
-    g.globalAlpha = op;
-    g.shadowBlur = f.dormant ? 14 : 9; g.shadowColor = f.color;
-    g.fillStyle = f.color;
-    g.beginPath();
-    g.ellipse(x, y, b, b * 0.52, Math.atan2(dy, dx), 0, TAU);
-    g.fill();
-    const wig = Math.sin(sw.phase[i]) * tl * 0.34;
-    g.beginPath();
-    g.moveTo(x - dx * b, y - dy * b);
-    g.lineTo(x - dx * (b + tl) + nx * (tl * 0.6 + wig), y - dy * (b + tl) + ny * (tl * 0.6 + wig));
-    g.lineTo(x - dx * (b + tl) - nx * (tl * 0.6 - wig), y - dy * (b + tl) - ny * (tl * 0.6 - wig));
-    g.closePath(); g.fill();
-    g.shadowBlur = 0;
-    g.fillStyle = '#04121f';
-    g.beginPath();
-    g.arc(x + dx * b * 0.45 + nx * b * 0.16, y + dy * b * 0.45 + ny * b * 0.16,
-          Math.max(1.1, b * 0.13), 0, TAU);
-    g.fill();
-    g.globalAlpha = 1;
+    // Hover detection with generous hit radius
+    const hitR = Math.max(20, b * 2.2);
+    if (hovering) {
+      const d = Math.hypot(x - mx, y - my);
+      if (d < hitR && d < hoverD) { hoverD = d; hoverIdx = i; }
+    }
+
+    const isHovered = (hoverIdx === i);
+    const spriteKey = getSpriteKey(f, i);
+    const spDef = SPRITE_DATA[spriteKey];
+    const sheetImg = spDef ? sheetImgs[spDef[0]] : null;
+
+    /* Jitter-free Facing Direction via Hysteresis */
+    if (vx > 5) fishFacing[i] = 1;
+    else if (vx < -5) fishFacing[i] = -1;
+
+    // Smooth transition between facing left and right
+    fishScaleX[i] += (fishFacing[i] - fishScaleX[i]) * Math.min(1, dt * 10);
+
+    // Smooth swimming pitch
+    const rawPitch = Math.atan2(vy, Math.abs(vx) || 1);
+    const targetPitch = Math.max(-0.65, Math.min(0.65, rawPitch)) * 0.42;
+    fishPitch[i] += (targetPitch - fishPitch[i]) * Math.min(1, dt * 8);
+
+    if (sheetImg && sheetImg._loaded) {
+      const sx = spDef[1], sy = spDef[2], sw_px = spDef[3], sh_px = spDef[4];
+      const aspect = sh_px / sw_px;
+      const drawW = Math.max(24, b * 3.6);
+      const drawH = drawW * aspect;
+
+      g.save();
+      g.translate(x, y);
+
+      // Natural swimming wiggle
+      const wiggle = Math.sin(sw.phase[i]) * 0.07;
+      g.rotate(fishPitch[i] + wiggle);
+
+      // Smooth turning scale and subtle swim squash-stretch
+      const squash = 1 + Math.sin(sw.phase[i] * 1.6) * 0.035;
+      g.scale(fishScaleX[i] * squash, (1 / squash));
+
+      // Lighting, depth glow and interaction highlight
+      if (isHovered) {
+        g.globalAlpha = 1;
+        g.shadowBlur = 20;
+        g.shadowColor = '#66dcff';
+      } else if (isDormant) {
+        g.globalAlpha = 0.76;
+        g.shadowBlur = 10;
+        g.shadowColor = f.color || '#7fd8ff';
+      } else {
+        g.globalAlpha = 0.98;
+        g.shadowBlur = 6;
+        g.shadowColor = 'rgba(0,25,50,0.4)';
+      }
+
+      g.drawImage(sheetImg, sx, sy, sw_px, sh_px, -drawW / 2, -drawH / 2, drawW, drawH);
+      g.restore();
+    } else {
+      // Procedural fallback
+      const tl = b * 0.75;
+      const sp = Math.hypot(vx, vy) || 1;
+      const dx = vx / sp, dy = vy / sp;
+      const nx = -dy, ny = dx;
+      g.globalAlpha = isDormant ? 0.74 : 0.95;
+      g.shadowBlur = isDormant ? 14 : 9; g.shadowColor = f.color;
+      g.fillStyle = f.color;
+      g.beginPath();
+      g.ellipse(x, y, b, b * 0.52, Math.atan2(dy, dx), 0, TAU);
+      g.fill();
+      const wig = Math.sin(sw.phase[i]) * tl * 0.34;
+      g.beginPath();
+      g.moveTo(x - dx * b, y - dy * b);
+      g.lineTo(x - dx * (b + tl) + nx * (tl * 0.6 + wig), y - dy * (b + tl) + ny * (tl * 0.6 + wig));
+      g.lineTo(x - dx * (b + tl) - nx * (tl * 0.6 - wig), y - dy * (b + tl) - ny * (tl * 0.6 - wig));
+      g.closePath(); g.fill();
+      g.shadowBlur = 0;
+      g.fillStyle = '#04121f';
+      g.beginPath();
+      g.arc(x + dx * b * 0.45 + nx * b * 0.16, y + dy * b * 0.45 + ny * b * 0.16,
+            Math.max(1.1, b * 0.13), 0, TAU);
+      g.fill();
+      g.globalAlpha = 1;
+    }
   }
 
   /* 11. Vignette overlay for depth */
@@ -446,10 +590,13 @@ function frame(now) {
   g.fillStyle = vig; g.fillRect(0, 0, W, H);
 
   if (hoverIdx >= 0) {
-    const f = FISH_DATA[hoverIdx];
-    tip.textContent = f.name + '  ·  ' + f.lang + '  ·  ' + f.stars + '\u2605' +
+    const f = ALL_FISH[hoverIdx];
+    const spriteKey = getSpriteKey(f, hoverIdx);
+    const dispSpecies = (f.species || spriteKey).replace(/_/g, ' ');
+    const commitText = f.commits ? ('  ·  ' + f.commits + ' commits') : '';
+    tip.textContent = f.name + '  ·  ' + dispSpecies + '  ·  ' + f.lang + commitText + '  ·  ' + f.stars + '\u2605' +
       (f.dormant ? '  ·  resting ' + f.ageDays + 'd' : '');
-    tip.style.left = Math.min(mx + 16, W - 230) + 'px';
+    tip.style.left = Math.min(mx + 16, W - 290) + 'px';
     tip.style.top = (my + 16) + 'px';
     tip.classList.add('on');
   } else tip.classList.remove('on');
@@ -457,5 +604,4 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
-
 })();
