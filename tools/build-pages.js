@@ -76,6 +76,14 @@ ${squeeze(client)}
     fs.mkdirSync(path.dirname(t), { recursive: true });
     fs.writeFileSync(t, html);
     console.log(t + '  ' + (Buffer.byteLength(html) / 1024).toFixed(1) + ' KB  (' + data.fish.length + ' fish)');
+
+    // Ensure assets/sprites/ has catalog synced
+    const targetCatalog = path.join(path.dirname(t), 'assets/sprites/sprite-catalog.json');
+    const srcCatalog = path.join(projectRoot, 'docs/assets/sprites/sprite-catalog.json');
+    if (fs.existsSync(srcCatalog)) {
+      fs.mkdirSync(path.dirname(targetCatalog), { recursive: true });
+      fs.copyFileSync(srcCatalog, targetCatalog);
+    }
   });
 }
 

@@ -35,6 +35,10 @@ const SPECIES = [
   { name: 'pufferfish', sprite: 'green_pufferfish', group: 7, schooling: true, depth: 0.70 },
   { name: 'jellyfish', sprite: 'blue_jellyfish', group: 7, schooling: true, depth: 0.75 },
   { name: 'blue-shark', sprite: 'blue_shark', group: 6, schooling: false, depth: 0.35 },
+  { name: 'red-crab', sprite: 'red_crab', group: 8, schooling: false, depth: 0.90, benthic: true },
+  { name: 'starfish', sprite: 'orange_starfish', group: 8, schooling: false, depth: 0.92, benthic: true },
+  { name: 'giant-clam', sprite: 'giant_clam', group: 8, schooling: false, depth: 0.93, benthic: true },
+  { name: 'red-lobster', sprite: 'red_lobster', group: 8, schooling: false, depth: 0.91, benthic: true },
 ];
 
 function speciesFor(language, name) {

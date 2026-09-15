@@ -1,0 +1,1502 @@
+{
+  "blue_shark": {
+    "species": "blue_shark",
+    "sheet": 0,
+    "rect": [
+      5,
+      30,
+      105,
+      76
+    ],
+    "file": "blue_shark.png",
+    "classType": "pelagic",
+    "targetDepth": 0.28,
+    "schooling": false,
+    "baseW": 36
+  },
+  "spotted_shark": {
+    "species": "spotted_shark",
+    "sheet": 0,
+    "rect": [
+      114,
+      44,
+      92,
+      60
+    ],
+    "file": "spotted_shark.png",
+    "classType": "pelagic",
+    "targetDepth": 0.28,
+    "schooling": false,
+    "baseW": 36
+  },
+  "orca": {
+    "species": "orca",
+    "sheet": 0,
+    "rect": [
+      208,
+      32,
+      100,
+      74
+    ],
+    "file": "orca.png",
+    "classType": "pelagic",
+    "targetDepth": 0.28,
+    "schooling": false,
+    "baseW": 36
+  },
+  "blue_dolphin": {
+    "species": "blue_dolphin",
+    "sheet": 0,
+    "rect": [
+      310,
+      33,
+      98,
+      73
+    ],
+    "file": "blue_dolphin.png",
+    "classType": "pelagic",
+    "targetDepth": 0.28,
+    "schooling": true,
+    "baseW": 36
+  },
+  "pink_dolphin": {
+    "species": "pink_dolphin",
+    "sheet": 0,
+    "rect": [
+      410,
+      35,
+      100,
+      70
+    ],
+    "file": "pink_dolphin.png",
+    "classType": "pelagic",
+    "targetDepth": 0.28,
+    "schooling": true,
+    "baseW": 36
+  },
+  "blue_whale": {
+    "species": "blue_whale",
+    "sheet": 0,
+    "rect": [
+      511,
+      22,
+      103,
+      88
+    ],
+    "file": "blue_whale.png",
+    "classType": "pelagic",
+    "targetDepth": 0.28,
+    "schooling": false,
+    "baseW": 36
+  },
+  "beluga": {
+    "species": "beluga",
+    "sheet": 0,
+    "rect": [
+      616,
+      47,
+      103,
+      59
+    ],
+    "file": "beluga.png",
+    "classType": "pelagic",
+    "targetDepth": 0.28,
+    "schooling": false,
+    "baseW": 36
+  },
+  "stingray": {
+    "species": "stingray",
+    "sheet": 0,
+    "rect": [
+      721,
+      36,
+      96,
+      68
+    ],
+    "file": "stingray.png",
+    "classType": "glider",
+    "targetDepth": 0.48,
+    "schooling": false,
+    "baseW": 30
+  },
+  "spotted_ray": {
+    "species": "spotted_ray",
+    "sheet": 0,
+    "rect": [
+      824,
+      34,
+      88,
+      73
+    ],
+    "file": "spotted_ray.png",
+    "classType": "glider",
+    "targetDepth": 0.48,
+    "schooling": false,
+    "baseW": 30
+  },
+  "swordfish": {
+    "species": "swordfish",
+    "sheet": 0,
+    "rect": [
+      916,
+      34,
+      106,
+      69
+    ],
+    "file": "swordfish.png",
+    "classType": "glider",
+    "targetDepth": 0.48,
+    "schooling": false,
+    "baseW": 30
+  },
+  "clownfish": {
+    "species": "clownfish",
+    "sheet": 0,
+    "rect": [
+      7,
+      127,
+      96,
+      70
+    ],
+    "file": "clownfish.png",
+    "classType": "reef",
+    "targetDepth": 0.58,
+    "schooling": true,
+    "baseW": 22
+  },
+  "blue_tang": {
+    "species": "blue_tang",
+    "sheet": 0,
+    "rect": [
+      111,
+      128,
+      92,
+      65
+    ],
+    "file": "blue_tang.png",
+    "classType": "reef",
+    "targetDepth": 0.58,
+    "schooling": true,
+    "baseW": 22
+  },
+  "yellow_tang": {
+    "species": "yellow_tang",
+    "sheet": 0,
+    "rect": [
+      213,
+      129,
+      91,
+      72
+    ],
+    "file": "yellow_tang.png",
+    "classType": "reef",
+    "targetDepth": 0.58,
+    "schooling": true,
+    "baseW": 22
+  },
+  "purple_fish": {
+    "species": "purple_fish",
+    "sheet": 0,
+    "rect": [
+      313,
+      130,
+      92,
+      66
+    ],
+    "file": "purple_fish.png",
+    "classType": "reef",
+    "targetDepth": 0.58,
+    "schooling": true,
+    "baseW": 22
+  },
+  "flame_angelfish": {
+    "species": "flame_angelfish",
+    "sheet": 0,
+    "rect": [
+      417,
+      128,
+      93,
+      72
+    ],
+    "file": "flame_angelfish.png",
+    "classType": "reef",
+    "targetDepth": 0.58,
+    "schooling": true,
+    "baseW": 22
+  },
+  "moorish_idol": {
+    "species": "moorish_idol",
+    "sheet": 0,
+    "rect": [
+      524,
+      126,
+      81,
+      77
+    ],
+    "file": "moorish_idol.png",
+    "classType": "reef",
+    "targetDepth": 0.58,
+    "schooling": true,
+    "baseW": 22
+  },
+  "damselfish": {
+    "species": "damselfish",
+    "sheet": 0,
+    "rect": [
+      621,
+      131,
+      92,
+      73
+    ],
+    "file": "damselfish.png",
+    "classType": "reef",
+    "targetDepth": 0.58,
+    "schooling": true,
+    "baseW": 22
+  },
+  "butterflyfish": {
+    "species": "butterflyfish",
+    "sheet": 0,
+    "rect": [
+      727,
+      129,
+      92,
+      75
+    ],
+    "file": "butterflyfish.png",
+    "classType": "reef",
+    "targetDepth": 0.58,
+    "schooling": true,
+    "baseW": 22
+  },
+  "striped_angelfish": {
+    "species": "striped_angelfish",
+    "sheet": 0,
+    "rect": [
+      825,
+      124,
+      88,
+      83
+    ],
+    "file": "striped_angelfish.png",
+    "classType": "reef",
+    "targetDepth": 0.58,
+    "schooling": true,
+    "baseW": 22
+  },
+  "lionfish": {
+    "species": "lionfish",
+    "sheet": 0,
+    "rect": [
+      918,
+      119,
+      99,
+      93
+    ],
+    "file": "lionfish.png",
+    "classType": "reef",
+    "targetDepth": 0.58,
+    "schooling": true,
+    "baseW": 22
+  },
+  "green_turtle": {
+    "species": "green_turtle",
+    "sheet": 0,
+    "rect": [
+      4,
+      221,
+      101,
+      75
+    ],
+    "file": "green_turtle.png",
+    "classType": "glider",
+    "targetDepth": 0.48,
+    "schooling": false,
+    "baseW": 30
+  },
+  "brown_turtle": {
+    "species": "brown_turtle",
+    "sheet": 0,
+    "rect": [
+      107,
+      224,
+      101,
+      69
+    ],
+    "file": "brown_turtle.png",
+    "classType": "glider",
+    "targetDepth": 0.48,
+    "schooling": false,
+    "baseW": 30
+  },
+  "green_pufferfish": {
+    "species": "green_pufferfish",
+    "sheet": 0,
+    "rect": [
+      213,
+      215,
+      90,
+      84
+    ],
+    "file": "green_pufferfish.png",
+    "classType": "reef",
+    "targetDepth": 0.58,
+    "schooling": true,
+    "baseW": 22
+  },
+  "orange_pufferfish": {
+    "species": "orange_pufferfish",
+    "sheet": 0,
+    "rect": [
+      315,
+      218,
+      87,
+      80
+    ],
+    "file": "orange_pufferfish.png",
+    "classType": "reef",
+    "targetDepth": 0.58,
+    "schooling": true,
+    "baseW": 22
+  },
+  "blue_porcupinefish": {
+    "species": "blue_porcupinefish",
+    "sheet": 0,
+    "rect": [
+      417,
+      218,
+      89,
+      72
+    ],
+    "file": "blue_porcupinefish.png",
+    "classType": "reef",
+    "targetDepth": 0.58,
+    "schooling": true,
+    "baseW": 22
+  },
+  "orange_seahorse": {
+    "species": "orange_seahorse",
+    "sheet": 0,
+    "rect": [
+      531,
+      211,
+      66,
+      100
+    ],
+    "file": "orange_seahorse.png",
+    "classType": "coral",
+    "targetDepth": 0.78,
+    "schooling": false,
+    "baseW": 20
+  },
+  "pink_seahorse": {
+    "species": "pink_seahorse",
+    "sheet": 0,
+    "rect": [
+      629,
+      212,
+      62,
+      97
+    ],
+    "file": "pink_seahorse.png",
+    "classType": "coral",
+    "targetDepth": 0.78,
+    "schooling": false,
+    "baseW": 20
+  },
+  "red_octopus": {
+    "species": "red_octopus",
+    "sheet": 0,
+    "rect": [
+      711,
+      214,
+      108,
+      95
+    ],
+    "file": "red_octopus.png",
+    "classType": "coral",
+    "targetDepth": 0.78,
+    "schooling": false,
+    "baseW": 20
+  },
+  "pink_squid": {
+    "species": "pink_squid",
+    "sheet": 0,
+    "rect": [
+      832,
+      212,
+      82,
+      98
+    ],
+    "file": "pink_squid.png",
+    "classType": "coral",
+    "targetDepth": 0.78,
+    "schooling": false,
+    "baseW": 20
+  },
+  "moray_eel": {
+    "species": "moray_eel",
+    "sheet": 0,
+    "rect": [
+      918,
+      231,
+      101,
+      61
+    ],
+    "file": "moray_eel.png",
+    "classType": "glider",
+    "targetDepth": 0.48,
+    "schooling": false,
+    "baseW": 30
+  },
+  "red_lobster": {
+    "species": "red_lobster",
+    "sheet": 0,
+    "rect": [
+      6,
+      308,
+      100,
+      93
+    ],
+    "file": "red_lobster.png",
+    "classType": "benthic",
+    "targetDepth": 0.92,
+    "schooling": false,
+    "baseW": 20
+  },
+  "red_crab": {
+    "species": "red_crab",
+    "sheet": 0,
+    "rect": [
+      111,
+      320,
+      96,
+      79
+    ],
+    "file": "red_crab.png",
+    "classType": "benthic",
+    "targetDepth": 0.92,
+    "schooling": false,
+    "baseW": 20
+  },
+  "mantis_shrimp": {
+    "species": "mantis_shrimp",
+    "sheet": 0,
+    "rect": [
+      212,
+      318,
+      97,
+      77
+    ],
+    "file": "mantis_shrimp.png",
+    "classType": "benthic",
+    "targetDepth": 0.92,
+    "schooling": false,
+    "baseW": 20
+  },
+  "blue_jellyfish": {
+    "species": "blue_jellyfish",
+    "sheet": 0,
+    "rect": [
+      318,
+      305,
+      80,
+      101
+    ],
+    "file": "blue_jellyfish.png",
+    "classType": "coral",
+    "targetDepth": 0.78,
+    "schooling": false,
+    "baseW": 20
+  },
+  "pink_jellyfish": {
+    "species": "pink_jellyfish",
+    "sheet": 0,
+    "rect": [
+      413,
+      307,
+      83,
+      97
+    ],
+    "file": "pink_jellyfish.png",
+    "classType": "coral",
+    "targetDepth": 0.78,
+    "schooling": false,
+    "baseW": 20
+  },
+  "sea_anemone": {
+    "species": "sea_anemone",
+    "sheet": 0,
+    "rect": [
+      511,
+      317,
+      104,
+      87
+    ],
+    "file": "sea_anemone.png",
+    "classType": "coral",
+    "targetDepth": 0.78,
+    "schooling": false,
+    "baseW": 20
+  },
+  "sea_urchin": {
+    "species": "sea_urchin",
+    "sheet": 0,
+    "rect": [
+      623,
+      319,
+      88,
+      83
+    ],
+    "file": "sea_urchin.png",
+    "classType": "benthic",
+    "targetDepth": 0.92,
+    "schooling": false,
+    "baseW": 20
+  },
+  "orange_starfish": {
+    "species": "orange_starfish",
+    "sheet": 0,
+    "rect": [
+      724,
+      318,
+      91,
+      84
+    ],
+    "file": "orange_starfish.png",
+    "classType": "benthic",
+    "targetDepth": 0.92,
+    "schooling": false,
+    "baseW": 20
+  },
+  "blue_starfish": {
+    "species": "blue_starfish",
+    "sheet": 0,
+    "rect": [
+      825,
+      318,
+      88,
+      83
+    ],
+    "file": "blue_starfish.png",
+    "classType": "benthic",
+    "targetDepth": 0.92,
+    "schooling": false,
+    "baseW": 20
+  },
+  "sea_cucumber": {
+    "species": "sea_cucumber",
+    "sheet": 0,
+    "rect": [
+      920,
+      334,
+      96,
+      54
+    ],
+    "file": "sea_cucumber.png",
+    "classType": "benthic",
+    "targetDepth": 0.92,
+    "schooling": false,
+    "baseW": 20
+  },
+  "pink_clam": {
+    "species": "pink_clam",
+    "sheet": 0,
+    "rect": [
+      10,
+      412,
+      89,
+      85
+    ],
+    "file": "pink_clam.png",
+    "classType": "benthic",
+    "targetDepth": 0.92,
+    "schooling": false,
+    "baseW": 20
+  },
+  "brown_clam": {
+    "species": "brown_clam",
+    "sheet": 0,
+    "rect": [
+      108,
+      412,
+      89,
+      83
+    ],
+    "file": "brown_clam.png",
+    "classType": "benthic",
+    "targetDepth": 0.92,
+    "schooling": false,
+    "baseW": 20
+  },
+  "banded_shrimp": {
+    "species": "banded_shrimp",
+    "sheet": 0,
+    "rect": [
+      201,
+      406,
+      105,
+      89
+    ],
+    "file": "banded_shrimp.png",
+    "classType": "benthic",
+    "targetDepth": 0.92,
+    "schooling": false,
+    "baseW": 20
+  },
+  "orange_shrimp": {
+    "species": "orange_shrimp",
+    "sheet": 0,
+    "rect": [
+      308,
+      413,
+      90,
+      85
+    ],
+    "file": "orange_shrimp.png",
+    "classType": "benthic",
+    "targetDepth": 0.92,
+    "schooling": false,
+    "baseW": 20
+  },
+  "yellow_striped_fish": {
+    "species": "yellow_striped_fish",
+    "sheet": 0,
+    "rect": [
+      414,
+      420,
+      91,
+      73
+    ],
+    "file": "yellow_striped_fish.png",
+    "classType": "reef",
+    "targetDepth": 0.58,
+    "schooling": true,
+    "baseW": 22
+  },
+  "parrotfish": {
+    "species": "parrotfish",
+    "sheet": 0,
+    "rect": [
+      516,
+      417,
+      93,
+      74
+    ],
+    "file": "parrotfish.png",
+    "classType": "reef",
+    "targetDepth": 0.58,
+    "schooling": true,
+    "baseW": 22
+  },
+  "cyan_fish": {
+    "species": "cyan_fish",
+    "sheet": 0,
+    "rect": [
+      615,
+      419,
+      98,
+      68
+    ],
+    "file": "cyan_fish.png",
+    "classType": "reef",
+    "targetDepth": 0.58,
+    "schooling": true,
+    "baseW": 22
+  },
+  "pink_fish": {
+    "species": "pink_fish",
+    "sheet": 0,
+    "rect": [
+      721,
+      414,
+      94,
+      80
+    ],
+    "file": "pink_fish.png",
+    "classType": "reef",
+    "targetDepth": 0.58,
+    "schooling": true,
+    "baseW": 22
+  },
+  "multicolor_fish": {
+    "species": "multicolor_fish",
+    "sheet": 0,
+    "rect": [
+      824,
+      413,
+      92,
+      82
+    ],
+    "file": "multicolor_fish.png",
+    "classType": "reef",
+    "targetDepth": 0.58,
+    "schooling": true,
+    "baseW": 22
+  },
+  "violet_fish": {
+    "species": "violet_fish",
+    "sheet": 0,
+    "rect": [
+      926,
+      413,
+      89,
+      77
+    ],
+    "file": "violet_fish.png",
+    "classType": "reef",
+    "targetDepth": 0.58,
+    "schooling": true,
+    "baseW": 22
+  },
+  "grey_shark": {
+    "species": "grey_shark",
+    "sheet": 1,
+    "rect": [
+      10,
+      48,
+      99,
+      77
+    ],
+    "file": "grey_shark.png",
+    "classType": "pelagic",
+    "targetDepth": 0.28,
+    "schooling": false,
+    "baseW": 36
+  },
+  "hammerhead_shark": {
+    "species": "hammerhead_shark",
+    "sheet": 1,
+    "rect": [
+      109,
+      54,
+      104,
+      72
+    ],
+    "file": "hammerhead_shark.png",
+    "classType": "pelagic",
+    "targetDepth": 0.28,
+    "schooling": false,
+    "baseW": 36
+  },
+  "whale_shark": {
+    "species": "whale_shark",
+    "sheet": 1,
+    "rect": [
+      211,
+      55,
+      108,
+      73
+    ],
+    "file": "whale_shark.png",
+    "classType": "pelagic",
+    "targetDepth": 0.28,
+    "schooling": false,
+    "baseW": 36
+  },
+  "killer_whale": {
+    "species": "killer_whale",
+    "sheet": 1,
+    "rect": [
+      318,
+      50,
+      97,
+      77
+    ],
+    "file": "killer_whale.png",
+    "classType": "pelagic",
+    "targetDepth": 0.28,
+    "schooling": false,
+    "baseW": 36
+  },
+  "dolphin": {
+    "species": "dolphin",
+    "sheet": 1,
+    "rect": [
+      416,
+      53,
+      92,
+      75
+    ],
+    "file": "dolphin.png",
+    "classType": "pelagic",
+    "targetDepth": 0.28,
+    "schooling": true,
+    "baseW": 36
+  },
+  "beluga_whale": {
+    "species": "beluga_whale",
+    "sheet": 1,
+    "rect": [
+      509,
+      56,
+      103,
+      72
+    ],
+    "file": "beluga_whale.png",
+    "classType": "pelagic",
+    "targetDepth": 0.28,
+    "schooling": false,
+    "baseW": 36
+  },
+  "blue_whale_v2": {
+    "species": "blue_whale_v2",
+    "sheet": 1,
+    "rect": [
+      610,
+      62,
+      112,
+      65
+    ],
+    "file": "blue_whale_v2.png",
+    "classType": "pelagic",
+    "targetDepth": 0.28,
+    "schooling": false,
+    "baseW": 36
+  },
+  "humpback_whale": {
+    "species": "humpback_whale",
+    "sheet": 1,
+    "rect": [
+      720,
+      56,
+      103,
+      74
+    ],
+    "file": "humpback_whale.png",
+    "classType": "pelagic",
+    "targetDepth": 0.28,
+    "schooling": false,
+    "baseW": 36
+  },
+  "narwhal": {
+    "species": "narwhal",
+    "sheet": 1,
+    "rect": [
+      818,
+      42,
+      119,
+      87
+    ],
+    "file": "narwhal.png",
+    "classType": "pelagic",
+    "targetDepth": 0.28,
+    "schooling": false,
+    "baseW": 36
+  },
+  "manta_ray": {
+    "species": "manta_ray",
+    "sheet": 1,
+    "rect": [
+      914,
+      54,
+      97,
+      70
+    ],
+    "file": "manta_ray.png",
+    "classType": "glider",
+    "targetDepth": 0.48,
+    "schooling": false,
+    "baseW": 30
+  },
+  "electric_ray": {
+    "species": "electric_ray",
+    "sheet": 1,
+    "rect": [
+      9,
+      142,
+      93,
+      71
+    ],
+    "file": "electric_ray.png",
+    "classType": "glider",
+    "targetDepth": 0.48,
+    "schooling": false,
+    "baseW": 30
+  },
+  "spotted_eagle_ray": {
+    "species": "spotted_eagle_ray",
+    "sheet": 1,
+    "rect": [
+      107,
+      137,
+      99,
+      78
+    ],
+    "file": "spotted_eagle_ray.png",
+    "classType": "glider",
+    "targetDepth": 0.48,
+    "schooling": false,
+    "baseW": 30
+  },
+  "sawfish": {
+    "species": "sawfish",
+    "sheet": 1,
+    "rect": [
+      209,
+      146,
+      137,
+      70
+    ],
+    "file": "sawfish.png",
+    "classType": "glider",
+    "targetDepth": 0.48,
+    "schooling": false,
+    "baseW": 30
+  },
+  "spotted_moray": {
+    "species": "spotted_moray",
+    "sheet": 1,
+    "rect": [
+      322,
+      148,
+      96,
+      77
+    ],
+    "file": "spotted_moray.png",
+    "classType": "glider",
+    "targetDepth": 0.48,
+    "schooling": false,
+    "baseW": 30
+  },
+  "electric_eel": {
+    "species": "electric_eel",
+    "sheet": 1,
+    "rect": [
+      416,
+      158,
+      106,
+      51
+    ],
+    "file": "electric_eel.png",
+    "classType": "coral",
+    "targetDepth": 0.78,
+    "schooling": false,
+    "baseW": 20
+  },
+  "octopus_v2": {
+    "species": "octopus_v2",
+    "sheet": 1,
+    "rect": [
+      528,
+      138,
+      96,
+      87
+    ],
+    "file": "octopus_v2.png",
+    "classType": "coral",
+    "targetDepth": 0.78,
+    "schooling": false,
+    "baseW": 20
+  },
+  "blue_ringed_octopus": {
+    "species": "blue_ringed_octopus",
+    "sheet": 1,
+    "rect": [
+      631,
+      145,
+      87,
+      75
+    ],
+    "file": "blue_ringed_octopus.png",
+    "classType": "coral",
+    "targetDepth": 0.78,
+    "schooling": false,
+    "baseW": 20
+  },
+  "squid_v2": {
+    "species": "squid_v2",
+    "sheet": 1,
+    "rect": [
+      727,
+      137,
+      81,
+      90
+    ],
+    "file": "squid_v2.png",
+    "classType": "coral",
+    "targetDepth": 0.78,
+    "schooling": false,
+    "baseW": 20
+  },
+  "cuttlefish": {
+    "species": "cuttlefish",
+    "sheet": 1,
+    "rect": [
+      817,
+      154,
+      111,
+      70
+    ],
+    "file": "cuttlefish.png",
+    "classType": "reef",
+    "targetDepth": 0.58,
+    "schooling": true,
+    "baseW": 22
+  },
+  "nautilus": {
+    "species": "nautilus",
+    "sheet": 1,
+    "rect": [
+      943,
+      145,
+      74,
+      76
+    ],
+    "file": "nautilus.png",
+    "classType": "reef",
+    "targetDepth": 0.58,
+    "schooling": true,
+    "baseW": 22
+  },
+  "yellow_pufferfish": {
+    "species": "yellow_pufferfish",
+    "sheet": 1,
+    "rect": [
+      9,
+      233,
+      86,
+      77
+    ],
+    "file": "yellow_pufferfish.png",
+    "classType": "reef",
+    "targetDepth": 0.58,
+    "schooling": true,
+    "baseW": 22
+  },
+  "spiny_pufferfish": {
+    "species": "spiny_pufferfish",
+    "sheet": 1,
+    "rect": [
+      109,
+      231,
+      88,
+      83
+    ],
+    "file": "spiny_pufferfish.png",
+    "classType": "reef",
+    "targetDepth": 0.58,
+    "schooling": true,
+    "baseW": 22
+  },
+  "clownfish_v2": {
+    "species": "clownfish_v2",
+    "sheet": 1,
+    "rect": [
+      205,
+      235,
+      98,
+      74
+    ],
+    "file": "clownfish_v2.png",
+    "classType": "reef",
+    "targetDepth": 0.58,
+    "schooling": true,
+    "baseW": 22
+  },
+  "blue_tang_v2": {
+    "species": "blue_tang_v2",
+    "sheet": 1,
+    "rect": [
+      311,
+      237,
+      94,
+      71
+    ],
+    "file": "blue_tang_v2.png",
+    "classType": "reef",
+    "targetDepth": 0.58,
+    "schooling": true,
+    "baseW": 22
+  },
+  "yellow_tang_v2": {
+    "species": "yellow_tang_v2",
+    "sheet": 1,
+    "rect": [
+      417,
+      234,
+      90,
+      75
+    ],
+    "file": "yellow_tang_v2.png",
+    "classType": "reef",
+    "targetDepth": 0.58,
+    "schooling": true,
+    "baseW": 22
+  },
+  "angelfish_v2": {
+    "species": "angelfish_v2",
+    "sheet": 1,
+    "rect": [
+      517,
+      231,
+      91,
+      86
+    ],
+    "file": "angelfish_v2.png",
+    "classType": "reef",
+    "targetDepth": 0.58,
+    "schooling": true,
+    "baseW": 22
+  },
+  "butterflyfish_v2": {
+    "species": "butterflyfish_v2",
+    "sheet": 1,
+    "rect": [
+      621,
+      238,
+      91,
+      71
+    ],
+    "file": "butterflyfish_v2.png",
+    "classType": "reef",
+    "targetDepth": 0.58,
+    "schooling": true,
+    "baseW": 22
+  },
+  "lionfish_v2": {
+    "species": "lionfish_v2",
+    "sheet": 1,
+    "rect": [
+      721,
+      230,
+      90,
+      87
+    ],
+    "file": "lionfish_v2.png",
+    "classType": "reef",
+    "targetDepth": 0.58,
+    "schooling": true,
+    "baseW": 22
+  },
+  "rainbow_fish": {
+    "species": "rainbow_fish",
+    "sheet": 1,
+    "rect": [
+      820,
+      238,
+      96,
+      73
+    ],
+    "file": "rainbow_fish.png",
+    "classType": "reef",
+    "targetDepth": 0.58,
+    "schooling": true,
+    "baseW": 22
+  },
+  "black_triggerfish": {
+    "species": "black_triggerfish",
+    "sheet": 1,
+    "rect": [
+      926,
+      232,
+      90,
+      78
+    ],
+    "file": "black_triggerfish.png",
+    "classType": "reef",
+    "targetDepth": 0.58,
+    "schooling": true,
+    "baseW": 22
+  },
+  "seahorse_v2": {
+    "species": "seahorse_v2",
+    "sheet": 1,
+    "rect": [
+      27,
+      320,
+      52,
+      89
+    ],
+    "file": "seahorse_v2.png",
+    "classType": "coral",
+    "targetDepth": 0.78,
+    "schooling": false,
+    "baseW": 20
+  },
+  "green_turtle_v2": {
+    "species": "green_turtle_v2",
+    "sheet": 1,
+    "rect": [
+      85,
+      331,
+      111,
+      72
+    ],
+    "file": "green_turtle_v2.png",
+    "classType": "glider",
+    "targetDepth": 0.48,
+    "schooling": false,
+    "baseW": 30
+  },
+  "leatherback_turtle": {
+    "species": "leatherback_turtle",
+    "sheet": 1,
+    "rect": [
+      192,
+      325,
+      117,
+      85
+    ],
+    "file": "leatherback_turtle.png",
+    "classType": "glider",
+    "targetDepth": 0.48,
+    "schooling": false,
+    "baseW": 30
+  },
+  "spiny_lobster": {
+    "species": "spiny_lobster",
+    "sheet": 1,
+    "rect": [
+      310,
+      321,
+      92,
+      91
+    ],
+    "file": "spiny_lobster.png",
+    "classType": "benthic",
+    "targetDepth": 0.92,
+    "schooling": false,
+    "baseW": 20
+  },
+  "king_prawn": {
+    "species": "king_prawn",
+    "sheet": 1,
+    "rect": [
+      396,
+      320,
+      114,
+      91
+    ],
+    "file": "king_prawn.png",
+    "classType": "benthic",
+    "targetDepth": 0.92,
+    "schooling": false,
+    "baseW": 20
+  },
+  "hermit_crab": {
+    "species": "hermit_crab",
+    "sheet": 1,
+    "rect": [
+      517,
+      335,
+      90,
+      76
+    ],
+    "file": "hermit_crab.png",
+    "classType": "benthic",
+    "targetDepth": 0.92,
+    "schooling": false,
+    "baseW": 20
+  },
+  "shore_crab": {
+    "species": "shore_crab",
+    "sheet": 1,
+    "rect": [
+      615,
+      327,
+      95,
+      79
+    ],
+    "file": "shore_crab.png",
+    "classType": "benthic",
+    "targetDepth": 0.92,
+    "schooling": false,
+    "baseW": 20
+  },
+  "blue_crab": {
+    "species": "blue_crab",
+    "sheet": 1,
+    "rect": [
+      716,
+      327,
+      107,
+      82
+    ],
+    "file": "blue_crab.png",
+    "classType": "benthic",
+    "targetDepth": 0.92,
+    "schooling": false,
+    "baseW": 20
+  },
+  "mantis_shrimp_v2": {
+    "species": "mantis_shrimp_v2",
+    "sheet": 1,
+    "rect": [
+      827,
+      331,
+      93,
+      70
+    ],
+    "file": "mantis_shrimp_v2.png",
+    "classType": "benthic",
+    "targetDepth": 0.92,
+    "schooling": false,
+    "baseW": 20
+  },
+  "horseshoe_crab": {
+    "species": "horseshoe_crab",
+    "sheet": 1,
+    "rect": [
+      917,
+      326,
+      93,
+      84
+    ],
+    "file": "horseshoe_crab.png",
+    "classType": "benthic",
+    "targetDepth": 0.92,
+    "schooling": false,
+    "baseW": 20
+  },
+  "pink_jellyfish_v2": {
+    "species": "pink_jellyfish_v2",
+    "sheet": 1,
+    "rect": [
+      14,
+      413,
+      84,
+      94
+    ],
+    "file": "pink_jellyfish_v2.png",
+    "classType": "coral",
+    "targetDepth": 0.78,
+    "schooling": false,
+    "baseW": 20
+  },
+  "blue_jellyfish_v2": {
+    "species": "blue_jellyfish_v2",
+    "sheet": 1,
+    "rect": [
+      113,
+      412,
+      86,
+      95
+    ],
+    "file": "blue_jellyfish_v2.png",
+    "classType": "coral",
+    "targetDepth": 0.78,
+    "schooling": false,
+    "baseW": 20
+  },
+  "moon_jellyfish": {
+    "species": "moon_jellyfish",
+    "sheet": 1,
+    "rect": [
+      219,
+      418,
+      78,
+      88
+    ],
+    "file": "moon_jellyfish.png",
+    "classType": "coral",
+    "targetDepth": 0.78,
+    "schooling": false,
+    "baseW": 20
+  },
+  "red_anemone": {
+    "species": "red_anemone",
+    "sheet": 1,
+    "rect": [
+      312,
+      418,
+      93,
+      85
+    ],
+    "file": "red_anemone.png",
+    "classType": "coral",
+    "targetDepth": 0.78,
+    "schooling": false,
+    "baseW": 20
+  },
+  "starfish_v2": {
+    "species": "starfish_v2",
+    "sheet": 1,
+    "rect": [
+      417,
+      418,
+      85,
+      80
+    ],
+    "file": "starfish_v2.png",
+    "classType": "benthic",
+    "targetDepth": 0.92,
+    "schooling": false,
+    "baseW": 20
+  },
+  "purple_urchin": {
+    "species": "purple_urchin",
+    "sheet": 1,
+    "rect": [
+      514,
+      421,
+      93,
+      82
+    ],
+    "file": "purple_urchin.png",
+    "classType": "benthic",
+    "targetDepth": 0.92,
+    "schooling": false,
+    "baseW": 20
+  },
+  "sea_cucumber_v2": {
+    "species": "sea_cucumber_v2",
+    "sheet": 1,
+    "rect": [
+      613,
+      431,
+      96,
+      64
+    ],
+    "file": "sea_cucumber_v2.png",
+    "classType": "benthic",
+    "targetDepth": 0.92,
+    "schooling": false,
+    "baseW": 20
+  },
+  "giant_clam": {
+    "species": "giant_clam",
+    "sheet": 1,
+    "rect": [
+      716,
+      430,
+      108,
+      74
+    ],
+    "file": "giant_clam.png",
+    "classType": "benthic",
+    "targetDepth": 0.92,
+    "schooling": false,
+    "baseW": 20
+  },
+  "cleaner_shrimp": {
+    "species": "cleaner_shrimp",
+    "sheet": 1,
+    "rect": [
+      823,
+      413,
+      106,
+      91
+    ],
+    "file": "cleaner_shrimp.png",
+    "classType": "benthic",
+    "targetDepth": 0.92,
+    "schooling": false,
+    "baseW": 20
+  },
+  "peppermint_shrimp": {
+    "species": "peppermint_shrimp",
+    "sheet": 1,
+    "rect": [
+      920,
+      413,
+      97,
+      92
+    ],
+    "file": "peppermint_shrimp.png",
+    "classType": "benthic",
+    "targetDepth": 0.92,
+    "schooling": false,
+    "baseW": 20
+  }
+}

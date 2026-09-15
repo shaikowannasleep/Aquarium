@@ -83,16 +83,25 @@ function setupSheetImage(img, filename) {
 setupSheetImage(sheetImgs[0], 'sheet1.png');
 setupSheetImage(sheetImgs[1], 'sheet2.png');
 
-/* Duplicate fish count by 2x for full, lively schools */
+/* Schooling companion logic: only duplicate small schooling species */
+const SCHOOLING_SPECIES = new Set([
+  'clownfish', 'tang', 'yellow-tang', 'blue-tang', 'yellow_tang', 'blue_tang',
+  'tetra', 'neon-tetra', 'cyan_fish', 'damselfish', 'angelfish', 'striped_angelfish',
+  'butterflyfish', 'pufferfish', 'green_pufferfish'
+]);
+
 const ALL_FISH = [];
 (FISH_DATA || []).forEach(f => {
   ALL_FISH.push(f);
-  // Add companion fish in the same school
-  ALL_FISH.push(Object.assign({}, f, {
-    size: Math.max(5.2, f.size * (0.85 + Math.random() * 0.28)),
-    pace: f.pace * (0.92 + Math.random() * 0.16),
-    peer: true
-  }));
+  const spKey = (f.sprite || f.species || '').toLowerCase().replace(/_/g, '-');
+  const isSchooling = SCHOOLING_SPECIES.has(spKey) || SCHOOLING_SPECIES.has(f.sprite) || f.schooling;
+  if (isSchooling) {
+    ALL_FISH.push(Object.assign({}, f, {
+      size: Math.max(4.8, f.size * (0.85 + Math.random() * 0.22)),
+      pace: f.pace * (0.92 + Math.random() * 0.16),
+      peer: true
+    }));
+  }
 });
 
 const sw = new SwarmEngine(Math.max(ALL_FISH.length, 64), 800, 600);
@@ -101,8 +110,10 @@ window.addEventListener('resize', resize);
 
 ALL_FISH.forEach((f, idx) => {
   const gid = (f.groupId !== undefined) ? f.groupId : (idx % 8);
-  sw.spawn(40 + Math.random() * (W - 80), 60 + Math.random() * (H - 160), undefined, gid);
-  sw.speedScale[sw.n - 1] = f.pace;
+  const targetDepth = f.depth !== undefined ? f.depth : (0.2 + (idx % 6) * 0.12);
+  const spawnY = targetDepth * (H - 120) + 50;
+  sw.spawn(40 + Math.random() * (W - 80), spawnY, undefined, gid);
+  sw.speedScale[sw.n - 1] = f.pace || 1.0;
 });
 
 /* Orientation smoothing states to eliminate rotation jitter */
@@ -279,6 +290,26 @@ function frame() {
       fd.y += fd.vy * dt;
       fd.x += fd.vx * dt + Math.sin(t * 3 + fd.age * 2) * 6 * dt;
       fd.vy = Math.min(fd.vy + 12 * dt, 36);
+    }
+  }
+
+  /* Habitat depth steering & species behavior */
+  for (let i = 0; i < sw.n; i++) {
+    const f = ALL_FISH[i];
+    if (!f) continue;
+    const spKey = getSpriteKey(f, i);
+    const targetDepth = f.depth !== undefined ? f.depth : 0.5;
+    const targetY = targetDepth * (H - 120) + 50;
+
+    if (spKey === 'red_crab' || spKey === 'red_lobster' || spKey === 'orange_starfish' || spKey === 'giant_clam') {
+      sw.py[i] = Math.max(H - 45, Math.min(H - 18, sw.py[i]));
+      sw.vy[i] *= 0.15;
+    } else if (spKey === 'blue_jellyfish' || spKey === 'pink_jellyfish') {
+      sw.vy[i] += (Math.sin(t * 2.0 + i) * 16 - 3) * dt;
+      sw.vx[i] *= 0.97;
+    } else {
+      const dy = targetY - sw.py[i];
+      sw.vy[i] += dy * 0.45 * dt;
     }
   }
 
@@ -508,23 +539,28 @@ function frame() {
     const spDef = SPRITE_DATA[spriteKey];
     const sheetImg = spDef ? sheetImgs[spDef[0]] : null;
 
-    /* Jitter-free Facing Direction via Hysteresis */
-    if (vx > 5) fishFacing[i] = 1;
-    else if (vx < -5) fishFacing[i] = -1;
+    /* Jitter-free Facing Direction: Sprites natively face LEFT */
+    // vx < -5 (swimming left) -> scaleX = 1 (faces left)
+    // vx > 5 (swimming right) -> scaleX = -1 (mirrored horizontally to face right)
+    if (vx < -5) fishFacing[i] = 1;
+    else if (vx > 5) fishFacing[i] = -1;
 
-    // Smooth transition between facing left and right
+    // Smooth turning transition
     fishScaleX[i] += (fishFacing[i] - fishScaleX[i]) * Math.min(1, dt * 10);
 
-    // Smooth swimming pitch
-    const rawPitch = Math.atan2(vy, Math.abs(vx) || 1);
-    const targetPitch = Math.max(-0.65, Math.min(0.65, rawPitch)) * 0.42;
+    // Gentle swimming pitch (clamped to avoid severe bending)
+    const rawPitch = Math.atan2(-vy, Math.abs(vx) || 1);
+    const targetPitch = Math.max(-0.25, Math.min(0.25, rawPitch * 0.35));
     fishPitch[i] += (targetPitch - fishPitch[i]) * Math.min(1, dt * 8);
 
     if (sheetImg && sheetImg._loaded) {
       const sx = spDef[1], sy = spDef[2], sw_px = spDef[3], sh_px = spDef[4];
       const aspect = sh_px / sw_px;
-      const drawW = Math.max(24, b * 3.6);
+      // Proportional creature sizing based on viewport
+      const scaleFactor = Math.min(Math.max(W / 1100, 0.82), 1.25);
+      const drawW = Math.max(24, Math.min(48, b * 2.5)) * scaleFactor;
       const drawH = drawW * aspect;
+      const visualRadius = Math.max(drawW, drawH) * 0.45;
 
       g.save();
       g.translate(x, y);

@@ -31,7 +31,7 @@ canvas{display:block;width:100%;height:100%;cursor:crosshair}
 <div id="tip"></div>
 <div id="foot">boids · reynolds 1987 · <a href="https://github.com/shaikowannasleep/Aquarium">source</a></div>
 <script>
-const FISH_DATA = [{"name":"Shooter","lang":"C#","color":"#178600","stars":2,"commits":3058,"forks":0,"size":22,"pace":0.45,"species":"blue-whale","sprite":"blue_whale","groupId":6,"schooling":false,"depth":0.3,"dormant":true,"ageDays":1235},{"name":"Idle-Army-Trading-Weapons","lang":"TypeScript","color":"#3178c6","stars":1,"commits":501,"forks":0,"size":22,"pace":1,"species":"sea-turtle","sprite":"green_turtle","groupId":5,"schooling":false,"depth":0.5,"dormant":false,"ageDays":48},{"name":"JavaProject","lang":"Java","color":"#b07219","stars":1,"commits":18015,"forks":0,"size":22,"pace":0.45,"species":"sea-turtle","sprite":"green_turtle","groupId":5,"schooling":false,"depth":0.5,"dormant":true,"ageDays":1383},{"name":"Aquarium","lang":"JavaScript","color":"#f1e05a","stars":0,"commits":26,"forks":0,"size":12.017491350496215,"pace":1,"species":"pink-seahorse","sprite":"pink_seahorse","groupId":4,"schooling":true,"depth":0.82,"dormant":false,"ageDays":0},{"name":"AbyssalDive","lang":"JavaScript","color":"#f1e05a","stars":0,"commits":5,"forks":0,"size":9.261947082688733,"pace":1,"species":"damselfish","sprite":"damselfish","groupId":2,"schooling":true,"depth":0.35,"dormant":false,"ageDays":4},{"name":"shaikowannasleep","lang":"Other","color":"#7fd8ff","stars":0,"commits":6,"forks":0,"size":9.497665304230708,"pace":1,"species":"blue-shark","sprite":"blue_shark","groupId":6,"schooling":false,"depth":0.35,"dormant":false,"ageDays":4},{"name":"MyDiscordBot","lang":"TypeScript","color":"#3178c6","stars":0,"commits":8,"forks":0,"size":9.9,"pace":1,"species":"blue-whale","sprite":"blue_whale","groupId":6,"schooling":false,"depth":0.3,"dormant":false,"ageDays":11},{"name":"Re-Prompt-tool","lang":"HTML","color":"#e34c26","stars":0,"commits":5,"forks":0,"size":9.261947082688733,"pace":1,"species":"blue-tang","sprite":"blue_tang","groupId":1,"schooling":true,"depth":0.55,"dormant":false,"ageDays":272},{"name":"BlockBlastDrop-Playable","lang":"Other","color":"#7fd8ff","stars":0,"commits":17014,"forks":0,"size":22,"pace":1,"species":"blue-shark","sprite":"blue_shark","groupId":6,"schooling":false,"depth":0.35,"dormant":false,"ageDays":274},{"name":"Rename-tools","lang":"HTML","color":"#e34c26","stars":0,"commits":3,"forks":0,"size":8.672949054676298,"pace":1,"species":"seahorse","sprite":"orange_seahorse","groupId":4,"schooling":true,"depth":0.78,"dormant":false,"ageDays":302},{"name":"Mesh-Simplifier-and-Auto-LOD-","lang":"Other","color":"#7fd8ff","stars":0,"commits":2147,"forks":0,"size":22,"pace":1,"species":"neon-tetra","sprite":"cyan_fish","groupId":2,"schooling":true,"depth":0.32,"dormant":false,"ageDays":307},{"name":"nodejs_blog","lang":"HTML","color":"#e34c26","stars":0,"commits":20,"forks":0,"size":11.471718756508794,"pace":0.45,"species":"yellow-tang","sprite":"yellow_tang","groupId":1,"schooling":true,"depth":0.55,"dormant":true,"ageDays":564},{"name":"3D-RPG-Fight-LOL","lang":"C#","color":"#178600","stars":0,"commits":43068,"forks":0,"size":22,"pace":0.45,"species":"blue-whale","sprite":"blue_whale","groupId":6,"schooling":false,"depth":0.3,"dormant":true,"ageDays":673},{"name":"FlashCard-2D","lang":"Other","color":"#7fd8ff","stars":0,"commits":8,"forks":0,"size":9.9,"pace":0.45,"species":"yellow-tang","sprite":"yellow_tang","groupId":1,"schooling":true,"depth":0.55,"dormant":true,"ageDays":684},{"name":"Project_Dino","lang":"C#","color":"#178600","stars":0,"commits":3748,"forks":0,"size":22,"pace":0.45,"species":"blue-whale","sprite":"blue_whale","groupId":6,"schooling":false,"depth":0.3,"dormant":true,"ageDays":797},{"name":"ZengaExercies2","lang":"C#","color":"#178600","stars":0,"commits":4,"forks":0,"size":8.992282314330039,"pace":0.45,"species":"yellow-tang","sprite":"yellow_tang","groupId":1,"schooling":true,"depth":0.55,"dormant":true,"ageDays":893},{"name":"ZengaExercies","lang":"Other","color":"#7fd8ff","stars":0,"commits":3,"forks":0,"size":8.672949054676298,"pace":0.45,"species":"blue-shark","sprite":"blue_shark","groupId":6,"schooling":false,"depth":0.35,"dormant":true,"ageDays":893},{"name":"Brick-Breaker-2D","lang":"C#","color":"#178600","stars":0,"commits":8,"forks":0,"size":9.9,"pace":0.45,"species":"blue-shark","sprite":"blue_shark","groupId":6,"schooling":false,"depth":0.35,"dormant":true,"ageDays":944},{"name":"Booking","lang":"JavaScript","color":"#f1e05a","stars":0,"commits":502,"forks":0,"size":22,"pace":0.45,"species":"butterflyfish","sprite":"butterflyfish","groupId":3,"schooling":true,"depth":0.6,"dormant":true,"ageDays":1028},{"name":"shaikowannasleep.github-io","lang":"Other","color":"#7fd8ff","stars":0,"commits":3,"forks":0,"size":8.672949054676298,"pace":0.45,"species":"pufferfish","sprite":"green_pufferfish","groupId":7,"schooling":true,"depth":0.7,"dormant":true,"ageDays":1043},{"name":"VR1-project","lang":"ShaderLab","color":"#222c37","stars":0,"commits":2820,"forks":0,"size":22,"pace":0.45,"species":"seahorse","sprite":"orange_seahorse","groupId":4,"schooling":true,"depth":0.78,"dormant":true,"ageDays":1290},{"name":"network_programming_ex","lang":"C++","color":"#f34b7d","stars":0,"commits":2358,"forks":0,"size":22,"pace":0.45,"species":"sea-turtle","sprite":"green_turtle","groupId":5,"schooling":false,"depth":0.5,"dormant":true,"ageDays":1312},{"name":"ContactApp","lang":"Java","color":"#b07219","stars":0,"commits":10,"forks":0,"size":10.239756318070146,"pace":0.45,"species":"neon-tetra","sprite":"cyan_fish","groupId":2,"schooling":true,"depth":0.32,"dormant":true,"ageDays":1343},{"name":"MappRPGResoucre","lang":"Other","color":"#7fd8ff","stars":0,"commits":8,"forks":0,"size":9.9,"pace":0.45,"species":"dolphin","sprite":"blue_dolphin","groupId":6,"schooling":true,"depth":0.25,"dormant":true,"ageDays":1378},{"name":"Chess-Simple","lang":"Python","color":"#3572A5","stars":0,"commits":635,"forks":0,"size":22,"pace":0.45,"species":"dolphin","sprite":"blue_dolphin","groupId":6,"schooling":true,"depth":0.25,"dormant":true,"ageDays":1383},{"name":"MovieManager","lang":"Java","color":"#b07219","stars":0,"commits":29,"forks":0,"size":12.259097016508864,"pace":0.45,"species":"blue-shark","sprite":"blue_shark","groupId":6,"schooling":false,"depth":0.35,"dormant":true,"ageDays":1383},{"name":"SIE-Android-Assignment1","lang":"Kotlin","color":"#A97BFF","stars":0,"commits":10,"forks":0,"size":10.239756318070146,"pace":0.45,"species":"sea-turtle","sprite":"green_turtle","groupId":5,"schooling":false,"depth":0.5,"dormant":true,"ageDays":1416},{"name":"IT4060Q_20198222_VanDinhDung","lang":"C++","color":"#f34b7d","stars":0,"commits":11,"forks":0,"size":10.392756199252496,"pace":0.45,"species":"seahorse","sprite":"orange_seahorse","groupId":4,"schooling":true,"depth":0.78,"dormant":true,"ageDays":1521},{"name":"Homework","lang":"C++","color":"#f34b7d","stars":0,"commits":3,"forks":0,"size":8.672949054676298,"pace":0.45,"species":"neon-tetra","sprite":"cyan_fish","groupId":2,"schooling":true,"depth":0.32,"dormant":true,"ageDays":1606}];
+const FISH_DATA = [{"name":"Shooter","lang":"C#","color":"#178600","stars":2,"commits":3058,"forks":0,"size":22,"pace":0.45,"species":"red-crab","sprite":"red_crab","groupId":8,"schooling":false,"depth":0.9,"dormant":true,"ageDays":1236},{"name":"Idle-Army-Trading-Weapons","lang":"TypeScript","color":"#3178c6","stars":1,"commits":501,"forks":0,"size":22,"pace":1,"species":"starfish","sprite":"orange_starfish","groupId":8,"schooling":false,"depth":0.92,"dormant":false,"ageDays":48},{"name":"JavaProject","lang":"Java","color":"#b07219","stars":1,"commits":18015,"forks":0,"size":22,"pace":0.45,"species":"sea-turtle","sprite":"green_turtle","groupId":5,"schooling":false,"depth":0.5,"dormant":true,"ageDays":1383},{"name":"Aquarium","lang":"JavaScript","color":"#f1e05a","stars":0,"commits":26,"forks":0,"size":12.017491350496215,"pace":1,"species":"clownfish","sprite":"clownfish","groupId":0,"schooling":true,"depth":0.45,"dormant":false,"ageDays":0},{"name":"AbyssalDive","lang":"JavaScript","color":"#f1e05a","stars":0,"commits":5,"forks":0,"size":9.261947082688733,"pace":1,"species":"damselfish","sprite":"damselfish","groupId":2,"schooling":true,"depth":0.35,"dormant":false,"ageDays":4},{"name":"shaikowannasleep","lang":"Other","color":"#7fd8ff","stars":0,"commits":6,"forks":0,"size":9.497665304230708,"pace":1,"species":"dolphin","sprite":"blue_dolphin","groupId":6,"schooling":true,"depth":0.25,"dormant":false,"ageDays":4},{"name":"MyDiscordBot","lang":"TypeScript","color":"#3178c6","stars":0,"commits":8,"forks":0,"size":9.9,"pace":1,"species":"pink-seahorse","sprite":"pink_seahorse","groupId":4,"schooling":true,"depth":0.82,"dormant":false,"ageDays":11},{"name":"Re-Prompt-tool","lang":"HTML","color":"#e34c26","stars":0,"commits":5,"forks":0,"size":9.261947082688733,"pace":1,"species":"jellyfish","sprite":"blue_jellyfish","groupId":7,"schooling":true,"depth":0.75,"dormant":false,"ageDays":272},{"name":"BlockBlastDrop-Playable","lang":"Other","color":"#7fd8ff","stars":0,"commits":17014,"forks":0,"size":22,"pace":1,"species":"dolphin","sprite":"blue_dolphin","groupId":6,"schooling":true,"depth":0.25,"dormant":false,"ageDays":274},{"name":"Rename-tools","lang":"HTML","color":"#e34c26","stars":0,"commits":3,"forks":0,"size":8.672949054676298,"pace":1,"species":"red-lobster","sprite":"red_lobster","groupId":8,"schooling":false,"depth":0.91,"dormant":false,"ageDays":302},{"name":"Mesh-Simplifier-and-Auto-LOD-","lang":"Other","color":"#7fd8ff","stars":0,"commits":2147,"forks":0,"size":22,"pace":1,"species":"seahorse","sprite":"orange_seahorse","groupId":4,"schooling":true,"depth":0.78,"dormant":false,"ageDays":307},{"name":"nodejs_blog","lang":"HTML","color":"#e34c26","stars":0,"commits":20,"forks":0,"size":11.471718756508794,"pace":0.45,"species":"yellow-tang","sprite":"yellow_tang","groupId":1,"schooling":true,"depth":0.55,"dormant":true,"ageDays":564},{"name":"3D-RPG-Fight-LOL","lang":"C#","color":"#178600","stars":0,"commits":43068,"forks":0,"size":22,"pace":0.45,"species":"clownfish","sprite":"clownfish","groupId":0,"schooling":true,"depth":0.45,"dormant":true,"ageDays":673},{"name":"FlashCard-2D","lang":"Other","color":"#7fd8ff","stars":0,"commits":8,"forks":0,"size":9.9,"pace":0.45,"species":"yellow-tang","sprite":"yellow_tang","groupId":1,"schooling":true,"depth":0.55,"dormant":true,"ageDays":684},{"name":"Project_Dino","lang":"C#","color":"#178600","stars":0,"commits":3748,"forks":0,"size":22,"pace":0.45,"species":"damselfish","sprite":"damselfish","groupId":2,"schooling":true,"depth":0.35,"dormant":true,"ageDays":798},{"name":"ZengaExercies2","lang":"C#","color":"#178600","stars":0,"commits":4,"forks":0,"size":8.992282314330039,"pace":0.45,"species":"yellow-tang","sprite":"yellow_tang","groupId":1,"schooling":true,"depth":0.55,"dormant":true,"ageDays":893},{"name":"ZengaExercies","lang":"Other","color":"#7fd8ff","stars":0,"commits":3,"forks":0,"size":8.672949054676298,"pace":0.45,"species":"red-lobster","sprite":"red_lobster","groupId":8,"schooling":false,"depth":0.91,"dormant":true,"ageDays":893},{"name":"Brick-Breaker-2D","lang":"C#","color":"#178600","stars":0,"commits":8,"forks":0,"size":9.9,"pace":0.45,"species":"seahorse","sprite":"orange_seahorse","groupId":4,"schooling":true,"depth":0.78,"dormant":true,"ageDays":944},{"name":"Booking","lang":"JavaScript","color":"#f1e05a","stars":0,"commits":502,"forks":0,"size":22,"pace":0.45,"species":"butterflyfish","sprite":"butterflyfish","groupId":3,"schooling":true,"depth":0.6,"dormant":true,"ageDays":1028},{"name":"shaikowannasleep.github-io","lang":"Other","color":"#7fd8ff","stars":0,"commits":3,"forks":0,"size":8.672949054676298,"pace":0.45,"species":"pufferfish","sprite":"green_pufferfish","groupId":7,"schooling":true,"depth":0.7,"dormant":true,"ageDays":1043},{"name":"VR1-project","lang":"ShaderLab","color":"#222c37","stars":0,"commits":2820,"forks":0,"size":22,"pace":0.45,"species":"red-lobster","sprite":"red_lobster","groupId":8,"schooling":false,"depth":0.91,"dormant":true,"ageDays":1290},{"name":"network_programming_ex","lang":"C++","color":"#f34b7d","stars":0,"commits":2358,"forks":0,"size":22,"pace":0.45,"species":"angelfish","sprite":"striped_angelfish","groupId":3,"schooling":true,"depth":0.65,"dormant":true,"ageDays":1312},{"name":"ContactApp","lang":"Java","color":"#b07219","stars":0,"commits":10,"forks":0,"size":10.239756318070146,"pace":0.45,"species":"neon-tetra","sprite":"cyan_fish","groupId":2,"schooling":true,"depth":0.32,"dormant":true,"ageDays":1343},{"name":"MappRPGResoucre","lang":"Other","color":"#7fd8ff","stars":0,"commits":8,"forks":0,"size":9.9,"pace":0.45,"species":"neon-tetra","sprite":"cyan_fish","groupId":2,"schooling":true,"depth":0.32,"dormant":true,"ageDays":1378},{"name":"Chess-Simple","lang":"Python","color":"#3572A5","stars":0,"commits":635,"forks":0,"size":22,"pace":0.45,"species":"red-lobster","sprite":"red_lobster","groupId":8,"schooling":false,"depth":0.91,"dormant":true,"ageDays":1383},{"name":"MovieManager","lang":"Java","color":"#b07219","stars":0,"commits":29,"forks":0,"size":12.259097016508864,"pace":0.45,"species":"blue-shark","sprite":"blue_shark","groupId":6,"schooling":false,"depth":0.35,"dormant":true,"ageDays":1383},{"name":"SIE-Android-Assignment1","lang":"Kotlin","color":"#A97BFF","stars":0,"commits":10,"forks":0,"size":10.239756318070146,"pace":0.45,"species":"sea-turtle","sprite":"green_turtle","groupId":5,"schooling":false,"depth":0.5,"dormant":true,"ageDays":1416},{"name":"IT4060Q_20198222_VanDinhDung","lang":"C++","color":"#f34b7d","stars":0,"commits":11,"forks":0,"size":10.392756199252496,"pace":0.45,"species":"seahorse","sprite":"orange_seahorse","groupId":4,"schooling":true,"depth":0.78,"dormant":true,"ageDays":1521},{"name":"Homework","lang":"C++","color":"#f34b7d","stars":0,"commits":3,"forks":0,"size":8.672949054676298,"pace":0.45,"species":"red-lobster","sprite":"red_lobster","groupId":8,"schooling":false,"depth":0.91,"dormant":true,"ageDays":1606}];
 'use strict';
 (function (global) {
 const TAU = Math.PI * 2;
@@ -444,23 +444,33 @@ function setupSheetImage(img, filename) {
 }
 setupSheetImage(sheetImgs[0], 'sheet1.png');
 setupSheetImage(sheetImgs[1], 'sheet2.png');
+const SCHOOLING_SPECIES = new Set([
+  'clownfish', 'tang', 'yellow-tang', 'blue-tang', 'yellow_tang', 'blue_tang',
+  'tetra', 'neon-tetra', 'cyan_fish', 'damselfish', 'angelfish', 'striped_angelfish',
+  'butterflyfish', 'pufferfish', 'green_pufferfish'
+]);
 const ALL_FISH = [];
 (FISH_DATA || []).forEach(f => {
   ALL_FISH.push(f);
-  // Add companion fish in the same school
-  ALL_FISH.push(Object.assign({}, f, {
-    size: Math.max(5.2, f.size * (0.85 + Math.random() * 0.28)),
-    pace: f.pace * (0.92 + Math.random() * 0.16),
-    peer: true
-  }));
+  const spKey = (f.sprite || f.species || '').toLowerCase().replace(/_/g, '-');
+  const isSchooling = SCHOOLING_SPECIES.has(spKey) || SCHOOLING_SPECIES.has(f.sprite) || f.schooling;
+  if (isSchooling) {
+    ALL_FISH.push(Object.assign({}, f, {
+      size: Math.max(4.8, f.size * (0.85 + Math.random() * 0.22)),
+      pace: f.pace * (0.92 + Math.random() * 0.16),
+      peer: true
+    }));
+  }
 });
 const sw = new SwarmEngine(Math.max(ALL_FISH.length, 64), 800, 600);
 resize();
 window.addEventListener('resize', resize);
 ALL_FISH.forEach((f, idx) => {
   const gid = (f.groupId !== undefined) ? f.groupId : (idx % 8);
-  sw.spawn(40 + Math.random() * (W - 80), 60 + Math.random() * (H - 160), undefined, gid);
-  sw.speedScale[sw.n - 1] = f.pace;
+  const targetDepth = f.depth !== undefined ? f.depth : (0.2 + (idx % 6) * 0.12);
+  const spawnY = targetDepth * (H - 120) + 50;
+  sw.spawn(40 + Math.random() * (W - 80), spawnY, undefined, gid);
+  sw.speedScale[sw.n - 1] = f.pace || 1.0;
 });
 const fishFacing = new Float32Array(sw.cap);
 const fishPitch = new Float32Array(sw.cap);
@@ -609,6 +619,23 @@ function frame() {
       fd.y += fd.vy * dt;
       fd.x += fd.vx * dt + Math.sin(t * 3 + fd.age * 2) * 6 * dt;
       fd.vy = Math.min(fd.vy + 12 * dt, 36);
+    }
+  }
+  for (let i = 0; i < sw.n; i++) {
+    const f = ALL_FISH[i];
+    if (!f) continue;
+    const spKey = getSpriteKey(f, i);
+    const targetDepth = f.depth !== undefined ? f.depth : 0.5;
+    const targetY = targetDepth * (H - 120) + 50;
+    if (spKey === 'red_crab' || spKey === 'red_lobster' || spKey === 'orange_starfish' || spKey === 'giant_clam') {
+      sw.py[i] = Math.max(H - 45, Math.min(H - 18, sw.py[i]));
+      sw.vy[i] *= 0.15;
+    } else if (spKey === 'blue_jellyfish' || spKey === 'pink_jellyfish') {
+      sw.vy[i] += (Math.sin(t * 2.0 + i) * 16 - 3) * dt;
+      sw.vx[i] *= 0.97;
+    } else {
+      const dy = targetY - sw.py[i];
+      sw.vy[i] += dy * 0.45 * dt;
     }
   }
   sw.step(dt, world);
@@ -804,19 +831,24 @@ function frame() {
     const spriteKey = getSpriteKey(f, i);
     const spDef = SPRITE_DATA[spriteKey];
     const sheetImg = spDef ? sheetImgs[spDef[0]] : null;
-    if (vx > 5) fishFacing[i] = 1;
-    else if (vx < -5) fishFacing[i] = -1;
-    // Smooth transition between facing left and right
+    // vx < -5 (swimming left) -> scaleX = 1 (faces left)
+    // vx > 5 (swimming right) -> scaleX = -1 (mirrored horizontally to face right)
+    if (vx < -5) fishFacing[i] = 1;
+    else if (vx > 5) fishFacing[i] = -1;
+    // Smooth turning transition
     fishScaleX[i] += (fishFacing[i] - fishScaleX[i]) * Math.min(1, dt * 10);
-    // Smooth swimming pitch
-    const rawPitch = Math.atan2(vy, Math.abs(vx) || 1);
-    const targetPitch = Math.max(-0.65, Math.min(0.65, rawPitch)) * 0.42;
+    // Gentle swimming pitch (clamped to avoid severe bending)
+    const rawPitch = Math.atan2(-vy, Math.abs(vx) || 1);
+    const targetPitch = Math.max(-0.25, Math.min(0.25, rawPitch * 0.35));
     fishPitch[i] += (targetPitch - fishPitch[i]) * Math.min(1, dt * 8);
     if (sheetImg && sheetImg._loaded) {
       const sx = spDef[1], sy = spDef[2], sw_px = spDef[3], sh_px = spDef[4];
       const aspect = sh_px / sw_px;
-      const drawW = Math.max(24, b * 3.6);
+      // Proportional creature sizing based on viewport
+      const scaleFactor = Math.min(Math.max(W / 1100, 0.82), 1.25);
+      const drawW = Math.max(24, Math.min(48, b * 2.5)) * scaleFactor;
       const drawH = drawW * aspect;
+      const visualRadius = Math.max(drawW, drawH) * 0.45;
       g.save();
       g.translate(x, y);
       // Natural swimming wiggle
