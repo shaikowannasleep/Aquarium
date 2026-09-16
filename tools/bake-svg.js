@@ -1,576 +1,297 @@
 'use strict';
 /* =====================================================================
- * Runs the boids engine headless, records every agent's path, and bakes
- * it into an SVG with SMIL <animateMotion> and cubic spline interpolation.
- * Uses authentic high-resolution cartoon sprites embedded as Base64.
- * Directed composition: 14-16 featured creatures across 5 depth zones.
+ * Directed Aquarium SVG bake.
+ *
+ * GitHub README SVG is a compact stage, not a full runtime simulation.
+ * It uses a fixed 16-creature roster with separate habitat lanes so no
+ * unrelated species form a mixed flock or overlap. Canvas boids remain a
+ * separate concern in src/aquarium.js.
  * ===================================================================== */
 
 const fs = require('fs');
 const path = require('path');
-const vm = require('vm');
 const { fetchProfile, fallback } = require('./fetch-github');
 
-const W = 880, H = 360;
-const FRAMES = 420;          // 14 s at 30 fps
-const FPS = 30;
-const SAMPLE = 4;            // 105 samples for smooth motion
+const W = 880;
+const H = 360;
+const DURATION = '16s';
 
 const SPRITE_META = {
-  "blue_shark": {"w": 105, "h": 76}, "spotted_shark": {"w": 92, "h": 60}, "orca": {"w": 100, "h": 74},
-  "blue_dolphin": {"w": 98, "h": 73}, "pink_dolphin": {"w": 100, "h": 70}, "blue_whale": {"w": 103, "h": 88},
-  "beluga": {"w": 103, "h": 59}, "stingray": {"w": 96, "h": 68}, "spotted_ray": {"w": 88, "h": 73},
-  "swordfish": {"w": 106, "h": 69}, "clownfish": {"w": 96, "h": 70}, "blue_tang": {"w": 92, "h": 65},
-  "yellow_tang": {"w": 91, "h": 72}, "purple_fish": {"w": 92, "h": 66}, "flame_angelfish": {"w": 93, "h": 72},
-  "moorish_idol": {"w": 81, "h": 77}, "damselfish": {"w": 92, "h": 73}, "butterflyfish": {"w": 92, "h": 75},
-  "striped_angelfish": {"w": 88, "h": 83}, "lionfish": {"w": 99, "h": 93}, "green_turtle": {"w": 101, "h": 75},
-  "brown_turtle": {"w": 101, "h": 69}, "green_pufferfish": {"w": 90, "h": 84}, "orange_pufferfish": {"w": 87, "h": 80},
-  "blue_porcupinefish": {"w": 89, "h": 72}, "orange_seahorse": {"w": 66, "h": 100}, "pink_seahorse": {"w": 62, "h": 97},
-  "red_octopus": {"w": 108, "h": 95}, "pink_squid": {"w": 82, "h": 98}, "moray_eel": {"w": 101, "h": 61},
-  "red_lobster": {"w": 100, "h": 93}, "red_crab": {"w": 96, "h": 79}, "mantis_shrimp": {"w": 97, "h": 77},
-  "blue_jellyfish": {"w": 80, "h": 101}, "pink_jellyfish": {"w": 83, "h": 97}, "sea_anemone": {"w": 104, "h": 87},
-  "sea_urchin": {"w": 88, "h": 83}, "orange_starfish": {"w": 91, "h": 84}, "blue_starfish": {"w": 88, "h": 83},
-  "sea_cucumber": {"w": 96, "h": 54}, "pink_clam": {"w": 89, "h": 85}, "brown_clam": {"w": 89, "h": 83},
-  "banded_shrimp": {"w": 105, "h": 89}, "orange_shrimp": {"w": 90, "h": 85}, "yellow_striped_fish": {"w": 91, "h": 73},
-  "parrotfish": {"w": 93, "h": 74}, "cyan_fish": {"w": 98, "h": 68}, "pink_fish": {"w": 94, "h": 80},
-  "multicolor_fish": {"w": 92, "h": 82}, "violet_fish": {"w": 89, "h": 77}, "grey_shark": {"w": 99, "h": 77},
-  "hammerhead_shark": {"w": 104, "h": 72}, "whale_shark": {"w": 108, "h": 73}, "killer_whale": {"w": 97, "h": 77},
-  "dolphin": {"w": 92, "h": 75}, "beluga_whale": {"w": 103, "h": 72}, "blue_whale_v2": {"w": 112, "h": 65},
-  "humpback_whale": {"w": 103, "h": 74}, "narwhal": {"w": 119, "h": 87}, "manta_ray": {"w": 97, "h": 70},
-  "electric_ray": {"w": 93, "h": 71}, "spotted_eagle_ray": {"w": 99, "h": 78}, "sawfish": {"w": 137, "h": 70},
-  "spotted_moray": {"w": 96, "h": 77}, "electric_eel": {"w": 106, "h": 51}, "octopus_v2": {"w": 96, "h": 87},
-  "blue_ringed_octopus": {"w": 87, "h": 75}, "squid_v2": {"w": 81, "h": 90}, "cuttlefish": {"w": 111, "h": 70},
-  "nautilus": {"w": 74, "h": 76}, "yellow_pufferfish": {"w": 86, "h": 77}, "spiny_pufferfish": {"w": 88, "h": 83},
-  "clownfish_v2": {"w": 98, "h": 74}, "blue_tang_v2": {"w": 94, "h": 71}, "yellow_tang_v2": {"w": 90, "h": 75},
-  "angelfish_v2": {"w": 91, "h": 86}, "butterflyfish_v2": {"w": 91, "h": 71}, "lionfish_v2": {"w": 90, "h": 87},
-  "rainbow_fish": {"w": 96, "h": 73}, "black_triggerfish": {"w": 90, "h": 78}, "seahorse_v2": {"w": 52, "h": 89},
-  "green_turtle_v2": {"w": 111, "h": 72}, "leatherback_turtle": {"w": 117, "h": 85}, "spiny_lobster": {"w": 92, "h": 91},
-  "king_prawn": {"w": 114, "h": 91}, "hermit_crab": {"w": 90, "h": 76}, "shore_crab": {"w": 95, "h": 79},
-  "blue_crab": {"w": 107, "h": 82}, "mantis_shrimp_v2": {"w": 93, "h": 70}, "horseshoe_crab": {"w": 93, "h": 84},
-  "pink_jellyfish_v2": {"w": 84, "h": 94}, "blue_jellyfish_v2": {"w": 86, "h": 95}, "moon_jellyfish": {"w": 78, "h": 88},
-  "red_anemone": {"w": 93, "h": 85}, "starfish_v2": {"w": 85, "h": 80}, "purple_urchin": {"w": 93, "h": 82},
-  "sea_cucumber_v2": {"w": 96, "h": 64}, "giant_clam": {"w": 108, "h": 74}, "cleaner_shrimp": {"w": 106, "h": 91},
-  "peppermint_shrimp": {"w": 97, "h": 92}
+  orange_seahorse: [66, 100], pink_seahorse: [62, 97],
+  red_crab: [96, 79], blue_crab: [107, 82], shore_crab: [95, 79],
+  cleaner_shrimp: [106, 91], peppermint_shrimp: [97, 92],
+  green_turtle_v2: [111, 72], leatherback_turtle: [117, 85],
+  blue_dolphin: [98, 73], dolphin: [92, 75], blue_shark: [105, 76]
 };
 
-/* Proportional, comfortable size specs per creature class */
-const CLASS_SCALE = {
-  'blue_whale':      { baseW: 38, maxW: 44, classType: 'pelagic' },
-  'blue_dolphin':    { baseW: 30, maxW: 34, classType: 'pelagic' },
-  'blue_shark':      { baseW: 32, maxW: 36, classType: 'pelagic' },
-  'killer_whale':    { baseW: 36, maxW: 42, classType: 'pelagic' },
-  'green_turtle':    { baseW: 28, maxW: 32, classType: 'glider' },
-  'manta_ray':       { baseW: 30, maxW: 35, classType: 'glider' },
-  'spotted_ray':     { baseW: 28, maxW: 32, classType: 'glider' },
-  'clownfish':       { baseW: 20, maxW: 24, classType: 'reef' },
-  'yellow_tang':     { baseW: 21, maxW: 25, classType: 'reef' },
-  'blue_tang':       { baseW: 21, maxW: 25, classType: 'reef' },
-  'striped_angelfish': { baseW: 22, maxW: 26, classType: 'reef' },
-  'butterflyfish':   { baseW: 22, maxW: 26, classType: 'reef' },
-  'damselfish':      { baseW: 20, maxW: 24, classType: 'reef' },
-  'cyan_fish':       { baseW: 20, maxW: 24, classType: 'reef' },
-  'green_pufferfish':{ baseW: 22, maxW: 25, classType: 'reef' },
-  'orange_seahorse': { baseW: 17, maxW: 21, classType: 'coral' },
-  'pink_seahorse':   { baseW: 17, maxW: 21, classType: 'coral' },
-  'blue_jellyfish':  { baseW: 21, maxW: 25, classType: 'coral' },
-  'red_crab':        { baseW: 20, maxW: 24, classType: 'benthic' },
-  'orange_starfish': { baseW: 18, maxW: 22, classType: 'benthic' },
-  'giant_clam':      { baseW: 20, maxW: 24, classType: 'benthic' },
-  'red_lobster':     { baseW: 22, maxW: 26, classType: 'benthic' },
-  'moray_eel':       { baseW: 26, maxW: 30, classType: 'benthic' },
-};
+const ROSTER = [
+  // Six coral-anchored seahorses: bob only, never turn or join a flock.
+  { key: 'orange_seahorse', role: 'seahorse', x: 92, y: 225, w: 23, side: 'right', motion: 'bob', phase: '0s' },
+  { key: 'pink_seahorse', role: 'seahorse', x: 166, y: 245, w: 23, side: 'left', motion: 'bob', phase: '-3s' },
+  { key: 'orange_seahorse', role: 'seahorse', x: 344, y: 220, w: 23, side: 'right', motion: 'bob', phase: '-2s' },
+  { key: 'pink_seahorse', role: 'seahorse', x: 430, y: 244, w: 23, side: 'left', motion: 'bob', phase: '-5s' },
+  { key: 'orange_seahorse', role: 'seahorse', x: 652, y: 225, w: 23, side: 'right', motion: 'bob', phase: '-1s' },
+  { key: 'pink_seahorse', role: 'seahorse', x: 779, y: 241, w: 23, side: 'left', motion: 'bob', phase: '-4s' },
+  // Bottom corridor: three crabs and two shrimp, no swimming through water.
+  { key: 'red_crab', role: 'crab', x: 154, y: 295, w: 27, side: 'right', motion: 'patrol', dx: 16, phase: '-1s' },
+  { key: 'blue_crab', role: 'crab', x: 400, y: 300, w: 29, side: 'left', motion: 'patrol', dx: -15, phase: '-4s' },
+  { key: 'shore_crab', role: 'crab', x: 705, y: 293, w: 27, side: 'right', motion: 'patrol', dx: 15, phase: '-6s' },
+  { key: 'cleaner_shrimp', role: 'shrimp', x: 283, y: 271, w: 27, side: 'right', motion: 'reef', dx: 10, phase: '-2s' },
+  { key: 'peppermint_shrimp', role: 'shrimp', x: 614, y: 270, w: 28, side: 'left', motion: 'reef', dx: -10, phase: '-5s' },
+  // The lower reef inhabitants stay anchored as before. The open upper water is
+  // intentionally reserved for three calm, coordinated schools of small fish.
+];
 
-function loadEngine() {
-  const sandbox = {
-    performance: { now: () => Number(process.hrtime.bigint()) / 1e6 },
-    Math, console,
-  };
-  sandbox.window = sandbox;
-  sandbox.globalThis = sandbox;
-  vm.createContext(sandbox);
-  vm.runInContext(fs.readFileSync(path.join(__dirname, '../src/engine.js'), 'utf8'), sandbox);
-  if (typeof sandbox.SwarmEngine !== 'function') {
-    throw new Error('engine.js did not export SwarmEngine');
-  }
-  return sandbox.SwarmEngine;
+// start = how far into its own cycle each school already is when the SVG is
+// first painted. A school is mid-crossing for the first half of its cycle, so
+// any value below .5 means that school is already on screen at frame 0.
+const SCHOOLS = [
+  { key: 'blue_tang',      label: 'azure school',   y: 72,  size: 18, seconds: 26, start: 0.19 },
+  { key: 'yellow_tang_v2', label: 'sunbeam school', y: 116, size: 17, seconds: 30, start: 0.26 },
+  { key: 'clownfish_v2',   label: 'coral school',   y: 158, size: 18, seconds: 34, start: 0.38 }
+];
+
+function esc(value) {
+  return String(value).replace(/[<>&'"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' }[c]));
 }
 
-function mulberry32(seed) {
-  let a = seed >>> 0;
-  return function () {
-    a |= 0; a = (a + 0x6D2B79F5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
+function spriteUri(key) {
+  const source = path.join(__dirname, '../docs/assets/sprites', key + '.png');
+  if (!fs.existsSync(source)) throw new Error('Missing aquarium sprite: ' + source);
+  return 'data:image/png;base64,' + fs.readFileSync(source).toString('base64');
 }
 
-/* Directed composition: deterministic selection of 14-16 creatures across 5 depth zones */
-function selectDirectedSchool(allFish) {
-  const byZone = {
-    pelagic: [],  // upper water (whale, dolphin, shark)
-    glider: [],   // mid gliders (turtle, ray)
-    reef: [],     // schooling reef fish (tang, clownfish, angelfish, damselfish, butterflyfish)
-    coral: [],    // coral drift (seahorse, jellyfish)
-    benthic: []   // seabed (crab, starfish, clam, lobster)
-  };
-
-  allFish.forEach(f => {
-    const sp = f.sprite || 'clownfish';
-    const spec = CLASS_SCALE[sp] || { classType: 'reef' };
-    const zone = spec.classType || (f.depth < 0.38 ? 'pelagic' : (f.depth < 0.55 ? 'glider' : (f.depth < 0.72 ? 'reef' : (f.depth < 0.85 ? 'coral' : 'benthic'))));
-    (byZone[zone] || byZone.reef).push(f);
-  });
-
-  // Sort each zone by significance (commits + stars*100)
-  const score = f => (f.commits || 0) + (f.stars || 0) * 150;
-  for (const z in byZone) {
-    byZone[z].sort((a, b) => score(b) - score(a));
-  }
-
-  const selected = [];
-  // 1. Pelagic: top 2
-  selected.push(...byZone.pelagic.slice(0, 2));
-  // 2. Gliders: top 2
-  selected.push(...byZone.glider.slice(0, 2));
-  // 3. Reef: top 6 distinct species
-  const seenReefSprites = new Set();
-  for (const f of byZone.reef) {
-    if (selected.filter(x => x.classType === 'reef').length >= 6) break;
-    if (!seenReefSprites.has(f.sprite)) {
-      seenReefSprites.add(f.sprite);
-      selected.push(f);
-    }
-  }
-  // 4. Coral: top 2
-  selected.push(...byZone.coral.slice(0, 2));
-
-  // 5. Benthic: top 2, or construct habitat benthic companion if none exist
-  if (byZone.benthic.length >= 2) {
-    selected.push(...byZone.benthic.slice(0, 2));
-  } else if (byZone.benthic.length === 1) {
-    selected.push(byZone.benthic[0]);
-    selected.push({
-      name: 'CoralSeabed', species: 'starfish', sprite: 'orange_starfish',
-      lang: 'CSS', stars: 0, commits: 14, depth: 0.92, benthic: true
-    });
-  } else {
-    selected.push({
-      name: 'ReefSanctuary', species: 'red-crab', sprite: 'red_crab',
-      lang: 'Rust', stars: 0, commits: 24, depth: 0.90, benthic: true
-    });
-    selected.push({
-      name: 'CoralSeabed', species: 'starfish', sprite: 'orange_starfish',
-      lang: 'CSS', stars: 0, commits: 14, depth: 0.92, benthic: true
-    });
-  }
-
-  // Ensure total is between 14 and 16
-  return selected.slice(0, 15);
+function spriteHeight(entry) {
+  const meta = SPRITE_META[entry.key];
+  return Math.round(entry.w * meta[1] / meta[0]);
 }
 
-function simulate(featuredFish) {
-  const SwarmEngine = loadEngine();
-  const rnd = mulberry32(
-    featuredFish.reduce((h, f) => (h * 31 + f.name.length + (f.stars || 0)) | 0, 7)
-  );
-  const origRandom = Math.random;
-  Math.random = rnd;
-
-  const n = featuredFish.length;
-  const sw = new SwarmEngine(Math.max(n, 16), W, H);
-
-  featuredFish.forEach((f, idx) => {
-    const gid = f.group !== undefined ? f.group : (idx % 8);
-    const targetY = f.depth ? (f.depth * (H - 100) + 35) : (H * 0.5);
-    const spawnX = 60 + (idx / n) * (W - 120) + (rnd() - 0.5) * 30;
-    sw.spawn(spawnX, targetY, undefined, gid);
-    sw.speedScale[sw.n - 1] = f.pace || 1.0;
-  });
-
-  const p = sw.p;
-  // High separation & mild cohesion for airy, spacious distribution
-  p.rCoh = 55; p.rAli = 45; p.rSep = 58;
-  p.wCoh = 0.40; p.wAli = 0.95; p.wSep = 4.5;
-  p.minSpeed = 16; p.maxSpeed = 42; p.maxForce = 110;
-  p.margin = 52; p.maxNeighbours = 4;
-  sw.resize(W, H);
-
-  const world = {
-    predators: [],
-    obstacles: [],
-    lure: { x: W * 0.5, y: H * 0.5, power: 0.18, active: true },
-  };
-
-  // Warm-up and settle according to depth tethers
-  for (let f = 0; f < 240; f++) {
-    const t = (f / 240) * Math.PI * 2;
-    world.lure.x = W * 0.5 + Math.cos(t) * W * 0.32;
-    world.lure.y = H * 0.48 + Math.sin(t * 1.1) * H * 0.16;
-
-    for (let i = 0; i < sw.n; i++) {
-      const fish = featuredFish[i];
-      const targetDepth = fish.depth || 0.5;
-      const targetY = targetDepth * (H - 90) + 35;
-      if (fish.benthic || fish.sprite === 'red_crab' || fish.sprite === 'orange_starfish' || fish.sprite === 'giant_clam' || fish.sprite === 'red_lobster') {
-        sw.py[i] = H - 34 + Math.sin(f * 0.05 + i) * 2;
-        sw.vy[i] *= 0.1;
-      } else {
-        const dy = targetY - sw.py[i];
-        sw.vy[i] += dy * 0.45 * (1 / FPS);
-      }
-    }
-    sw.step(1 / FPS, world);
-  }
-
-  const tracks = featuredFish.map(() => []);
-  for (let f = 0; f < FRAMES; f++) {
-    const t = (f / FRAMES) * Math.PI * 2;
-    world.lure.x = W * 0.5 + Math.cos(t) * W * 0.32;
-    world.lure.y = H * 0.48 + Math.sin(t * 1.1) * H * 0.16;
-
-    for (let i = 0; i < sw.n; i++) {
-      const fish = featuredFish[i];
-      const targetDepth = fish.depth || 0.5;
-      const targetY = targetDepth * (H - 90) + 35;
-      // Per-fish horizontal wave offset to avoid clustering
-      const phase = (i / sw.n) * Math.PI * 2;
-      sw.vx[i] += Math.sin(t * 1.5 + phase) * 2.5 * (1 / FPS);
-
-      if (fish.benthic || fish.sprite === 'red_crab' || fish.sprite === 'orange_starfish' || fish.sprite === 'giant_clam' || fish.sprite === 'red_lobster') {
-        sw.py[i] = H - 34 + Math.sin(t * 2 + i) * 2;
-        sw.vy[i] *= 0.1;
-      } else {
-        const dy = targetY - sw.py[i];
-        sw.vy[i] += dy * 0.45 * (1 / FPS);
-      }
-    }
-
-    sw.step(1 / FPS, world);
-
-    if (f % SAMPLE === 0) {
-      for (let i = 0; i < sw.n; i++) {
-        tracks[i].push([
-          Math.round(sw.px[i] * 10) / 10,
-          Math.round(sw.py[i] * 10) / 10,
-        ]);
-      }
-    }
-  }
-
-  Math.random = origRandom;
-  return tracks;
+function motionDuration(entry) {
+  if (entry.role === 'shark') return '16s';
+  if (entry.role === 'turtle') return '13s';
+  if (entry.motion === 'patrol') return '8s';
+  if (entry.motion === 'reef') return '7s';
+  return '12s';
 }
 
-/* Catmull-Rom to Cubic B?zier conversion for smooth C1 path */
-function loopPathFrom(track) {
-  const n = track.length;
-  if (n < 3) return '';
-
-  let d = 'M' + track[0][0].toFixed(1) + ',' + track[0][1].toFixed(1);
-  for (let i = 0; i < n; i++) {
-    const p0 = track[(i - 1 + n) % n];
-    const p1 = track[i];
-    const p2 = track[(i + 1) % n];
-    const p3 = track[(i + 2) % n];
-
-    const cp1x = (p1[0] + (p2[0] - p0[0]) / 6).toFixed(1);
-    const cp1y = (p1[1] + (p2[1] - p0[1]) / 6).toFixed(1);
-    const cp2x = (p2[0] - (p3[0] - p1[0]) / 6).toFixed(1);
-    const cp2y = (p2[1] - (p3[1] - p1[1]) / 6).toFixed(1);
-    const endX = p2[0].toFixed(1);
-    const endY = p2[1].toFixed(1);
-
-    d += ' C' + cp1x + ',' + cp1y + ' ' + cp2x + ',' + cp2y + ' ' + endX + ',' + endY;
+function creatureMotion(entry) {
+  const phase = entry.phase || '0s';
+  if (entry.motion === 'bob') {
+    return '<animateTransform attributeName="transform" type="translate" values="0 0;0 -7;0 0" dur="6.8s" begin="' + phase + '" repeatCount="indefinite" additive="sum" calcMode="spline" keyTimes="0;.5;1" keySplines=".42 0 .58 1;.42 0 .58 1"/>';
   }
-  d += 'Z';
-  return d;
+  if (entry.motion === 'patrol') {
+    return '<animateTransform attributeName="transform" type="translate" values="0 0;' + entry.dx + ' 0;' + entry.dx + ' 0;0 0;0 0" dur="' + motionDuration(entry) + '" begin="' + phase + '" repeatCount="indefinite" additive="sum" calcMode="spline" keyTimes="0;.45;.54;.96;1" keySplines=".42 0 .58 1;0 0 1 1;.42 0 .58 1;0 0 1 1"/>';
+  }
+  if (entry.motion === 'reef') {
+    return '<animateTransform attributeName="transform" type="translate" values="0 0;' + entry.dx + ' -3;0 0" dur="' + motionDuration(entry) + '" begin="' + phase + '" repeatCount="indefinite" additive="sum" calcMode="spline" keyTimes="0;.5;1" keySplines=".42 0 .58 1;.42 0 .58 1"/>';
+  }
+  return '<animateTransform attributeName="transform" type="translate" values="0 0;' + entry.dx + ' ' + entry.dy + ';0 0" dur="' + motionDuration(entry) + '" begin="' + phase + '" repeatCount="indefinite" additive="sum" calcMode="spline" keyTimes="0;.5;1" keySplines=".42 0 .58 1;.42 0 .58 1"/>';
 }
 
-/* Discrete scale flip & gentle pitch tilt */
-function bakeFishTransforms(track, phaseOffset) {
-  const n = track.length;
-  const rawScales = [];
-  const rawAngles = [];
-
-  let facing = 1; // 1 = facing left (natural sprite orientation), -1 = facing right
-
-  for (let i = 0; i < n; i++) {
-    const prev = track[(i - 1 + n) % n];
-    const next = track[(i + 1) % n];
-    const vx = next[0] - prev[0];
-    const vy = next[1] - prev[1];
-
-    // Hysteresis: only change facing when moving decisively
-    if (vx < -0.32) {
-      facing = 1;   // swimming left -> keep default left-facing sprite
-    } else if (vx > 0.32) {
-      facing = -1;  // swimming right -> mirror horizontally
-    }
-    rawScales.push(facing);
-
-    // Subtle pitch: strictly clamped to [-8?, 8?]
-    const pitchRad = Math.atan2(-vy, Math.abs(vx) || 1);
-    const pitchDeg = Math.max(-8, Math.min(8, pitchRad * (180 / Math.PI) * 0.32));
-    // Subtle tail wiggle: 1.5?
-    const wiggleDeg = Math.sin((i / n) * Math.PI * 6 + (phaseOffset || 0)) * 1.5;
-    rawAngles.push(pitchDeg + wiggleDeg);
-  }
-
-  // Smooth angles
-  let curAngle = rawAngles[0];
-  const smoothedAngleStrs = new Array(n);
-  for (let pass = 0; pass < 2; pass++) {
-    for (let i = 0; i < n; i++) {
-      curAngle += (rawAngles[i] - curAngle) * 0.40;
-      if (pass === 1) {
-        smoothedAngleStrs[i] = (Math.round(curAngle * 10) / 10).toFixed(1);
-      }
-    }
-  }
-
-  // Discrete Scale Values: EITHER '1 1' OR '-1 1'
-  // When used with calcMode="discrete", SVG SMIL NEVER interpolates through 0!
-  // Zero squishing, zero flattening!
-  const discreteScaleStrs = rawScales.map(s => (s === 1 ? '1 1' : '-1 1'));
-  discreteScaleStrs[n - 1] = discreteScaleStrs[0];
-  smoothedAngleStrs[n - 1] = smoothedAngleStrs[0];
-
-  const keyTimes = [];
-  for (let i = 0; i < n; i++) {
-    keyTimes.push((i / (n - 1)).toFixed(3));
-  }
-
-  return {
-    scaleValues: discreteScaleStrs.join(';'),
-    angleValues: smoothedAngleStrs.join(';'),
-    keyTimes: keyTimes.join(';')
-  };
+function facingScale(direction) {
+  // All approved side-view PNG sprites face LEFT natively. Mirror only the
+  // right-moving leg; never animate scale through zero.
+  return direction === 'right' ? -1 : 1;
 }
 
-function esc(s) {
-  return String(s).replace(/[<>&'"]/g, c => (
-    { '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' }[c]
-  ));
+function cruiseLeg(entry, image, direction, index) {
+  const margin = Math.ceil(entry.w * 1.6);
+  const leftOutside = -entry.x - margin;
+  const rightOutside = W - entry.x + margin;
+  const start = direction === 'right' ? leftOutside : rightOutside;
+  const end = direction === 'right' ? rightOutside : leftOutside;
+  const duration = motionDuration(entry);
+  const phase = entry.phase || '0s';
+  const firstLeg = index === 0;
+  const keyTimes = firstLeg ? '0;.04;.46;1' : '0;.54;.96;1';
+  const values = firstLeg
+    ? start + ' 0;' + start + ' 0;' + end + ' 0;' + end + ' 0'
+    : start + ' 0;' + start + ' 0;' + end + ' 0;' + end + ' 0';
+  const splines = firstLeg
+    ? '0 0 1 1;.42 0 .58 1;0 0 1 1'
+    : '0 0 1 1;.42 0 .58 1;0 0 1 1';
+  return '<g><animateTransform attributeName="transform" type="translate" values="' + values +
+    '" dur="' + duration + '" begin="' + phase + '" repeatCount="indefinite" additive="sum" calcMode="spline" keyTimes="' + keyTimes + '" keySplines="' + splines + '"/>' +
+    '<g transform="scale(' + facingScale(direction) + ' 1)">' + image + '</g></g>';
 }
 
-function getSpriteBase64(spriteName) {
-  const p = path.join(__dirname, '../docs/assets/sprites/' + spriteName + '.png');
-  if (fs.existsSync(p)) {
-    return 'data:image/png;base64,' + fs.readFileSync(p).toString('base64');
-  }
-  const fallback = path.join(__dirname, '../docs/assets/sprites/clownfish.png');
-  return 'data:image/png;base64,' + fs.readFileSync(fallback).toString('base64');
+function renderCreature(entry, data, index) {
+  const h = spriteHeight(entry);
+  const repo = data.fish[index % Math.max(1, data.fish.length)] || { name: entry.role, lang: 'Aquarium' };
+  const image = '<use href="#creatureSprite' + index + '"/>';
+  const poses = entry.motion === 'cruise'
+    ? cruiseLeg(entry, image, 'right', 0) + cruiseLeg(entry, image, 'left', 1)
+    : '<g transform="scale(' + facingScale(entry.side) + ' 1)">' + image + '</g>';
+  return '<g transform="translate(' + entry.x + ' ' + entry.y + ')" filter="url(#spriteShadow)">' +
+    (entry.motion === 'cruise' ? '' : creatureMotion(entry)) + poses +
+    '<title>' + esc(repo.name) + ' · ' + esc(entry.role) + ' · ' + esc(repo.lang) + '</title></g>';
 }
 
-function buildSvg(data, featuredFish, tracks) {
-  const dur = (FRAMES / FPS).toFixed(2) + 's';
-  const parts = [];
+function schoolSpriteDefs() {
+  return SCHOOLS.map((school, index) => {
+    const source = path.join(__dirname, '../docs/assets/sprites', school.key + '.png');
+    if (!fs.existsSync(source)) throw new Error('Missing school sprite: ' + source);
+    return '<image id="schoolSprite' + index + '" href="data:image/png;base64,' +
+      fs.readFileSync(source).toString('base64') + '" x="-' + (school.size / 2) + '" y="-' +
+      (school.size * 0.58).toFixed(1) + '" width="' + school.size + '" height="' +
+      (school.size * 1.16).toFixed(1) + '" preserveAspectRatio="xMidYMid meet"/>';
+  }).join('');
+}
 
-  parts.push('<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H +
-             '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' +
-             esc(data.name) + ' GitHub aquarium">');
-
-  parts.push('<defs>');
-  /* Enhanced deep ocean gradient */
-  parts.push('<radialGradient id="bg" cx="50%" cy="16%" r="84%">' +
-             '<stop offset="0%" stop-color="#168aa8"/>' +
-             '<stop offset="20%" stop-color="#0c5b7e"/>' +
-             '<stop offset="50%" stop-color="#073356"/>' +
-             '<stop offset="80%" stop-color="#031b34"/>' +
-             '<stop offset="100%" stop-color="#010918"/></radialGradient>');
-  /* Surface gradient */
-  parts.push('<linearGradient id="surface" x1="0" x2="0" y1="0" y2="1">' +
-             '<stop offset="0%" stop-color="#c8f8ff" stop-opacity=".50"/>' +
-             '<stop offset="30%" stop-color="#82e1f5" stop-opacity=".28"/>' +
-             '<stop offset="70%" stop-color="#3cb4d7" stop-opacity=".10"/>' +
-             '<stop offset="100%" stop-color="#1e78aa" stop-opacity="0"/></linearGradient>');
-  /* God ray gradient */
-  parts.push('<linearGradient id="ray" x1="0" x2="0" y1="0" y2="1">' +
-             '<stop offset="0%" stop-color="#b4ebff" stop-opacity=".07"/>' +
-             '<stop offset="20%" stop-color="#78d2f0" stop-opacity=".04"/>' +
-             '<stop offset="60%" stop-color="#46aae0" stop-opacity=".02"/>' +
-             '<stop offset="100%" stop-color="#1e64a0" stop-opacity="0"/></linearGradient>');
-  /* Floor sand gradient */
-  parts.push('<linearGradient id="floor" x1="0" x2="0" y1="0" y2="1">' +
-             '<stop offset="0%" stop-color="#0c2d42"/>' +
-             '<stop offset="40%" stop-color="#0a2538"/>' +
-             '<stop offset="100%" stop-color="#061824"/></linearGradient>');
-
-  /* Crisp drop shadow filter - replaces blurry glow */
-  parts.push('<filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">' +
-             '<feDropShadow dx="0" dy="2.5" stdDeviation="1.8" flood-color="#021428" flood-opacity="0.48"/>' +
-             '</filter>');
-  /* Subtle dormant glow */
-  parts.push('<filter id="glow-dormant" x="-30%" y="-30%" width="160%" height="160%">' +
-             '<feGaussianBlur stdDeviation="2.2" result="b"/>' +
-             '<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>' +
-             '</filter>');
-
-  /* Embed Base64 sprite assets for each unique species in the school */
-  const uniqueSprites = new Set(featuredFish.map(f => f.sprite || 'clownfish'));
-  uniqueSprites.forEach(spriteKey => {
-    const b64Uri = getSpriteBase64(spriteKey);
-    const meta = SPRITE_META[spriteKey] || { w: 72, h: 54 };
-    parts.push('<image id="sp_' + spriteKey + '" width="' + meta.w + '" height="' + meta.h +
-               '" href="' + b64Uri + '"/>');
-  });
-
-  parts.push('</defs>');
-
-  /* Background */
-  parts.push('<rect width="' + W + '" height="' + H + '" fill="url(#bg)"/>');
-
-  /* God rays */
-  const rayRnd = mulberry32(4242);
-  for (let i = 0; i < 7; i++) {
-    const x = 50 + i * 125 + Math.floor((rayRnd() - 0.5) * 40);
-    const topW = 25 + Math.floor(rayRnd() * 40);
-    const bottomW = 75 + Math.floor(rayRnd() * 120);
-    const baseAlpha = (0.02 + rayRnd() * 0.035).toFixed(3);
-    const maxAlpha = (parseFloat(baseAlpha) * 2.0).toFixed(3);
-    const animDur = (12 + rayRnd() * 16).toFixed(1);
-    parts.push('<polygon points="' + (x - topW/2) + ',0 ' + (x + topW/2) + ',0 ' +
-               (x + bottomW/2) + ',' + H + ' ' + (x - bottomW/2) + ',' + H +
-               '" fill="url(#ray)">' +
-               '<animate attributeName="opacity" values="' + baseAlpha + ';' + maxAlpha + ';' + baseAlpha +
-               '" dur="' + animDur + 's" repeatCount="indefinite"/></polygon>');
+function renderSchool(school, schoolIndex) {
+  // One school = ten small fish held in a fixed formation, so the group reads
+  // as a single shoal rather than ten independent swimmers.
+  const formation = [];
+  for (let i = 0; i < 10; i++) {
+    const column = i % 5;
+    const row = Math.floor(i / 5);
+    const localX = column * 22 + row * 10;
+    const localY = (row ? 11 : 0) + ((column % 2) ? 4 : -2);
+    const bob = (i % 3) * 2;
+    formation.push('<g transform="translate(' + localX + ' ' + localY + ')">' +
+      '<animateTransform attributeName="transform" type="translate" values="0 0;0 ' +
+      (-3 - bob) + ';0 0" dur="' + (3.8 + (i % 3) * 0.45).toFixed(2) + 's" begin="' +
+      (-i * 0.19).toFixed(2) + 's" repeatCount="indefinite" additive="sum"/>' +
+      '<use href="#schoolSprite' + schoolIndex + '"/></g>');
   }
+  const shoal = formation.join('');
 
-  /* Surface waves */
-  parts.push('<rect width="' + W + '" height="50" fill="url(#surface)"/>');
-  for (let wave = 0; wave < 2; wave++) {
-    const yBase = 12 + wave * 10;
-    const amp = 4 + wave * 2;
-    const animDur = (6 + wave * 2) + 's';
-    let d1 = 'M0,' + yBase;
-    let d2 = 'M0,' + yBase;
-    for (let x = 0; x <= W; x += 55) {
-      const y1 = yBase + Math.sin(x * 0.035) * amp;
-      const y2 = yBase + Math.sin(x * 0.035 + Math.PI) * amp;
-      d1 += ' L' + x + ',' + y1.toFixed(1);
-      d2 += ' L' + x + ',' + y2.toFixed(1);
-    }
-    parts.push('<path d="' + d1 + '" fill="none" stroke="rgba(180,240,255,' + (0.24 - wave * 0.08) +
-               ')" stroke-width="' + (1.8 - wave * 0.4) + '">' +
-               '<animate attributeName="d" dur="' + animDur + '" repeatCount="indefinite" values="' +
-               d1 + ';' + d2 + ';' + d1 + '"/></path>');
+  // Both ends sit fully outside the 880-wide frame, so a school is always off
+  // screen at the moment it turns around.
+  const left = -260;
+  const right = W + 160;
+  const dur = school.seconds + 's';
+  // A negative begin winds the timeline forward, so the school is already part
+  // way across the frame the instant the SVG is first painted.
+  const begin = '-' + (school.seconds * school.start).toFixed(2) + 's';
+  // Matching static pose, for GitHub's cached raster preview and for any
+  // renderer that ignores SMIL: the school sits where the animation would
+  // have carried it by that same point in the cycle.
+  const restX = Math.round(left + (right - left) * (school.start / 0.5));
+
+  // Outbound leg: left to right across the first half of the cycle, then
+  // parked off screen. Visibility is switched discretely, while out of view.
+  const outbound = '<g opacity="1" transform="translate(' + restX + ' 0)">' +
+    '<animate attributeName="opacity" values="1;0" keyTimes="0;.5" calcMode="discrete" dur="' +
+    dur + '" begin="' + begin + '" repeatCount="indefinite"/>' +
+    '<animateTransform attributeName="transform" type="translate" values="' +
+    left + ' 0;' + right + ' 0;' + right + ' 0" keyTimes="0;.5;1" dur="' + dur +
+    '" begin="' + begin + '" repeatCount="indefinite"/>' +
+    '<g transform="scale(-1 1)">' + shoal + '</g></g>';
+
+  // Return leg: the same school mirrored, crossing right to left over the
+  // second half of the cycle. It only becomes visible once the outbound leg
+  // has left the frame, so the turn itself is never seen on screen.
+  const inbound = '<g opacity="0" transform="translate(' + right + ' 0)">' +
+    '<animate attributeName="opacity" values="0;1" keyTimes="0;.5" calcMode="discrete" dur="' +
+    dur + '" begin="' + begin + '" repeatCount="indefinite"/>' +
+    '<animateTransform attributeName="transform" type="translate" values="' +
+    right + ' 0;' + right + ' 0;' + left + ' 0" keyTimes="0;.5;1" dur="' + dur +
+    '" begin="' + begin + '" repeatCount="indefinite"/>' +
+    '<g transform="scale(1 1)">' + shoal + '</g></g>';
+
+  return '<g transform="translate(0 ' + school.y + ')" filter="url(#spriteShadow)"><title>' +
+    school.label + ' · 10 small fish swimming together</title>' + outbound + inbound + '</g>';
+}
+
+function cartoonPalace() {
+  return '<g id="cartoonPalace" stroke="#173f69" stroke-width="2.5" stroke-linejoin="round">' +
+    '<path d="M249 305 L249 239 L275 214 L301 239 L301 305 M579 305 L579 239 L605 214 L631 239 L631 305" fill="#426fa6"/>' +
+    '<path d="M274 214 L275 187 L293 206 L301 214 M604 214 L605 187 L623 206 L631 214" fill="#7fd9f0"/>' +
+    '<path d="M301 305 L301 216 L340 188 L380 216 L380 305 M500 305 L500 216 L540 188 L579 216 L579 305" fill="#4f82bd"/>' +
+    '<path d="M378 305 L378 192 L440 151 L502 192 L502 305" fill="#5c91c9"/>' +
+    '<path d="M410 305 L410 227 Q440 202 470 227 L470 305" fill="#173f69" stroke="#9eeeff"/>' +
+    '<path d="M419 238 Q440 219 461 238" fill="none" stroke="#ffd979" stroke-width="4"/>' +
+    '<g fill="#b8f7ff" stroke="#173f69"><path d="M326 238 Q340 222 354 238 L354 258 L326 258Z"/><path d="M526 238 Q540 222 554 238 L554 258 L526 258Z"/><path d="M422 184 Q440 166 458 184 L458 207 L422 207Z"/></g>' +
+    '<g fill="#ffe083" stroke="none" opacity=".85"><circle cx="340" cy="248" r="4"/><circle cx="540" cy="248" r="4"/><circle cx="440" cy="196" r="4"/></g>' +
+    '<path d="M223 306 H657" fill="none" stroke="#8fd6e7" stroke-width="4" opacity=".65"/>' +
+    '<path d="M237 305 Q282 287 322 305 Q364 288 405 305 Q450 287 494 305 Q538 288 590 305 Q624 291 652 305" fill="#295b88" stroke="none" opacity=".82"/>' +
+    '</g>';
+}
+
+function coralAndHabitat() {
+  return [
+    '<path d="M0 296 Q48 267 91 297 Q132 237 180 300 Q233 260 283 300 Q340 245 390 300 Q442 269 496 300 Q545 236 602 300 Q654 258 708 299 Q755 238 809 299 Q848 272 880 294 L880 360 L0 360Z" fill="#11485f" opacity=".72"/>',
+    '<path d="M0 306 Q146 291 287 308 Q437 292 592 309 Q742 291 880 305 L880 360 L0 360Z" fill="url(#sand)"/>',
+    '<g fill="url(#rock)" stroke="#173a52" stroke-width="3"><path d="M5 322 L31 276 L66 263 L99 291 L122 323Z"/><path d="M211 324 L239 284 L278 276 L309 305 L327 324Z"/><path d="M499 324 L528 282 L566 274 L602 306 L622 324Z"/><path d="M743 324 L774 275 L819 268 L856 300 L880 324Z"/></g>',
+    '<g fill="none" stroke="url(#kelp)" stroke-linecap="round">' +
+    '<path d="M37 326 Q18 289 39 250 Q58 286 48 326" stroke-width="7"><animateTransform attributeName="transform" type="rotate" values="-3 37 326;3 37 326;-3 37 326" dur="7s" repeatCount="indefinite"/></path>' +
+    '<path d="M121 326 Q95 278 124 227 Q150 279 133 326" stroke-width="8"><animateTransform attributeName="transform" type="rotate" values="-3 121 326;3 121 326;-3 121 326" dur="8s" repeatCount="indefinite"/></path>' +
+    '<path d="M350 326 Q330 276 355 237 Q378 282 364 326" stroke-width="7"><animateTransform attributeName="transform" type="rotate" values="-3 350 326;3 350 326;-3 350 326" dur="7.5s" repeatCount="indefinite"/></path>' +
+    '<path d="M681 326 Q655 274 688 233 Q714 281 700 326" stroke-width="8"><animateTransform attributeName="transform" type="rotate" values="-3 681 326;3 681 326;-3 681 326" dur="8.3s" repeatCount="indefinite"/></path></g>',
+    '<g fill="none" stroke-linecap="round" stroke-width="5">' +
+    '<path d="M88 322 Q75 273 93 240 M85 286 L61 265 M91 276 L113 252" stroke="url(#coralOrange)"/>' +
+    '<path d="M165 322 Q178 274 161 244 M172 284 L197 261 M165 273 L143 257" stroke="url(#coralPink)"/>' +
+    '<path d="M340 322 Q327 270 350 236 M340 285 L312 263 M347 273 L371 252" stroke="url(#coralOrange)"/>' +
+    '<path d="M429 322 Q441 273 423 247 M434 285 L458 264 M428 274 L406 256" stroke="url(#coralPink)"/>' +
+    '<path d="M648 322 Q634 272 655 241 M648 285 L621 264 M654 274 L677 254" stroke="url(#coralOrange)"/>' +
+    '<path d="M777 322 Q789 273 771 244 M783 285 L807 263 M776 275 L754 255" stroke="url(#coralPink)"/></g>'
+  ].join('');
+}
+
+function creatureSpriteDefs() {
+  return ROSTER.map((entry, index) => {
+    const h = spriteHeight(entry);
+    return '<image id="creatureSprite' + index + '" href="' + spriteUri(entry.key) +
+      '" x="' + (-entry.w / 2) + '" y="' + (-h / 2) + '" width="' + entry.w +
+      '" height="' + h + '" preserveAspectRatio="xMidYMid meet"/>';
+  }).join('');
+}
+
+function buildSvg(data) {
+  const body = [];
+  body.push('<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(data.name) + ' directed aquarium">');
+  body.push('<defs>' +
+    '<radialGradient id="water" cx="50%" cy="0%" r="110%"><stop offset="0" stop-color="#2aaed0"/><stop offset=".30" stop-color="#08718f"/><stop offset=".75" stop-color="#043958"/><stop offset="1" stop-color="#01213f"/></radialGradient>' +
+    '<linearGradient id="sand" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#e7c47b"/><stop offset="1" stop-color="#9c7044"/></linearGradient>' +
+    '<linearGradient id="rock" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#7293a7"/><stop offset="1" stop-color="#1d435a"/></linearGradient>' +
+    '<linearGradient id="kelp" x1="0" y1="1" x2="0" y2="0"><stop stop-color="#0b6c54"/><stop offset=".5" stop-color="#19b477"/><stop offset="1" stop-color="#77e69e"/></linearGradient>' +
+    '<linearGradient id="coralPink" x1="0" y1="1" x2="0" y2="0"><stop stop-color="#b53b68"/><stop offset="1" stop-color="#ff9aba"/></linearGradient>' +
+    '<linearGradient id="coralOrange" x1="0" y1="1" x2="0" y2="0"><stop stop-color="#ba4932"/><stop offset="1" stop-color="#ffbd76"/></linearGradient>' +
+    '<filter id="spriteShadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="2" stdDeviation="1.4" flood-color="#011426" flood-opacity=".5"/></filter>' +
+    '<filter id="uiShadow"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity=".45"/></filter>' +
+    creatureSpriteDefs() + schoolSpriteDefs() + '</defs>');
+  body.push('<rect width="880" height="360" fill="url(#water)"/>');
+  body.push('<path d="M0 14 Q55 5 110 14 T220 14 T330 14 T440 14 T550 14 T660 14 T770 14 T880 14" fill="none" stroke="#d5fbff" stroke-width="2.5" opacity=".55"><animate attributeName="d" dur="9s" repeatCount="indefinite" values="M0 14 Q55 5 110 14 T220 14 T330 14 T440 14 T550 14 T660 14 T770 14 T880 14;M0 14 Q55 23 110 14 T220 14 T330 14 T440 14 T550 14 T660 14 T770 14 T880 14;M0 14 Q55 5 110 14 T220 14 T330 14 T440 14 T550 14 T660 14 T770 14 T880 14"/></path>');
+  body.push('<path d="M75 0 L145 0 L245 290 L-30 290Z M344 0 L404 0 L489 290 L286 290Z M671 0 L735 0 L805 290 L583 290Z" fill="#c4f4ff" opacity=".045"/>');
+  body.push(cartoonPalace());
+  body.push(coralAndHabitat());
+  body.push('<g fill="none" stroke="#d5f8ff" opacity=".45"><circle cx="305" cy="132" r="4"/><circle cx="316" cy="118" r="7"/><circle cx="325" cy="98" r="3"/><circle cx="548" cy="227" r="4"/><circle cx="561" cy="211" r="7"/><circle cx="573" cy="193" r="3"/></g>');
+  SCHOOLS.forEach((school, index) => body.push(renderSchool(school, index)));
+  ROSTER.forEach((entry, index) => body.push(renderCreature(entry, data, index)));
+  body.push('<g transform="translate(16 16)" filter="url(#uiShadow)"><rect width="172" height="42" rx="10" fill="#06233b" fill-opacity=".86" stroke="#6ed8f4" stroke-opacity=".5"/><text x="13" y="16" fill="#d9f7ff" font-family="ui-sans-serif,Arial" font-size="10" font-weight="700">AQUARIUM HAPPINESS</text><rect x="13" y="23" width="145" height="10" rx="5" fill="#123b56"/><rect x="13" y="23" width="113" height="10" rx="5" fill="#46dc87"><animate attributeName="width" values="113;113;121;121;113" keyTimes="0;.625;.65;.72;1" dur="8s" repeatCount="indefinite" calcMode="spline" keySplines=".42 0 .58 1;.42 0 .58 1;.42 0 .58 1;.42 0 .58 1"/></rect><text x="162" y="32" text-anchor="end" fill="#fff" font-family="ui-monospace,monospace" font-size="9">78%</text></g>');
+  body.push('<g transform="translate(283 211)" opacity="0"><circle r="4" fill="#ffd45e"/><path d="M-7 0 L-13 -4 M-7 0 L-13 4" stroke="#ffd45e" stroke-width="1.7" stroke-linecap="round"/><animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;.375;.39;.625;.63;1" dur="8s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="283 211;283 211;283 263;283 263;283 211" keyTimes="0;.375;.5;.625;.63;1" dur="8s" repeatCount="indefinite" calcMode="spline" keySplines=".42 0 .58 1;.42 0 .58 1;.42 0 .58 1;.42 0 .58 1"/></g><g transform="translate(283 246)" opacity="0"><text text-anchor="middle" font-family="ui-sans-serif,Arial" font-size="14" fill="#ff4d62">❤<animate attributeName="font-size" values="14;14;26;22;22" keyTimes="0;.625;.64;.70;1" dur="8s" repeatCount="indefinite" calcMode="spline" keySplines=".42 0 .58 1;.42 0 .58 1;.42 0 .58 1;.42 0 .58 1"/></text><animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;.625;.64;.70;.72;1" dur="8s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="283 246;283 246;283 218;283 218;283 246" keyTimes="0;.625;.64;.70;.72;1" dur="8s" repeatCount="indefinite" calcMode="spline" keySplines=".42 0 .58 1;.42 0 .58 1;.42 0 .58 1;.42 0 .58 1"/></g>');
+  body.push('<text x="16" y="347" fill="#d4f7ff" opacity=".65" font-family="ui-monospace,monospace" font-size="10">3 calm schools · 10 fish per school · cartoon coral palace</text>');
+  body.push('</svg>');
+  return body.join('');
+}
+
+async function getData(user) {
+  try { return await fetchProfile(user); }
+  catch (error) {
+    console.error('warn: ' + error.message);
+    return fallback(user);
   }
-
-  /* Organic sandy floor dunes */
-  parts.push('<path d="M0,320 Q220,312 440,324 T880,318 L880,360 L0,360 Z" fill="url(#floor)"/>');
-  parts.push('<path d="M0,332 Q240,326 480,334 T880,330 L880,360 L0,360 Z" fill="#041522" opacity="0.5"/>');
-
-  /* Left Coral Reef & Rock cluster */
-  parts.push('<g opacity="0.9">');
-  parts.push('<path d="M-10,360 C15,310 55,305 90,325 C115,338 125,355 135,360 Z" fill="#072034"/>');
-  parts.push('<path d="M-5,360 C10,325 40,320 70,336 C90,348 100,358 110,360 Z" fill="#0b2c45"/>');
-  parts.push('<path d="M28,328 C28,295 36,295 36,328" stroke="#e76f51" stroke-width="7" stroke-linecap="round" fill="none"/>');
-  parts.push('<path d="M38,332 C38,285 47,285 47,332" stroke="#f4a261" stroke-width="8" stroke-linecap="round" fill="none"/>');
-  parts.push('<path d="M49,335 C49,300 56,300 56,335" stroke="#e76f51" stroke-width="6" stroke-linecap="round" fill="none"/>');
-  parts.push('<path d="M68,336 Q80,305 95,302 Q88,318 78,340" stroke="#7209b7" stroke-width="3" fill="none"/>');
-  parts.push('<path d="M72,338 Q90,312 105,312 Q94,324 82,342" stroke="#9d4edd" stroke-width="3" fill="none"/>');
-  parts.push('<path d="M76,340 Q100,320 112,324 Q98,332 86,344" stroke="#c77dff" stroke-width="2.5" fill="none"/>');
-  parts.push('</g>');
-
-  /* Right Coral Reef & Rock cluster */
-  parts.push('<g opacity="0.9">');
-  parts.push('<path d="M890,360 C865,312 825,308 790,326 C768,338 758,354 750,360 Z" fill="#072034"/>');
-  parts.push('<path d="M885,360 C870,326 840,322 810,338 C792,348 782,358 775,360 Z" fill="#0b2c45"/>');
-  parts.push('<path d="M848,330 C848,290 838,290 838,330" stroke="#2a9d8f" stroke-width="8" stroke-linecap="round" fill="none"/>');
-  parts.push('<path d="M836,334 C836,302 828,302 828,334" stroke="#52b788" stroke-width="7" stroke-linecap="round" fill="none"/>');
-  parts.push('<path d="M822,338 Q806,310 790,312 Q802,324 814,342" stroke="#e76f51" stroke-width="3" fill="none"/>');
-  parts.push('<path d="M818,340 Q798,318 782,322 Q798,330 810,344" stroke="#f4a261" stroke-width="3" fill="none"/>');
-  parts.push('</g>');
-
-  /* The fish: Real cartoon sprites swimming along DoTween smooth Catmull-Rom splines */
-  featuredFish.forEach((f, i) => {
-    const track = tracks[i];
-    if (!track || track.length < 3) return;
-    const d = loopPathFrom(track);
-    const transforms = bakeFishTransforms(track, i);
-    const op = f.dormant ? 0.72 : 0.98;
-    const filt = f.dormant ? 'glow-dormant' : 'shadow';
-    const spriteKey = f.sprite || 'clownfish';
-    const meta = SPRITE_META[spriteKey] || { w: 72, h: 54 };
-    const spec = CLASS_SCALE[spriteKey] || { baseW: 22, maxW: 26 };
-    // Exact sizing by class
-    const drawW = spec.baseW || 22;
-    const drawH = Math.round(drawW * (meta.h / meta.w));
-
-    // Outer container: path translation only
-    parts.push('<g opacity="' + op + '" filter="url(#' + filt + ')">');
-    parts.push('<animateMotion dur="' + dur + '" repeatCount="indefinite" path="' + d + '"/>');
-    // Middle container: discrete scale flip (calcMode="discrete", NEVER passing through 0)
-    parts.push('<g>');
-    parts.push('<animateTransform attributeName="transform" type="scale" dur="' + dur +
-               '" repeatCount="indefinite" values="' + transforms.scaleValues +
-               '" keyTimes="' + transforms.keyTimes + '" calcMode="discrete"/>');
-    // Inner container: subtle pitch tilt & breathing wiggle (clamped [-8?, 8?])
-    parts.push('<g>');
-    parts.push('<animateTransform attributeName="transform" type="rotate" dur="' + dur +
-               '" repeatCount="indefinite" values="' + transforms.angleValues +
-               '" keyTimes="' + transforms.keyTimes + '" calcMode="linear"/>');
-    parts.push('<use href="#sp_' + spriteKey + '" x="' + (-drawW / 2) + '" y="' + (-drawH / 2) +
-               '" width="' + drawW + '" height="' + drawH + '"/>');
-    const commitText = f.commits ? (' ? ' + f.commits + ' commits') : '';
-    parts.push('<title>' + esc(f.name) + ' ? ' + esc(f.species || spriteKey) + ' ? ' + esc(f.lang) + commitText + ' ? ' + f.stars + '?</title>');
-    parts.push('</g>');
-    parts.push('</g>');
-    parts.push('</g>');
-  });
-
-  const caption = data.offline
-    ? 'offline sample data'
-    : data.publicRepos + ' repos ? ' + data.followers + ' followers ? ' +
-      featuredFish.length + ' featured creatures ? abyssal boids';
-  parts.push('<text x="16" y="' + (H - 14) + '" font-family="ui-monospace,Menlo,Consolas,monospace" ' +
-             'font-size="11" fill="#7fd8ff" opacity="0.65">' + esc(caption) + '</text>');
-  parts.push('<text x="' + (W - 16) + '" y="' + (H - 14) + '" text-anchor="end" ' +
-             'font-family="ui-monospace,Menlo,Consolas,monospace" font-size="11" ' +
-             'fill="#7fd8ff" opacity="0.40">ABYSSAL</text>');
-
-  parts.push('</svg>');
-  return parts.join('');
 }
 
 async function main() {
   const user = process.argv[2] || process.env.GH_USER || 'shaikowannasleep';
-  let data;
-  try {
-    data = await fetchProfile(user);
-    console.log('fetched ' + data.fish.length + ' repos for ' + user);
-  } catch (e) {
-    console.error('warn: ' + e.message);
-    console.error('falling back to sample data so the build still succeeds');
-    data = fallback(user);
-  }
-
-  // Directed composition: select 14-16 featured creatures
-  const featuredFish = selectDirectedSchool(data.fish);
-  console.log('Selected ' + featuredFish.length + ' featured creatures across 5 depth zones');
-
-  const tracks = simulate(featuredFish);
-  const svg = buildSvg(data, featuredFish, tracks);
-
-  const rootDir = path.resolve(__dirname, '..');
-  const isSubApp = path.basename(rootDir) === 'aquarium';
-  const projectRoot = isSubApp ? path.resolve(rootDir, '../..') : rootDir;
-
+  const data = await getData(user);
+  const svg = buildSvg(data);
+  const appRoot = path.resolve(__dirname, '..');
+  const projectRoot = path.resolve(appRoot, '../..');
   const targets = [
+    path.join(appRoot, 'docs/aquarium.svg'),
     path.join(projectRoot, 'docs/aquarium.svg'),
-    path.join(projectRoot, 'docs/apps/aquarium/aquarium.svg'),
-    path.join(projectRoot, 'apps/aquarium/docs/aquarium.svg')
+    path.join(projectRoot, 'docs/apps/aquarium/aquarium.svg')
   ];
-
-  targets.forEach(t => {
-    fs.mkdirSync(path.dirname(t), { recursive: true });
-    fs.writeFileSync(t, svg);
-    console.log(t + '  ' + (Buffer.byteLength(svg) / 1024).toFixed(1) + ' KB');
-  });
-
-  console.log('featured fish: ' + featuredFish.length + '  keyframes/fish: ' + tracks[0].length);
+  for (const target of targets) {
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, svg);
+    console.log(target + '  ' + (Buffer.byteLength(svg) / 1024).toFixed(1) + ' KB');
+  }
+  console.log('built directed SVG: ' + ROSTER.length + ' creatures');
 }
 
 if (require.main === module) main();
-module.exports = { simulate, buildSvg, loopPathFrom, selectDirectedSchool };
+module.exports = { buildSvg, ROSTER, SCHOOLS };

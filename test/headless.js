@@ -126,40 +126,42 @@ rippleSwarm.step(1 / 60, { predators: [], obstacles: [], lure: { active: false }
   ripples: [{ x: 100, y: 150, radius: 50, speed: 150, strength: 1, band: 28, active: true }] });
 ok('ripple pushes fish away from its wave front', rippleSwarm.vx[0] > 30, rippleSwarm.vx[0].toFixed(2));
 
-console.log('\n=== 6. deterministic bake ===');
-const { simulate, buildSvg, loopPathFrom, loopContinuity } = require('../tools/bake-svg');
-const { speciesFor } = require('../tools/fetch-github');
+console.log('\n=== 6. directed README aquarium bake ===');
+const { buildSvg, ROSTER, SCHOOLS } = require('../tools/bake-svg');
 const sample = {
-  user: 'x', name: 'x', followers: 1, publicRepos: 3,
+  name: 'x',
   fish: [
-    { name: 'a', lang: 'C#', color: '#178600', stars: 3, forks: 0, size: 8, pace: 1, dormant: false, ageDays: 5, species: 'neon-tetra', sprite: 'tetra', schooling: true, depth: 0.30 },
-    { name: 'b', lang: 'Go', color: '#00ADD8', stars: 1, forks: 0, size: 6, pace: 0.45, dormant: true, ageDays: 400, species: 'clownfish', sprite: 'clownfish', schooling: true, depth: 0.48 },
-    { name: 'c', lang: 'Lua', color: '#000080', stars: 0, forks: 0, size: 6, pace: 1, dormant: false, ageDays: 20, species: 'angelfish', sprite: 'angelfish', schooling: false, depth: 0.70 },
-  ],
-  generated: 'fixed',
+    { name: 'a', lang: 'C#' },
+    { name: 'b', lang: 'Go' },
+    { name: 'c', lang: 'Lua' }
+  ]
 };
-const t1 = simulate(sample);
-const t2 = simulate(sample);
-ok('same profile bakes the same swim', JSON.stringify(t1) === JSON.stringify(t2));
-const svg = buildSvg(sample, t1);
+const svg = buildSvg(sample);
+const svgAgain = buildSvg(sample);
+ok('same profile bakes the same directed aquarium', svg === svgAgain);
 ok('svg has an xml root', svg.startsWith('<svg') && svg.endsWith('</svg>'));
-ok('svg contains animateMotion', svg.includes('<animateMotion'));
 ok('svg has no <script>', !/<script/i.test(svg));
-ok('one path per fish', (svg.match(/<animateMotion/g) || []).length >= sample.fish.length);
-let loopGap = 0, loopTangent = 1;
-for (const track of t1) {
-  const continuity = loopContinuity(track);
-  loopGap = Math.max(loopGap, continuity.positionGap);
-  loopTangent = Math.min(loopTangent, continuity.tangentDot);
-}
-ok('loop bridge returns exactly to its start', loopGap === 0, loopGap.toFixed(3));
-ok('loop bridge has C1 tangents at the seam', loopTangent > 0.999, loopTangent.toFixed(4));
-ok('each fish path closes with a cubic bridge', (loopPathFrom(t1[0]).match(/C/g) || []).length === 1);
-ok('svg stays below 200 KB for sample data', Buffer.byteLength(svg) < 200 * 1024,
+ok('three school sprite definitions are embedded', (svg.match(/id="schoolSprite/g) || []).length === 3);
+ok('three schools contain exactly ten fish each', (svg.match(/10 small fish swimming together/g) || []).length === 3);
+ok('schools use slow two-way swim legs',
+   (svg.match(/schoolSprite/g) || []).length >= 63 &&
+   SCHOOLS.every(s => s.seconds >= 20 && svg.includes('dur="' + s.seconds + 's"')));
+ok('school direction changes while off-screen', svg.includes('opacity="0"') && svg.includes('scale(-1 1)') && svg.includes('scale(1 1)'));
+/* The README shows a still frame far more often than it shows the animation:
+ * GitHub serves a cached raster, and some viewers ignore SMIL entirely. So
+ * every school must already be visible, and fully inside the 880px frame, at
+ * time zero rather than waiting to swim in. */
+const firstFrameLegs = [...svg.matchAll(/<title>[a-z ]+school \u00b7[^<]*<\/title><g opacity="(\d)" transform="translate\((-?\d+) 0\)">/g)];
+ok('every school is painted at frame 0', firstFrameLegs.length === SCHOOLS.length &&
+   firstFrameLegs.every(m => m[1] === '1'));
+ok('no school is clipped by the frame at frame 0',
+   firstFrameLegs.every(m => Number(m[2]) - 98 >= 0 && Number(m[2]) <= 880),
+   firstFrameLegs.map(m => m[2]).join(', '));
+ok('cartoon underwater palace is rendered', svg.includes('id="cartoonPalace"'));
+ok('legacy large cruise creatures are removed', !svg.includes('· turtle ·') && !svg.includes('· dolphin ·') && !svg.includes('· shark ·'));
+ok('lower reef inhabitants remain', ROSTER.length === 11 && svg.includes('· seahorse ·') && svg.includes('· crab ·'));
+ok('generated SVG stays practical for README', Buffer.byteLength(svg) < 400 * 1024,
    (Buffer.byteLength(svg) / 1024).toFixed(1) + ' KB');
-const jsSpecies = speciesFor('JavaScript');
-ok('language maps to a stable fish species', jsSpecies.name === speciesFor('JavaScript').name);
-ok('SVG embeds original vector fish silhouettes', !/<image\b|(?:href|src)="https?:/i.test(svg));
 
 console.log('\n' + (fail === 0 ? 'ALL CHECKS PASSED' : fail + ' CHECK(S) FAILED') + '\n');
 process.exit(fail ? 1 : 0);
