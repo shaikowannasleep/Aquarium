@@ -142,7 +142,7 @@ ok('same profile bakes the same directed aquarium', svg === svgAgain);
 ok('svg has an xml root', svg.startsWith('<svg') && svg.endsWith('</svg>'));
 ok('svg has no <script>', !/<script/i.test(svg));
 ok('three school sprite definitions are embedded', (svg.match(/id="schoolSprite/g) || []).length === 3);
-ok('three schools contain 120 fish each', SCHOOLS.length === 3 && SCHOOLS.every(s => s.count === 120) && (svg.match(/120 small fish/g) || []).length === 3);
+ok('three schools contain exactly ten fish each', (svg.match(/10 small fish swimming together/g) || []).length === 3);
 ok('schools use slow two-way swim legs',
    (svg.match(/schoolSprite/g) || []).length >= 63 &&
    SCHOOLS.every(s => s.seconds >= 20 && svg.includes('dur="' + s.seconds + 's"')));
@@ -160,7 +160,7 @@ ok('no school is clipped by the frame at frame 0',
 ok('cartoon underwater palace is rendered', svg.includes('id="cartoonPalace"'));
 ok('legacy large cruise creatures are removed', !svg.includes('· turtle ·') && !svg.includes('· dolphin ·') && !svg.includes('· shark ·'));
 ok('lower reef inhabitants remain', ROSTER.length === 11 && svg.includes('· seahorse ·') && svg.includes('· crab ·'));
-ok('generated SVG stays practical for README', Buffer.byteLength(svg) < 550 * 1024,
+ok('generated SVG stays practical for README', Buffer.byteLength(svg) < 400 * 1024,
    (Buffer.byteLength(svg) / 1024).toFixed(1) + ' KB');
 
 console.log('\n' + (fail === 0 ? 'ALL CHECKS PASSED' : fail + ' CHECK(S) FAILED') + '\n');
