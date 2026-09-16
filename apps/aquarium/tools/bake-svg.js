@@ -46,9 +46,17 @@ const ROSTER = [
 // first painted. A school is mid-crossing for the first half of its cycle, so
 // any value below .5 means that school is already on screen at frame 0.
 const SCHOOLS = [
-  { key: 'blue_tang',      label: 'azure school',   y: 72,  size: 18, seconds: 26, start: 0.19 },
-  { key: 'yellow_tang_v2', label: 'sunbeam school', y: 116, size: 17, seconds: 30, start: 0.26 },
-  { key: 'clownfish_v2',   label: 'coral school',   y: 158, size: 18, seconds: 34, start: 0.38 }
+  // 30 fish existed before; 120 x 3 adds 330 fish, for 360 total.
+  // Every fish reuses one embedded sprite definition through <use>.
+  { key: 'blue_tang',      label: 'azure school',   y: 72,  size: 12, count: 120, seconds: 26, start: 0.19, seed: 11, depth: 'far' },
+  { key: 'yellow_tang_v2', label: 'sunbeam school', y: 116, size: 12, count: 120, seconds: 30, start: 0.26, seed: 23, depth: 'mid' },
+  { key: 'clownfish_v2',   label: 'coral school',   y: 158, size: 12, count: 120, seconds: 34, start: 0.38, seed: 37, depth: 'near' }
+];
+
+const SPECIAL_SPRITES = [
+  { id: 'mantaSprite', key: 'manta_ray', w: 42 },
+  { id: 'sharkSprite', key: 'blue_shark', w: 46 },
+  { id: 'turtleSprite', key: 'green_turtle_v2', w: 34 }
 ];
 
 function esc(value) {
@@ -135,98 +143,131 @@ function schoolSpriteDefs() {
       fs.readFileSync(source).toString('base64') + '" x="-' + (school.size / 2) + '" y="-' +
       (school.size * 0.58).toFixed(1) + '" width="' + school.size + '" height="' +
       (school.size * 1.16).toFixed(1) + '" preserveAspectRatio="xMidYMid meet"/>';
+  }).join('') + SPECIAL_SPRITES.map((sprite) => {
+    const source = path.join(__dirname, '../docs/assets/sprites', sprite.key + '.png');
+    if (!fs.existsSync(source)) throw new Error('Missing special sprite: ' + source);
+    const meta = SPRITE_META[sprite.key] || [sprite.w, sprite.w];
+    const h = Math.round(sprite.w * meta[1] / meta[0]);
+    return '<image id="' + sprite.id + '" href="data:image/png;base64,' +
+      fs.readFileSync(source).toString('base64') + '" x="-' + (sprite.w / 2) + '" y="-' +
+      (h / 2) + '" width="' + sprite.w + '" height="' + h + '" preserveAspectRatio="xMidYMid meet"/>';
   }).join('');
 }
 
+function schoolRandom(seed, index) {
+  const value = Math.sin(seed * 12.9898 + index * 78.233) * 43758.5453;
+  return value - Math.floor(value);
+}
+
 function renderSchool(school, schoolIndex) {
-  // One school = ten small fish held in a fixed formation, so the group reads
-  // as a single shoal rather than ten independent swimmers.
   const formation = [];
-  for (let i = 0; i < 10; i++) {
-    const column = i % 5;
-    const row = Math.floor(i / 5);
-    const localX = column * 22 + row * 10;
-    const localY = (row ? 11 : 0) + ((column % 2) ? 4 : -2);
-    const bob = (i % 3) * 2;
+  // Deterministic pseudo-random loose shoal: stable output, natural spacing,
+  // and no runtime allocation. Shared <use> sprites keep the SVG compact.
+  for (let i = 0; i < school.count; i++) {
+    const angle = i * 2.399963 + school.seed;
+    const radius = Math.sqrt((i + 0.5) / school.count);
+    const jitterX = (schoolRandom(school.seed, i) - 0.5) * 22;
+    const jitterY = (schoolRandom(school.seed + 17, i) - 0.5) * 13;
+    let localX = Math.round(Math.cos(angle) * radius * 150 + jitterX);
+    if (school.depth === 'mid') localX += localX >= 0 ? 168 : -168;
+    const localY = Math.round(Math.sin(angle) * radius * 25 + jitterY);
     formation.push('<g transform="translate(' + localX + ' ' + localY + ')">' +
-      '<animateTransform attributeName="transform" type="translate" values="0 0;0 ' +
-      (-3 - bob) + ';0 0" dur="' + (3.8 + (i % 3) * 0.45).toFixed(2) + 's" begin="' +
-      (-i * 0.19).toFixed(2) + 's" repeatCount="indefinite" additive="sum"/>' +
       '<use href="#schoolSprite' + schoolIndex + '"/></g>');
   }
   const shoal = formation.join('');
-
-  // Both ends sit fully outside the 880-wide frame, so a school is always off
-  // screen at the moment it turns around.
-  const left = -260;
-  const right = W + 160;
+  const left = -300;
+  const right = W + 180;
   const dur = school.seconds + 's';
-  // A negative begin winds the timeline forward, so the school is already part
-  // way across the frame the instant the SVG is first painted.
   const begin = '-' + (school.seconds * school.start).toFixed(2) + 's';
-  // Matching static pose, for GitHub's cached raster preview and for any
-  // renderer that ignores SMIL: the school sits where the animation would
-  // have carried it by that same point in the cycle.
   const restX = Math.round(left + (right - left) * (school.start / 0.5));
-
-  // Outbound leg: left to right across the first half of the cycle, then
-  // parked off screen. Visibility is switched discretely, while out of view.
   const outbound = '<g opacity="1" transform="translate(' + restX + ' 0)">' +
     '<animate attributeName="opacity" values="1;0" keyTimes="0;.5" calcMode="discrete" dur="' +
     dur + '" begin="' + begin + '" repeatCount="indefinite"/>' +
-    '<animateTransform attributeName="transform" type="translate" values="' +
-    left + ' 0;' + right + ' 0;' + right + ' 0" keyTimes="0;.5;1" dur="' + dur +
-    '" begin="' + begin + '" repeatCount="indefinite"/>' +
-    '<g transform="scale(-1 1)">' + shoal + '</g></g>';
-
-  // Return leg: the same school mirrored, crossing right to left over the
-  // second half of the cycle. It only becomes visible once the outbound leg
-  // has left the frame, so the turn itself is never seen on screen.
+    '<animateTransform attributeName="transform" type="translate" values="' + left + ' 0;' +
+    right + ' 0;' + right + ' 0" keyTimes="0;.5;1" dur="' + dur + '" begin="' + begin +
+    '" repeatCount="indefinite"/>' + '<g transform="scale(-1 1)">' + shoal + '</g></g>';
   const inbound = '<g opacity="0" transform="translate(' + right + ' 0)">' +
     '<animate attributeName="opacity" values="0;1" keyTimes="0;.5" calcMode="discrete" dur="' +
     dur + '" begin="' + begin + '" repeatCount="indefinite"/>' +
-    '<animateTransform attributeName="transform" type="translate" values="' +
-    right + ' 0;' + right + ' 0;' + left + ' 0" keyTimes="0;.5;1" dur="' + dur +
-    '" begin="' + begin + '" repeatCount="indefinite"/>' +
-    '<g transform="scale(1 1)">' + shoal + '</g></g>';
-
+    '<animateTransform attributeName="transform" type="translate" values="' + right + ' 0;' +
+    right + ' 0;' + left + ' 0" keyTimes="0;.5;1" dur="' + dur + '" begin="' + begin +
+    '" repeatCount="indefinite"/>' + '<g transform="scale(1 1)">' + shoal + '</g></g>';
   return '<g transform="translate(0 ' + school.y + ')" filter="url(#spriteShadow)"><title>' +
-    school.label + ' · 10 small fish swimming together</title>' + outbound + inbound + '</g>';
+    school.label + ' · ' + school.count + ' small fish · shared sprite atlas</title>' + outbound + inbound + '</g>';
 }
 
-function cartoonPalace() {
-  return '<g id="cartoonPalace" stroke="#173f69" stroke-width="2.5" stroke-linejoin="round">' +
-    '<path d="M249 305 L249 239 L275 214 L301 239 L301 305 M579 305 L579 239 L605 214 L631 239 L631 305" fill="#426fa6"/>' +
-    '<path d="M274 214 L275 187 L293 206 L301 214 M604 214 L605 187 L623 206 L631 214" fill="#7fd9f0"/>' +
-    '<path d="M301 305 L301 216 L340 188 L380 216 L380 305 M500 305 L500 216 L540 188 L579 216 L579 305" fill="#4f82bd"/>' +
-    '<path d="M378 305 L378 192 L440 151 L502 192 L502 305" fill="#5c91c9"/>' +
-    '<path d="M410 305 L410 227 Q440 202 470 227 L470 305" fill="#173f69" stroke="#9eeeff"/>' +
-    '<path d="M419 238 Q440 219 461 238" fill="none" stroke="#ffd979" stroke-width="4"/>' +
-    '<g fill="#b8f7ff" stroke="#173f69"><path d="M326 238 Q340 222 354 238 L354 258 L326 258Z"/><path d="M526 238 Q540 222 554 238 L554 258 L526 258Z"/><path d="M422 184 Q440 166 458 184 L458 207 L422 207Z"/></g>' +
-    '<g fill="#ffe083" stroke="none" opacity=".85"><circle cx="340" cy="248" r="4"/><circle cx="540" cy="248" r="4"/><circle cx="440" cy="196" r="4"/></g>' +
-    '<path d="M223 306 H657" fill="none" stroke="#8fd6e7" stroke-width="4" opacity=".65"/>' +
-    '<path d="M237 305 Q282 287 322 305 Q364 288 405 305 Q450 287 494 305 Q538 288 590 305 Q624 291 652 305" fill="#295b88" stroke="none" opacity=".82"/>' +
+function renderSpecialCreatures() {
+  return '<g id="atlanticLargeCreatures" filter="url(#spriteShadow)">' +
+    '<g transform="translate(238 58)"><animateTransform attributeName="transform" type="translate" values="-40 0;260 4;560 -2" dur="24s" repeatCount="indefinite"/><use href="#mantaSprite"/><title>Manta ray gliding over the Atlantis arch</title></g>' +
+    '<g transform="translate(766 92)"><animateTransform attributeName="transform" type="translate" values="0 0;-72 3;0 0" dur="20s" repeatCount="indefinite"/><use href="#sharkSprite"/><title>Small distant shark silhouette</title></g>' +
+    '<g transform="translate(590 62)"><animateTransform attributeName="transform" type="translate" values="0 0;28 -4;0 0" dur="18s" repeatCount="indefinite"/><use href="#turtleSprite"/><title>Sea turtle drifting above the ruins</title></g>' +
     '</g>';
 }
 
-function coralAndHabitat() {
-  return [
-    '<path d="M0 296 Q48 267 91 297 Q132 237 180 300 Q233 260 283 300 Q340 245 390 300 Q442 269 496 300 Q545 236 602 300 Q654 258 708 299 Q755 238 809 299 Q848 272 880 294 L880 360 L0 360Z" fill="#11485f" opacity=".72"/>',
-    '<path d="M0 306 Q146 291 287 308 Q437 292 592 309 Q742 291 880 305 L880 360 L0 360Z" fill="url(#sand)"/>',
-    '<g fill="url(#rock)" stroke="#173a52" stroke-width="3"><path d="M5 322 L31 276 L66 263 L99 291 L122 323Z"/><path d="M211 324 L239 284 L278 276 L309 305 L327 324Z"/><path d="M499 324 L528 282 L566 274 L602 306 L622 324Z"/><path d="M743 324 L774 275 L819 268 L856 300 L880 324Z"/></g>',
-    '<g fill="none" stroke="url(#kelp)" stroke-linecap="round">' +
-    '<path d="M37 326 Q18 289 39 250 Q58 286 48 326" stroke-width="7"><animateTransform attributeName="transform" type="rotate" values="-3 37 326;3 37 326;-3 37 326" dur="7s" repeatCount="indefinite"/></path>' +
-    '<path d="M121 326 Q95 278 124 227 Q150 279 133 326" stroke-width="8"><animateTransform attributeName="transform" type="rotate" values="-3 121 326;3 121 326;-3 121 326" dur="8s" repeatCount="indefinite"/></path>' +
-    '<path d="M350 326 Q330 276 355 237 Q378 282 364 326" stroke-width="7"><animateTransform attributeName="transform" type="rotate" values="-3 350 326;3 350 326;-3 350 326" dur="7.5s" repeatCount="indefinite"/></path>' +
-    '<path d="M681 326 Q655 274 688 233 Q714 281 700 326" stroke-width="8"><animateTransform attributeName="transform" type="rotate" values="-3 681 326;3 681 326;-3 681 326" dur="8.3s" repeatCount="indefinite"/></path></g>',
-    '<g fill="none" stroke-linecap="round" stroke-width="5">' +
-    '<path d="M88 322 Q75 273 93 240 M85 286 L61 265 M91 276 L113 252" stroke="url(#coralOrange)"/>' +
-    '<path d="M165 322 Q178 274 161 244 M172 284 L197 261 M165 273 L143 257" stroke="url(#coralPink)"/>' +
-    '<path d="M340 322 Q327 270 350 236 M340 285 L312 263 M347 273 L371 252" stroke="url(#coralOrange)"/>' +
-    '<path d="M429 322 Q441 273 423 247 M434 285 L458 264 M428 274 L406 256" stroke="url(#coralPink)"/>' +
-    '<path d="M648 322 Q634 272 655 241 M648 285 L621 264 M654 274 L677 254" stroke="url(#coralOrange)"/>' +
-    '<path d="M777 322 Q789 273 771 244 M783 285 L807 263 M776 275 L754 255" stroke="url(#coralPink)"/></g>'
-  ].join('');
+function bubbleField() {
+  const bubbles = [];
+  for (let i = 0; i < 26; i++) {
+    const x = 20 + ((i * 137) % 840);
+    const y = 300 + ((i * 53) % 42);
+    const r = 1.5 + (i % 4) * 0.8;
+    const rise = 210 + (i % 5) * 28;
+    const duration = (7 + (i % 6) * 1.4).toFixed(1);
+    const delay = -((i * 1.37) % 9).toFixed(2);
+    bubbles.push('<g opacity=".32"><circle cx="0" cy="0" r="' + r.toFixed(1) + '" fill="none" stroke="#bff7f4" stroke-width="1.2"/><animate attributeName="opacity" values=".32;.65;.35;0" keyTimes="0;.12;.75;1" dur="' + duration + 's" begin="' + delay + 's" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="' + x + ' ' + y + ';' + (x - 8) + ' ' + (y - rise * .45).toFixed(1) + ';' + (x + 7) + ' ' + (y - rise).toFixed(1) + '" dur="' + duration + 's" begin="' + delay + 's" repeatCount="indefinite"/></g>');
+  }
+  return '<g id="continuousBubbles">' + bubbles.join('') + '</g>';
+}
+
+function seaLifeFrame() {
+  return '<g id="seaLifeFrame">' +
+    '<g fill="#102f43" stroke="#355e6d" stroke-width="2" opacity=".9"><path d="M0 333 L34 291 L72 307 L105 278 L142 321 L176 294 L222 334Z"/><path d="M658 334 L704 294 L738 321 L775 278 L808 307 L846 291 L880 333Z"/></g>' +
+    '<g fill="none" stroke-linecap="round"><path d="M13 336 Q-4 281 24 238 Q45 285 33 334" stroke="#173f50" stroke-width="17" opacity=".9"/><path d="M13 336 Q-4 281 24 238 Q45 285 33 334" stroke="#4fbd88" stroke-width="7"/><path d="M69 339 Q44 291 76 251 Q102 292 91 338" stroke="#1d5e59" stroke-width="15"/><path d="M69 339 Q44 291 76 251 Q102 292 91 338" stroke="#58c88e" stroke-width="5"/><path d="M867 336 Q884 281 856 238 Q835 285 847 334" stroke="#173f50" stroke-width="17" opacity=".9"/><path d="M867 336 Q884 281 856 238 Q835 285 847 334" stroke="#4fbd88" stroke-width="7"/><path d="M811 339 Q836 291 804 251 Q778 292 789 338" stroke="#1d5e59" stroke-width="15"/><path d="M811 339 Q836 291 804 251 Q778 292 789 338" stroke="#58c88e" stroke-width="5"/></g>' +
+    '<g fill="none" stroke-linecap="round"><path d="M116 344 Q91 304 112 267 M121 344 Q126 295 150 254 M126 344 Q153 310 168 283" stroke="#193d4b" stroke-width="12" opacity=".9"/><path d="M116 344 Q91 304 112 267 M121 344 Q126 295 150 254 M126 344 Q153 310 168 283" stroke="#62d096" stroke-width="4"/><path d="M764 344 Q789 304 768 267 M759 344 Q754 295 730 254 M754 344 Q727 310 712 283" stroke="#193d4b" stroke-width="12" opacity=".9"/><path d="M764 344 Q789 304 768 267 M759 344 Q754 295 730 254 M754 344 Q727 310 712 283" stroke="#62d096" stroke-width="4"/></g>' +
+    '<g stroke="#f0b0a1" stroke-width="1.5"><path d="M0 350 Q12 300 27 350 Q39 302 55 350 Q70 310 86 350Z" fill="url(#coralPurple)"/><path d="M82 350 Q98 297 113 350 Q127 304 142 350 Q155 315 173 350Z" fill="url(#coralRed)"/><path d="M707 350 Q725 315 738 350 Q753 304 767 350 Q782 297 798 350Z" fill="url(#coralRed)"/><path d="M794 350 Q810 310 825 350 Q841 302 853 350 Q868 300 880 350Z" fill="url(#coralPurple)"/></g>' +
+    '<g fill="#e4ad4e" stroke="#ffe6a1" stroke-width="1"><circle cx="46" cy="325" r="7"/><circle cx="154" cy="330" r="5"/><circle cx="834" cy="325" r="7"/><circle cx="726" cy="330" r="5"/></g>' +
+    '<path d="M0 354 Q100 337 205 353 T440 350 T675 353 T880 350 V360 H0Z" fill="#17364a" stroke="none"/>' +
+    '<path d="M300 356 L348 333 L391 347 L440 327 L489 347 L532 333 L580 356" fill="none" stroke="#79a59f" stroke-width="4" opacity=".65"/>' +
+    '</g>';
+}
+
+function angelPalace() {
+  // Original six-wing angelic ruin: architectural language and composition are
+  // intentionally distinct from the supplied reference image.
+  return '<g id="cartoonPalace" stroke="#80b8b6" stroke-width="2.2" stroke-linejoin="round">' +
+    '<path d="M0 320 H880 V360 H0Z" fill="#102c40" stroke="none"/>' +
+    '<path d="M0 306 L150 292 L270 306 L440 285 L610 306 L730 292 L880 306" fill="none" stroke="#8bb8b1" stroke-width="3" opacity=".7"/>' +
+    '<g filter="url(#stoneShadow)"><path d="M-42 320 V48 Q20 8 82 48 V320Z" fill="url(#columnStone)" stroke="#83aaa9" stroke-width="3"/><path d="M798 320 V48 Q860 8 922 48 V320Z" fill="url(#columnStone)" stroke="#83aaa9" stroke-width="3"/></g>' +
+    '<g fill="none" stroke="#b7d6c6" stroke-width="2" opacity=".5"><path d="M-24 92 Q20 62 64 92 M-30 128 Q20 98 70 128 M-34 164 Q20 134 74 164 M-38 200 Q20 170 78 200"/><path d="M904 92 Q860 62 816 92 M910 128 Q860 98 810 128 M914 164 Q860 134 806 164 M918 200 Q860 170 802 200"/></g>' +
+    '<g fill="#315d6f" stroke="#8ac6c0"><path d="M54 320 V102 L101 65 L148 102 V320Z"/><path d="M732 320 V102 L779 65 L826 102 V320Z"/></g>' +
+    '<g fill="#547f86" stroke="#b4d9ca"><path d="M146 320 V128 L198 88 L250 128 V320Z"/><path d="M630 320 V128 L682 88 L734 128 V320Z"/></g>' +
+    '<path d="M242 320 V86 L440 18 L638 86 V320Z" fill="#477783" stroke="#b1d4c6"/>' +
+    '<path d="M270 320 V125 Q440 8 610 125 V320Z" fill="#0c2f47" stroke="#a9d6ca" stroke-width="4"/>' +
+    '<path d="M310 320 V166 Q440 72 570 166 V320Z" fill="#061e37" stroke="#83c1bd" stroke-width="3"/>' +
+    '<path d="M350 320 V216 Q440 145 530 216 V320Z" fill="#031629" stroke="#d1e6ce" stroke-width="3"/>' +
+    '<path d="M370 230 Q440 169 510 230" fill="none" stroke="#f3cf70" stroke-width="5"/>' +
+    // Six-wing guardian crest above the gate.
+    '<g transform="translate(440 91) scale(.62)" opacity=".62" fill="#86b7af" stroke="#c4e2cf"><circle cy="-8" r="13" fill="#e7cf88"/>' +
+    '<path d="M-13 4 Q-64 -42 -104 -15 Q-67 8 -18 22Z"/><path d="M13 4 Q64 -42 104 -15 Q67 8 18 22Z"/>' +
+    '<path d="M-14 13 Q-72 11 -92 51 Q-42 54 -8 30Z"/><path d="M14 13 Q72 11 92 51 Q42 54 8 30Z"/>' +
+    '<path d="M-10 20 Q-35 58 -24 85 Q-3 62 0 31Z"/><path d="M10 20 Q35 58 24 85 Q3 62 0 31Z"/></g>' +
+    '<g fill="#a7d9cf" stroke="#315d6f"><path d="M92 166 L122 137 L152 166 V200 H92Z"/><path d="M728 166 L758 137 L788 166 V200 H728Z"/><path d="M176 146 L198 125 L220 146 V174 H176Z"/><path d="M660 146 L682 125 L704 146 V174 H660Z"/></g>' +
+    '<g fill="#f1d27b" stroke="none"><circle cx="122" cy="183" r="5"/><circle cx="758" cy="183" r="5"/><circle cx="198" cy="158" r="4"/><circle cx="682" cy="158" r="4"/></g>' +
+    '<path d="M200 320 L270 287 L330 305 L385 273 L440 300 L495 273 L550 305 L610 287 L680 320" fill="#597b80" stroke="#9cc4bb"/>' +
+    '<path d="M440 320 L440 270 M440 320 L383 292 M440 320 L497 292 M383 292 L335 306 M497 292 L545 306" fill="none" stroke="#bad4c9" stroke-width="4" opacity=".75"/>' +
+    '<g fill="none" stroke="#b8d8c8" stroke-width="2" opacity=".6"><path d="M16 122 Q36 103 56 122 M16 158 Q36 139 56 158 M824 122 Q844 103 864 122 M824 158 Q844 139 864 158"/><path d="M74 118 l14 16 l-14 16 l14 16 M806 118 l-14 16 l14 16 l-14 16"/></g>' +
+    '<g fill="none" stroke="#496f79" stroke-width="5" opacity=".75"><path d="M8 230 Q35 197 62 230"/><path d="M818 230 Q845 197 872 230"/></g>' +
+    '<g fill="#254d60" stroke="#9ccbc3"><path d="M20 320 V100 Q45 76 70 100 V320Z"/><path d="M810 320 V100 Q835 76 860 100 V320Z"/></g>' +
+    '<g fill="none" stroke="#d0e3c9" stroke-width="3" opacity=".7"><path d="M28 145 q17 -22 34 0 l-10 14 l10 14 l-17 16 l-17 -16 l10 -14Z"/><path d="M818 145 q17 -22 34 0 l-10 14 l10 14 l-17 16 l-17 -16 l10 -14Z"/></g>' +
+    '<g fill="none" stroke-linecap="round"><path d="M8 104 Q28 119 17 151 M23 103 Q44 121 31 160 M854 104 Q834 119 845 151 M839 103 Q818 121 831 160" stroke="#153e39" stroke-width="9"/><path d="M8 104 Q28 119 17 151 M23 103 Q44 121 31 160 M854 104 Q834 119 845 151 M839 103 Q818 121 831 160" stroke="#4b9d70" stroke-width="3"/><path d="M304 126 Q326 142 315 166 M576 126 Q554 142 565 166" stroke="#245949" stroke-width="8"/><path d="M304 126 Q326 142 315 166 M576 126 Q554 142 565 166" stroke="#6bb583" stroke-width="2.5"/></g>' +
+    '<g stroke="#799e9b" stroke-width="5" opacity=".65"><path d="M30 230 Q45 206 60 230"/><path d="M820 230 Q835 206 850 230"/></g>' +
+    '</g>';
+}
+
+function atlantisBackdrop() {
+  return '<g id="atlantisBackdrop"><path d="M0 0 H880 V360 H0Z" fill="#061b32" opacity=".25"/>' +
+    '<g fill="#c7f6ef" opacity=".11"><path d="M75 0 H116 L250 310 H166Z"/><path d="M366 0 H408 L474 300 H397Z"/><path d="M642 0 H684 L758 310 H681Z"/></g>' +
+    '<path d="M0 328 Q140 306 280 324 T440 322 T600 324 T880 328 V360 H0Z" fill="#0b2b43" opacity=".92"/>' +
+    '</g>';
 }
 
 function creatureSpriteDefs() {
@@ -248,20 +289,27 @@ function buildSvg(data) {
     '<linearGradient id="kelp" x1="0" y1="1" x2="0" y2="0"><stop stop-color="#0b6c54"/><stop offset=".5" stop-color="#19b477"/><stop offset="1" stop-color="#77e69e"/></linearGradient>' +
     '<linearGradient id="coralPink" x1="0" y1="1" x2="0" y2="0"><stop stop-color="#b53b68"/><stop offset="1" stop-color="#ff9aba"/></linearGradient>' +
     '<linearGradient id="coralOrange" x1="0" y1="1" x2="0" y2="0"><stop stop-color="#ba4932"/><stop offset="1" stop-color="#ffbd76"/></linearGradient>' +
+    '<linearGradient id="coralPurple" x1="0" y1="1" x2="0" y2="0"><stop stop-color="#4a236f"/><stop offset="1" stop-color="#c07bd2"/></linearGradient>' +
+    '<linearGradient id="coralRed" x1="0" y1="1" x2="0" y2="0"><stop stop-color="#922e51"/><stop offset="1" stop-color="#f07a74"/></linearGradient>' +
+    '<linearGradient id="columnStone" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#071c31"/><stop offset=".42" stop-color="#183d53"/><stop offset=".78" stop-color="#315d68"/><stop offset="1" stop-color="#071b2c"/></linearGradient>' +
+    '<filter id="stoneShadow" x="-30%" y="-20%" width="160%" height="150%"><feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#020d19" flood-opacity=".8"/></filter>' +
     '<filter id="spriteShadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="2" stdDeviation="1.4" flood-color="#011426" flood-opacity=".5"/></filter>' +
     '<filter id="uiShadow"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity=".45"/></filter>' +
     creatureSpriteDefs() + schoolSpriteDefs() + '</defs>');
   body.push('<rect width="880" height="360" fill="url(#water)"/>');
   body.push('<path d="M0 14 Q55 5 110 14 T220 14 T330 14 T440 14 T550 14 T660 14 T770 14 T880 14" fill="none" stroke="#d5fbff" stroke-width="2.5" opacity=".55"><animate attributeName="d" dur="9s" repeatCount="indefinite" values="M0 14 Q55 5 110 14 T220 14 T330 14 T440 14 T550 14 T660 14 T770 14 T880 14;M0 14 Q55 23 110 14 T220 14 T330 14 T440 14 T550 14 T660 14 T770 14 T880 14;M0 14 Q55 5 110 14 T220 14 T330 14 T440 14 T550 14 T660 14 T770 14 T880 14"/></path>');
   body.push('<path d="M75 0 L145 0 L245 290 L-30 290Z M344 0 L404 0 L489 290 L286 290Z M671 0 L735 0 L805 290 L583 290Z" fill="#c4f4ff" opacity=".045"/>');
-  body.push(cartoonPalace());
-  body.push(coralAndHabitat());
+  body.push('<g fill="none" stroke="#bff5ef" opacity=".16"><path d="M0 42 Q110 27 220 42 T440 42 T660 42 T880 42"><animate attributeName="d" dur="11s" repeatCount="indefinite" values="M0 42 Q110 27 220 42 T440 42 T660 42 T880 42;M0 42 Q110 57 220 42 T440 42 T660 42 T880 42;M0 42 Q110 27 220 42 T440 42 T660 42 T880 42"/></path><path d="M0 70 Q110 55 220 70 T440 70 T660 70 T880 70"><animate attributeName="d" dur="14s" repeatCount="indefinite" values="M0 70 Q110 55 220 70 T440 70 T660 70 T880 70;M0 70 Q110 85 220 70 T440 70 T660 70 T880 70;M0 70 Q110 55 220 70 T440 70 T660 70 T880 70"/></path></g>');
+  body.push(atlantisBackdrop());
+  body.push(angelPalace());
+  body.push(seaLifeFrame());
+  body.push(bubbleField());
   body.push('<g fill="none" stroke="#d5f8ff" opacity=".45"><circle cx="305" cy="132" r="4"/><circle cx="316" cy="118" r="7"/><circle cx="325" cy="98" r="3"/><circle cx="548" cy="227" r="4"/><circle cx="561" cy="211" r="7"/><circle cx="573" cy="193" r="3"/></g>');
   SCHOOLS.forEach((school, index) => body.push(renderSchool(school, index)));
+  body.push(renderSpecialCreatures());
   ROSTER.forEach((entry, index) => body.push(renderCreature(entry, data, index)));
   body.push('<g transform="translate(16 16)" filter="url(#uiShadow)"><rect width="172" height="42" rx="10" fill="#06233b" fill-opacity=".86" stroke="#6ed8f4" stroke-opacity=".5"/><text x="13" y="16" fill="#d9f7ff" font-family="ui-sans-serif,Arial" font-size="10" font-weight="700">AQUARIUM HAPPINESS</text><rect x="13" y="23" width="145" height="10" rx="5" fill="#123b56"/><rect x="13" y="23" width="113" height="10" rx="5" fill="#46dc87"><animate attributeName="width" values="113;113;121;121;113" keyTimes="0;.625;.65;.72;1" dur="8s" repeatCount="indefinite" calcMode="spline" keySplines=".42 0 .58 1;.42 0 .58 1;.42 0 .58 1;.42 0 .58 1"/></rect><text x="162" y="32" text-anchor="end" fill="#fff" font-family="ui-monospace,monospace" font-size="9">78%</text></g>');
   body.push('<g transform="translate(283 211)" opacity="0"><circle r="4" fill="#ffd45e"/><path d="M-7 0 L-13 -4 M-7 0 L-13 4" stroke="#ffd45e" stroke-width="1.7" stroke-linecap="round"/><animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;.375;.39;.625;.63;1" dur="8s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="283 211;283 211;283 263;283 263;283 211" keyTimes="0;.375;.5;.625;.63;1" dur="8s" repeatCount="indefinite" calcMode="spline" keySplines=".42 0 .58 1;.42 0 .58 1;.42 0 .58 1;.42 0 .58 1"/></g><g transform="translate(283 246)" opacity="0"><text text-anchor="middle" font-family="ui-sans-serif,Arial" font-size="14" fill="#ff4d62">❤<animate attributeName="font-size" values="14;14;26;22;22" keyTimes="0;.625;.64;.70;1" dur="8s" repeatCount="indefinite" calcMode="spline" keySplines=".42 0 .58 1;.42 0 .58 1;.42 0 .58 1;.42 0 .58 1"/></text><animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;.625;.64;.70;.72;1" dur="8s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="283 246;283 246;283 218;283 218;283 246" keyTimes="0;.625;.64;.70;.72;1" dur="8s" repeatCount="indefinite" calcMode="spline" keySplines=".42 0 .58 1;.42 0 .58 1;.42 0 .58 1;.42 0 .58 1"/></g>');
-  body.push('<text x="16" y="347" fill="#d4f7ff" opacity=".65" font-family="ui-monospace,monospace" font-size="10">3 calm schools · 10 fish per school · cartoon coral palace</text>');
   body.push('</svg>');
   return body.join('');
 }

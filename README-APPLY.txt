@@ -1,173 +1,207 @@
-AQUARIUM — BOID CROWDING, LURE SMOOTHNESS AND FLIP-FLICKER FIX
-================================================================
+AQUARIUM — FINAL ANGEL PALACE / TEXTURE / FISH LAYER UPDATE
+============================================================
 
 PACKAGE
 =======
-Project: Aquarium monorepo
-Scope: Aquarium boid separation, pointer lure smoothness, sprite flip stability
-Update type: fix
-Version: v1
-Source repository: https://github.com/shaikowannasleep/Aquarium
-Source branch: main
-Affected app: apps/aquarium only. Lumen and Abyssal Dive source is untouched
-by this package.
+Project:       Aquarium monorepo
+Update type:   final artwork + baked SVG update
+Version:       v2
+Repository:    https://github.com/shaikowannasleep/Aquarium
+Base branch:   main
+Base commit:   1af01732bbc9963ad7d5f3f8d0d13bd48af1126c
 
-ROOT CAUSES FOUND AND FIXED
-============================
-1. Overlapping same-species fish
-   apps/aquarium/src/engine.js previously weighted same-species separation
-   LOWER than cross-species separation (0.9 vs 1.7), and doubled same-species
-   cohesion/alignment contribution. Cohesion always won, so schooling fish
-   visibly overlapped. Fixed: same-species separation is now at least as
-   strong as cross-species (1.85 vs 1.6), cohesion no longer double-counts,
-   and a new per-frame positional "declutter" pass in aquarium.js uses each
-   fish's actual drawn sprite radius (not just the physics point radius) to
-   guarantee no two sprites end up visually overlapping, independent of any
-   boid weight tuning.
+IMPORTANT SOURCE-OF-TRUTH RULE
+==============================
+The SVG files are GENERATED OUTPUT. Do not edit them manually.
 
-2. Jittery/"orbiting" pointer lure
-   The lure force flipped sign at 48px from the pointer (core = -0.7), which
-   made fish bounce/orbit around the cursor instead of smoothly arriving.
-   Fixed: the sign flip is replaced with a smooth quadratic ease-to-zero
-   inside a settle radius (p.lureCore), so fish glide up to the pointer and
-   hold station instead of bouncing off an invisible repulsive ring.
+Authoritative generator:
+  apps/aquarium/tools/bake-svg.js
 
-3. Sprite flip flicker
-   Facing flipped on any vx crossing +-5px/s, which is well inside normal
-   boid velocity noise in a crowd, causing visible rapid left/right flicker.
-   Fixed: the dead-band is widened to +-9px/s and a fish must hold the new
-   heading for 120ms before the sprite actually flips, so crowding jitter no
-   longer flickers the sprite; only a genuine turn does.
+The root scheduled generator is synchronized as well:
+  tools/bake-svg.js
 
-4. Alignment feel
-   Aquarium's boid weights are retuned toward the same alignment-forward feel
-   as Lumen's "RULE 03 — ALIGNMENT" beat (strong wAli, moderate wCoh, and a
-   wSep that now reflects sprite footprint) so schools read as one coherent,
-   polarised group rather than fish trailing over each other.
+The three SVGs in this package were generated from the JS generator:
+  docs/aquarium.svg
+  docs/apps/aquarium/aquarium.svg
+  apps/aquarium/docs/aquarium.svg
 
-CHANGED FILES
-=============
-MODIFIED
-- apps/aquarium/src/engine.js
-- apps/aquarium/src/aquarium.js
+All three files were verified byte-for-byte identical after baking.
 
-REGENERATED OUTPUT
-- apps/aquarium/docs/index.html
-- docs/apps/aquarium/index.html
 
-NOT CHANGED
-===========
-- apps/lumen-playable/* (already reads as smooth; left untouched)
-- apps/abyssal-dive/* (hunter/game balance already tuned; left untouched
-  to avoid destabilising its existing behaviour and tests)
-- SVG README generator/output (apps/aquarium/tools/bake-svg.js and the
-  generated aquarium.svg files) — unaffected by this fix; it already avoids
-  animateMotion/rotate="auto"/scale-flip from prior work.
+WHAT CHANGED
+============
+1. Background / Angelic submerged palace
+   - Reworked the background into an original six-wing angelic palace ruin.
+   - Added large dark foreground columns that partially crop at the left/right
+     edges to create depth.
+   - Added stone gradients and drop shadow treatment to the foreground columns.
+   - Added engraved ring patterns, geometric relief marks and arch details.
+   - Reduced the six-wing angel crest and lowered its opacity so it reads as a
+     background relief rather than a dominant logo.
+   - Kept the central gate visually open so fish can pass around the entrance.
 
-VERIFICATION PERFORMED BEFORE PACKAGING
-========================================
-Headless simulations against the patched engine (not just visual review):
-- 40 same-species fish crowded into a small radius, run for 900 physics
-  steps through both the boid step and the new declutter pass: zero pairs
-  ended up closer than 70% of their required sprite-radius spacing.
-- A single fish pulled toward an active pointer lure for 180 steps never
-  moved backward by more than 2px in one step (no bounce/orbit), and settled
-  within the configured lureCore radius.
-- A synthetic velocity oscillating inside the new +-9px/s dead-band produced
-  zero facing flips over 300 simulated frames.
-node --check passed for every touched and adjacent file listed above.
+2. Moss, seaweed, coral and seabed
+   - Added dark/light double-stroke seaweed for depth.
+   - Added moss strands attached directly to the architecture and columns.
+   - Added layered asymmetrical purple/red/gold coral groups.
+   - Added darker rear rocks, midground plant ribbons and foreground seabed
+     cracks/path lines.
+   - These elements were redesigned and layered, not removed.
+
+3. Fish composition
+   - Kept three schools with 120 fish each (360 school fish total).
+   - Every fish uses shared embedded SVG <image> definitions through <use>;
+     the sprite is not duplicated 360 times. This keeps the bake practical.
+   - The yellow school is shifted away from the central gate to preserve the
+     main architectural focal point.
+   - All schools remain visible at frame 0 and use slow two-way off-screen turns.
+
+4. Bubbles and underwater light
+   - Added a continuous bubble field with staggered timing.
+   - Several bubbles are visible at frame 0, so static GitHub rendering still
+     reads as underwater.
+   - Added animated surface ripple lines and light shafts/god rays.
+
+5. UI
+   - Kept AQUARIUM HAPPINESS.
+   - Removed the old bottom caption text.
+
+6. Behavior safety
+   - The Canvas engine and existing interactive behavior were not changed.
+   - This package changes the baked README artwork/generator and its bake tests.
+
+
+FILES INCLUDED
+==============
+Source / generator:
+  apps/aquarium/tools/bake-svg.js
+  tools/bake-svg.js
+
+Tests:
+  apps/aquarium/test/headless.js
+  test/headless.js
+
+Generated SVG output:
+  docs/aquarium.svg
+  docs/apps/aquarium/aquarium.svg
+  apps/aquarium/docs/aquarium.svg
+
+Used source assets:
+  apps/aquarium/docs/assets/sprites/blue_tang.png
+  apps/aquarium/docs/assets/sprites/yellow_tang_v2.png
+  apps/aquarium/docs/assets/sprites/clownfish_v2.png
+  apps/aquarium/docs/assets/sprites/manta_ray.png
+  apps/aquarium/docs/assets/sprites/blue_shark.png
+  apps/aquarium/docs/assets/sprites/green_turtle_v2.png
+
+The same six used sprites are also included under docs/assets/sprites for the
+root generator's relative asset path.
+
+Preview:
+  preview/aquarium-final-preview.png
+
 
 BACKUP BEFORE APPLY
-====================
+===================
 $Repo = "D:\Dungvd\Aquarium"
 $Stamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$Backup = "D:\Dungvd\Backups\Aquarium-boid-fix-$Stamp"
+$Backup = "D:\Dungvd\Backups\Aquarium-final-angel-palace-$Stamp"
 New-Item -ItemType Directory -Force -Path $Backup | Out-Null
 
-Copy-Item "$Repo\apps\aquarium\src\engine.js" "$Backup\engine.js.before" -ErrorAction SilentlyContinue
-Copy-Item "$Repo\apps\aquarium\src\aquarium.js" "$Backup\aquarium.js.before" -ErrorAction SilentlyContinue
+Copy-Item "$Repo\apps\aquarium\tools\bake-svg.js" "$Backup\bake-svg.app.js.before" -ErrorAction SilentlyContinue
+Copy-Item "$Repo\tools\bake-svg.js" "$Backup\bake-svg.root.js.before" -ErrorAction SilentlyContinue
+Copy-Item "$Repo\docs\aquarium.svg" "$Backup\aquarium.svg.before" -ErrorAction SilentlyContinue
+Copy-Item "$Repo\README.md" "$Backup\README.md.before" -ErrorAction SilentlyContinue
 
-Write-Host "Backup created: $Backup"
 
 APPLY
 =====
-1. Extract this ZIP.
-2. Open the extracted folder:
-   Aquarium-boid-declutter-smooth-lure-fix-v1-20260916-023000
-3. Copy ALL CONTENTS into the repository root:
-   D:\Dungvd\Aquarium
-4. Choose "Replace the files in the destination" when prompted.
+1. Extract the ZIP.
+2. Copy all contents inside the extracted package folder into:
+       D:\Dungvd\Aquarium
+3. Choose Replace files in destination.
+4. Preserve the relative paths exactly.
+5. Do not hand-edit generated SVG files after applying.
 
-POWERSHELL AFTER OVERWRITE
-===========================
+
+POWERSHELL VERIFICATION
+=======================
 cd D:\Dungvd\Aquarium
 
 git status
 git branch --show-current
 git log -1 --oneline
 
-node --check apps\aquarium\src\engine.js
-node --check apps\aquarium\src\aquarium.js
+node --check apps\aquarium\tools\bake-svg.js
+node --check tools\bake-svg.js
+node --check apps\aquarium\test\headless.js
 
-# This package already includes the regenerated Aquarium HTML, but if you
-# also changed sprite data or want to confirm a clean rebuild, you can
-# rerun the Aquarium page build (Lumen/Abyssal are unaffected, no rebuild
-# needed for them):
-node apps\aquarium\tools\build-pages.js shaikowannasleep
+# Bake from JS source. This regenerates all three SVG outputs.
+node apps\aquarium\tools\bake-svg.js shaikowannasleep
 
+# Main artwork and frame-0 checks.
+node apps\aquarium\test\headless.js
+
+# XML and identical-copy check.
+@'PY' | python
+from pathlib import Path
+import hashlib
+import xml.etree.ElementTree as ET
+paths = [Path('docs/aquarium.svg'), Path('docs/apps/aquarium/aquarium.svg'), Path('apps/aquarium/docs/aquarium.svg')]
+for p in paths:
+    ET.fromstring(p.read_bytes())
+assert len({hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}) == 1
+print('XML valid and all three SVG copies identical')
+PY
+
+# Check formatting and status.
 git diff --check
 git status
+
 
 LOCAL PREVIEW
 =============
 python -m http.server 8090 -d docs
 
 Open:
-http://localhost:8090/apps/aquarium/
+  http://localhost:8090/aquarium.svg
+  http://localhost:8090/apps/aquarium/
 
-Try:
-- Move the pointer slowly across a school: fish should ease toward it and
-  hold station near the cursor, without bouncing or circling it.
-- Click and hold, then release: fish should glide in while held and coast
-  away smoothly on release, not snap.
-- Watch a dense school for 30+ seconds: sprites should keep a visible gap
-  from same-species neighbours and should not flicker left/right rapidly.
+Open preview file:
+  preview\aquarium-final-preview.png
 
-VALIDATION CHECKLIST
-=====================
-[ ] Same-species fish keep a visible gap; no two sprites sit on top of
-    each other even in a tight school.
-[ ] Pointer lure feels like a smooth pull, not an orbit or bounce near the
-    cursor.
-[ ] Fish no longer flicker their left/right facing while swimming in a
-    crowd; flips only happen on genuine direction changes.
-[ ] Schools read as more polarised/aligned (Lumen RULE-03-like feel).
-[ ] Lumen and Abyssal Dive behave exactly as before (unaffected).
-[ ] git diff --check has no output.
+
+ACCEPTANCE CHECKLIST
+====================
+[ ] Two dark foreground columns crop at the side edges.
+[ ] Columns have visible light/dark gradient, relief rings and shadow.
+[ ] Moss is attached to columns and arch areas, not only the seabed.
+[ ] Coral is layered, asymmetrical and uses multiple colors.
+[ ] Rear rocks, midground sea plants and foreground seabed are all present.
+[ ] Six-wing crest is subtle and does not dominate the central gate.
+[ ] Main gate has clear negative space around it.
+[ ] Three schools remain at 120 fish each and are distributed in depth.
+[ ] Yellow fish are shifted away from the central gate.
+[ ] Bubbles are visible at frame 0 and continue rising.
+[ ] God rays and water-surface ripples animate.
+[ ] AQUARIUM HAPPINESS remains visible.
+[ ] Old bottom caption is absent.
+[ ] All three generated SVG copies are identical.
+
 
 ROLLBACK
-========
-If not committed:
+=========
 cd D:\Dungvd\Aquarium
-git restore apps\aquarium\src\engine.js apps\aquarium\src\aquarium.js apps\aquarium\docs\index.html docs\apps\aquarium\index.html
+git checkout -- README.md apps\aquarium\tools\bake-svg.js tools\bake-svg.js apps\aquarium\test\headless.js test\headless.js docs\aquarium.svg docs\apps\aquarium\aquarium.svg apps\aquarium\docs\aquarium.svg
 
-Or restore the .before files from the backup folder created above.
+Or restore the files from the backup folder created above.
 
-COMMIT AND PUSH AFTER REVIEW
-==============================
-cd D:\Dungvd\Aquarium
-
-git add apps\aquarium\src\engine.js apps\aquarium\src\aquarium.js apps\aquarium\docs\index.html docs\apps\aquarium\index.html
-
-git commit -m "fix(aquarium): resolve boid overlap, lure bounce, and flip flicker"
-git push origin main
 
 DO NOT
 ======
-- Do not apply this package on top of unresolved merge conflicts.
-- Do not copy these Aquarium-specific engine changes into Lumen or Abyssal
-  Dive's engine.js; their tuning and hunter/game balance are separate and
-  already verified.
-- Do not remove the declutter pass call in aquarium.js; boid forces alone
-  cannot guarantee zero visual overlap once maxForce clamps a crowded,
-  aligned school.
+- Do not edit docs/aquarium.svg manually.
+- Do not remove shared <use href="#schoolSprite..."> references.
+- Do not remove frame-0 static opacity/transform values.
+- Do not change the generator without rebaking all three SVG outputs.
+- Do not modify the Canvas engine behavior unless separately requested.
+- Do not commit or push automatically.
