@@ -7,6 +7,7 @@ const path = require('path');
 const src = path.join(__dirname, 'src');
 const html = fs.readFileSync(path.join(src, 'index.html'), 'utf8');
 const css = fs.readFileSync(path.join(src, 'style.css'), 'utf8');
+const shared = fs.readFileSync(path.join(__dirname, '../shared/soft-lure.js'), 'utf8');
 const engine = fs.readFileSync(path.join(src, 'engine.js'), 'utf8');
 const game = fs.readFileSync(path.join(src, 'game.js'), 'utf8');
 const spriteNames = {
@@ -33,8 +34,9 @@ const out = html
            '<style>' + css.replace(/\s*\n\s*/g, '') + '</style>')
   .replace(/<script>\s*window\.SPRITE_SOURCES\s*=[\s\S]*?<\/script>/,
            '<script>window.SPRITE_SOURCES=' + JSON.stringify(sprites) + ';</script>')
+  .replace(/<script src="\.\.\/\.\.\/shared\/soft-lure\.js"><\/script>\s*/g, '')
   .replace(/<script src="(?:engine|game)\.js"><\/script>\s*/g, '')
-  .replace('</body>', '<script>' + squeeze(engine) + '\n' + squeeze(game) + '</script>\n</body>');
+  .replace('</body>', '<script>' + squeeze(shared) + '\n' + squeeze(engine) + '\n' + squeeze(game) + '</script>\n</body>');
 
 /* Guard: the inlined bundle must parse as a single script.
  * Concatenating two files that both declare top-level `const TAU` is a

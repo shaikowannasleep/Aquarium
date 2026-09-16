@@ -22,8 +22,11 @@ async function main() {
   try { data = await fetchProfile(user); }
   catch (e) { console.error('warn: ' + e.message); data = fallback(user); }
 
+  const sharedLure = fs.readFileSync(path.join(__dirname, '../../shared/soft-lure.js'), 'utf8');
+  const encounter = fs.readFileSync(path.join(__dirname, '../src/encounter-wave-director.js'), 'utf8');
   const engine = fs.readFileSync(path.join(__dirname, '../src/engine.js'), 'utf8');
   const client = fs.readFileSync(path.join(__dirname, '../src/aquarium.js'), 'utf8');
+  const background = 'data:image/png;base64,' + fs.readFileSync(path.join(__dirname, '../docs/assets/arcade-aquarium-background.png')).toString('base64');
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -53,12 +56,16 @@ canvas{display:block;width:100%;height:100%;cursor:crosshair}
 <div id="hud">
   <div><b>${data.name}</b> · ${data.publicRepos} repos · ${data.followers} followers</div>
   <div>${data.fish.length} fish · hover to identify · move to lead them</div>
+  <div>next encounter <b><span id="waveCountdown">00:00:60</span></b></div>
   <div>local order <b><span id="ord">0.00</span></b> · <span id="fps">60</span> fps</div>
 </div>
 <div id="tip"></div>
 <div id="foot">boids · reynolds 1987 · <a href="https://github.com/${user}/Aquarium">source</a></div>
 <script>
 const FISH_DATA = ${JSON.stringify(data.fish)};
+${squeeze(sharedLure)}
+${squeeze(encounter)}
+const AQUARIUM_BACKGROUND = '${background}';
 ${squeeze(engine)}
 ${squeeze(client)}
 </script>

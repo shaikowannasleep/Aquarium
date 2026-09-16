@@ -36,6 +36,22 @@ const Sprites = (() => {
       g.restore();
       return true;
     },
+    drawSideSprite(g, name, x, y, width, vx, vy, facing, alpha) {
+      const image = images[name];
+      if (!image || !image.complete || !image.naturalWidth) return false;
+      const height = width * image.naturalHeight / image.naturalWidth;
+      // Side-view PNG sprites face LEFT. Never rotate them through 90/180
+      // degrees; keep a horizontal pose and add only a restrained pitch.
+      const pitch = clamp(Math.atan2(-vy, Math.max(Math.abs(vx), 28)) * 0.20, -0.32, 0.32);
+      g.save();
+      g.globalAlpha = alpha === undefined ? 1 : alpha;
+      g.translate(x, y);
+      g.rotate(pitch);
+      g.scale(facing === -1 ? -1 : 1, 1);
+      g.drawImage(image, -width * 0.5, -height * 0.5, width, height);
+      g.restore();
+      return true;
+    },
   };
 })();
 
@@ -131,6 +147,8 @@ class AbyssalDive {
     window.addEventListener('resize', () => this.resize());
 
     this.pointer = { x: this.W / 2, y: this.H / 2, down: false, used: false };
+    this.fishFacing = new Float32Array(900);
+    this.fishFacing.fill(1);
     this.bindInput();
 
     this.runIndex = 0;          // how many dives deep the player has gone
@@ -862,8 +880,10 @@ class AbyssalDive {
       g.lineWidth = 2;
       g.beginPath(); g.moveTo(sw.tx[i], sw.ty[i]); g.lineTo(x, y); g.stroke();
 
-      if (!Sprites.draw(g, schoolSprites[i % schoolSprites.length], x, y,
-                        25, Math.atan2(dy, dx), 0.96)) {
+      if (vx > 10) this.fishFacing[i] = -1;
+      else if (vx < -10) this.fishFacing[i] = 1;
+      if (!Sprites.drawSideSprite(g, schoolSprites[i % schoolSprites.length], x, y,
+                        25, vx, vy, this.fishFacing[i] === -1 ? -1 : 1, 0.96)) {
         const wig = Math.sin(sw.phase[i]) * 3;
         g.fillStyle = 'hsla(' + hue + ',96%,' + lerp(64, 72, st) + '%,0.96)';
         g.beginPath();
@@ -889,9 +909,13 @@ class AbyssalDive {
     const dazzled = this.time < H.slowUntil;
     const frenzied = this.time < H.frenzyUntil;
     const exhausted = !frenzied && this.time < H.exhaustUntil;
-    const a = Math.atan2(H.vy, H.vx);
+    const speed = Math.hypot(H.vx, H.vy) || 1;
+    const dx = H.vx / speed;
+    if (H.facing === undefined) H.facing = 1;
+    if (dx > 0.14) H.facing = -1;
+    else if (dx < -0.14) H.facing = 1;
     g.save();
-    g.translate(H.x, H.y); g.rotate(a);
+    g.translate(H.x, H.y);
 
     let col = '255,86,62';
     if (dazzled) col = '150,220,255';
@@ -922,7 +946,8 @@ class AbyssalDive {
     if (frenzied) g.scale(1.12, 1.12);
     else if (exhausted) g.scale(0.94, 0.94);
 
-    if (!Sprites.draw(g, 'hunter', 0, 0, frenzied ? 94 : 84, 0,
+    if (!Sprites.drawSideSprite(g, 'hunter', 0, 0, frenzied ? 94 : 84,
+                      H.vx, H.vy, H.facing === -1 ? -1 : 1,
                       exhausted ? 0.62 : 1)) {
       g.fillStyle = dazzled ? '#22394f' : (frenzied ? '#2a1014' : '#131e2c');
       g.beginPath();

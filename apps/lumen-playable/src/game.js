@@ -37,6 +37,22 @@ const Sprites = (() => {
       g.restore();
       return true;
     },
+    drawSideSprite(g, name, x, y, width, vx, vy, facing, alpha) {
+      const image = images[name];
+      if (!image || !image.complete || !image.naturalWidth) return false;
+      const height = width * image.naturalHeight / image.naturalWidth;
+      // Side-view PNG sprites face LEFT. Never rotate them through 90/180
+      // degrees; keep a horizontal pose and add only a restrained pitch.
+      const pitch = clamp(Math.atan2(-vy, Math.max(Math.abs(vx), 28)) * 0.20, -0.32, 0.32);
+      g.save();
+      g.globalAlpha = alpha === undefined ? 1 : alpha;
+      g.translate(x, y);
+      g.rotate(pitch);
+      g.scale(facing === -1 ? -1 : 1, 1);
+      g.drawImage(image, -width * 0.5, -height * 0.5, width, height);
+      g.restore();
+      return true;
+    },
   };
 })();
 
@@ -113,6 +129,8 @@ class Game {
     };
 
     this.pointer = { x: this.W / 2, y: this.H / 2, down: false, everDown: false };
+    this.fishFacing = new Float32Array(900);
+    this.fishFacing.fill(1);
     this.bindInput();
 
     this.beat = 0;
@@ -592,7 +610,9 @@ class Game {
       g.lineTo(x, y);
       g.stroke();
 
-      if (!Sprites.draw(g, 'school', x, y, 26, Math.atan2(dy, dx), 0.95)) {
+      if (vx > 10) this.fishFacing[i] = -1;
+      else if (vx < -10) this.fishFacing[i] = 1;
+      if (!Sprites.drawSideSprite(g, 'school', x, y, 26, vx, vy, this.fishFacing[i] === -1 ? -1 : 1, 0.95)) {
         const wig = Math.sin(sw.phase[i]) * 3.1;
         const nx = -dy, ny = dx;
         g.fillStyle = 'hsla(' + hue + ',96%,' + lit + '%,0.95)';
@@ -620,9 +640,13 @@ class Game {
   drawPredator(g) {
     const P = this.world.predators[0];
     if (!P) return;
-    const a = Math.atan2(P.vy, P.vx);
+    const speed = Math.hypot(P.vx, P.vy) || 1;
+    const dx = P.vx / speed;
+    if (P.facing === undefined) P.facing = 1;
+    if (dx > 0.14) P.facing = -1;
+    else if (dx < -0.14) P.facing = 1;
     g.save();
-    g.translate(P.x, P.y); g.rotate(a);
+    g.translate(P.x, P.y);
 
     const gr = g.createRadialGradient(0, 0, 4, 0, 0, 90);
     gr.addColorStop(0, 'rgba(255,80,60,0.24)');
@@ -630,7 +654,7 @@ class Game {
     g.fillStyle = gr;
     g.beginPath(); g.arc(0, 0, 90, 0, TAU); g.fill();
 
-    if (!Sprites.draw(g, 'predator', 0, 0, 86, 0, 1)) {
+    if (!Sprites.drawSideSprite(g, 'predator', 0, 0, 86, P.vx, P.vy, P.facing === -1 ? -1 : 1, 1)) {
       g.fillStyle = '#16212f';
       g.beginPath();
       g.moveTo(34, 0); g.lineTo(2, 13); g.lineTo(-26, 6);

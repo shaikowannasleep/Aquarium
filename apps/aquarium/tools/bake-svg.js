@@ -84,9 +84,9 @@ function creatureMotion(entry) {
 }
 
 function facingScale(direction) {
-  // The source sprites face right. This is a fixed pose per leg, never an
-  // animated scale transition through zero.
-  return direction === 'right' ? 1 : -1;
+  // All approved side-view PNG sprites face LEFT natively. Mirror only the
+  // right-moving leg; never animate scale through zero.
+  return direction === 'right' ? -1 : 1;
 }
 
 function cruiseLeg(entry, image, direction, index) {

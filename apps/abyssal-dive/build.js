@@ -17,7 +17,8 @@ function squeeze(js) {
 }
 
 const files = ['oceanography.js', 'flowfield.js', 'level.js', 'engine.js', 'game.js'];
-const bundle = files.map(f => squeeze(fs.readFileSync(path.join(src, f), 'utf8'))).join('\n');
+const shared = squeeze(fs.readFileSync(path.join(__dirname, '../shared/soft-lure.js'), 'utf8'));
+const bundle = shared + '\n' + files.map(f => squeeze(fs.readFileSync(path.join(src, f), 'utf8'))).join('\n');
 const spriteNames = {
   schoolA: 'blue_tang.png', schoolB: 'purple_fish.png',
   schoolC: 'damselfish.png', hunter: 'blue_shark.png',
@@ -30,6 +31,7 @@ const sprites = Object.fromEntries(Object.entries(spriteNames).map(([name, file]
 const sourceTag = /<script>\s*window\.SPRITE_SOURCES\s*=[\s\S]*?<\/script>/;
 const out = html
   .replace(sourceTag, '<script>window.SPRITE_SOURCES=' + JSON.stringify(sprites) + ';</script>')
+  .replace(/<script src="\.\.\/\.\.\/shared\/soft-lure\.js"><\/script>\s*/g, '')
   .replace(/<script src="(?:oceanography|flowfield|level|engine|game)\.js"><\/script>\s*/g, '')
   .replace('</body>', '<script>' + bundle + '</script>\n</body>');
 

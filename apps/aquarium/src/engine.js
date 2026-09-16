@@ -218,15 +218,22 @@ class SwarmEngine {
             hits++;
             const sameSpecies = (this.species[i] === this.species[j]);
             if (d2 < rSep2) {
+              // Same-species crowding must be resisted at least as hard as
+              // cross-species crowding, or cohesion always wins and sprites
+              // visibly overlap. A visual-radius aware separation call site
+              // scales this further per creature class; this is the floor.
               const w = 1 / d2;
-              const sepMult = sameSpecies ? 0.9 : 1.7;
+              const sepMult = sameSpecies ? 1.85 : 1.6;
               sepX -= dx * w * sepMult; sepY -= dy * w * sepMult;
             }
             if (sameSpecies) {
-              if (d2 < rAli2) { aliX += this.vx[j] * 2.2; aliY += this.vy[j] * 2.2; nAli += 2; }
-              cohX += this.px[j] * 1.8; cohY += this.py[j] * 1.8; nCoh += 2;
+              // Rule-03 style alignment: match neighbour heading strongly,
+              // but cohesion stays modest so the school does not compress
+              // into the separation radius it is simultaneously fighting.
+              if (d2 < rAli2) { aliX += this.vx[j] * 1.6; aliY += this.vy[j] * 1.6; nAli += 2; }
+              cohX += this.px[j]; cohY += this.py[j]; nCoh++;
             } else {
-              if (d2 < rAli2 * 0.45) { aliX += this.vx[j] * 0.4; aliY += this.vy[j] * 0.4; nAli++; }
+              if (d2 < rAli2 * 0.35) { aliX += this.vx[j] * 0.25; aliY += this.vy[j] * 0.25; nAli++; }
             }
 
             if (++seen >= maxN) break outer;   // topological, not metric
@@ -325,9 +332,13 @@ class SwarmEngine {
         const R = (p.rLure || 240) * (L.power || 1);
         if (d < R && d > 1e-4) {
           const t = 1 - d / R;
-          const core = d < 48 ? -0.7 : 1.0;
-          fx += (dx / d) * p.maxSpeed * (p.wLure || 2.4) * t * (L.power || 1) * core;
-          fy += (dy / d) * p.maxSpeed * (p.wLure || 2.4) * t * (L.power || 1) * core;
+          // Smoothly ease attraction to zero inside the settle radius instead
+          // of flipping its sign: fish glide up to the pointer and hold
+          // station, rather than orbiting or bouncing off a repulsive core.
+          const settle = p.lureCore || 42;
+          const ease = d < settle ? (d / settle) * (d / settle) : 1;
+          fx += (dx / d) * p.maxSpeed * (p.wLure || 2.4) * t * (L.power || 1) * ease;
+          fy += (dy / d) * p.maxSpeed * (p.wLure || 2.4) * t * (L.power || 1) * ease;
         }
       }
 

@@ -9,6 +9,10 @@ const g = cv.getContext('2d');
 const tip = document.getElementById('tip');
 const ordEl = document.getElementById('ord');
 const fpsEl = document.getElementById('fps');
+const waveCountdownEl = document.getElementById('waveCountdown');
+const aquariumBackground = new Image();
+aquariumBackground.onload = () => { aquariumBackground._loaded = true; };
+if (typeof AQUARIUM_BACKGROUND !== 'undefined') aquariumBackground.src = AQUARIUM_BACKGROUND;
 
 let W = 0, H = 0, dpr = Math.min(window.devicePixelRatio || 1, 2);
 function resize() {
@@ -120,21 +124,28 @@ ALL_FISH.forEach((f, idx) => {
 const fishFacing = new Float32Array(sw.cap);
 const fishPitch = new Float32Array(sw.cap);
 const fishScaleX = new Float32Array(sw.cap);
+const fishFlipHold = new Float32Array(sw.cap);
 for (let i = 0; i < sw.cap; i++) {
   fishFacing[i] = Math.random() < 0.5 ? 1 : -1;
   fishScaleX[i] = fishFacing[i];
 }
 
 const p = sw.p;
-p.rCoh = 95; p.rAli = 72; p.rSep = 28;
-p.wCoh = 0.85; p.wAli = 1.35; p.wSep = 2.1;
-p.minSpeed = 22; p.maxSpeed = 68; p.maxForce = 150;
+// Rule-03 (Lumen ALIGNMENT beat) feel: polarised schools read as alive and
+// do not visually overlap, because separation now covers roughly the drawn
+// sprite footprint, not just the physics point radius.
+p.rCoh = 88; p.rAli = 70; p.rSep = 40;
+p.wCoh = 0.62; p.wAli = 1.9; p.wSep = 2.6;
+p.minSpeed = 24; p.maxSpeed = 66; p.maxForce = 165;
 p.margin = 56; p.maxNeighbours = 8;
+p.lureCore = 40;
 
 /* World entities */
 const world = {
-  predators: [], obstacles: [], ripples: [], foods: [], lure: { x: 0, y: 0, power: 1, active: false }
+  predators: [], obstacles: [], ripples: [], foods: [], lure: { x: 0, y: 0, power: 0, active: false }
 };
+const softLure = new window.SoftLureController(W / 2, H / 2);
+const encounterDirector = new window.EncounterWaveDirector();
 
 /* Food feeding system */
 const foods = [];
@@ -158,7 +169,7 @@ function dropFood(x, y) {
 }
 
 /* Mouse interaction & Rising bubbles */
-let mx = W / 2, my = H / 2, hovering = false;
+let mx = W / 2, my = H / 2, hovering = false, pointerDown = false;
 
 function spawnCursorBubbles(x, y) {
   for (let k = 0; k < 2; k++) {
@@ -179,17 +190,19 @@ function spawnCursorBubbles(x, y) {
 
 function movePointer(x, y) {
   mx = x; my = y; hovering = true;
-  world.lure.x = mx; world.lure.y = my; world.lure.power = 1.15; world.lure.active = true;
+  softLure.setTarget(mx, my, true);
   spawnCursorBubbles(x, y);
 }
 
 cv.addEventListener('pointermove', e => movePointer(e.clientX, e.clientY));
 cv.addEventListener('pointerdown', e => {
+  pointerDown = true;
   movePointer(e.clientX, e.clientY);
   dropFood(e.clientX, e.clientY);
 });
-cv.addEventListener('pointerleave', () => { hovering = false; world.lure.active = false; });
-cv.addEventListener('pointercancel', () => { hovering = false; world.lure.active = false; });
+window.addEventListener('pointerup', () => { pointerDown = false; softLure.setTarget(mx, my, false); });
+cv.addEventListener('pointerleave', () => { hovering = false; pointerDown = false; softLure.setTarget(mx, my, false); });
+cv.addEventListener('pointercancel', () => { hovering = false; pointerDown = false; softLure.setTarget(mx, my, false); });
 cv.addEventListener('touchmove', e => {
   e.preventDefault();
   movePointer(e.touches[0].clientX, e.touches[0].clientY);
@@ -273,6 +286,34 @@ function localOrder() {
 
 let lastT = performance.now() / 1000, frames = 0, fpsT = 0, ordT = 0;
 
+function spriteVisualRadius(f) {
+  const scaleFactor = Math.min(Math.max(W / 1100, 0.82), 1.25);
+  const drawW = Math.max(24, Math.min(48, f.size * 2.5)) * scaleFactor;
+  return drawW * 0.42;
+}
+
+function declutterOverlaps(dt) {
+  const n = sw.n;
+  const push = Math.min(1, dt * 14);
+  for (let i = 0; i < n; i++) {
+    const fi = ALL_FISH[i]; if (!fi) continue;
+    const ri = spriteVisualRadius(fi);
+    for (let j = i + 1; j < n; j++) {
+      const fj = ALL_FISH[j]; if (!fj) continue;
+      const dx = sw.px[j] - sw.px[i], dy = sw.py[j] - sw.py[i];
+      const rj = spriteVisualRadius(fj);
+      const minDist = (ri + rj) * 0.86; // slight tolerance so schools stay tight, not glued
+      const d2 = dx * dx + dy * dy;
+      if (d2 >= minDist * minDist || d2 < 1e-6) continue;
+      const d = Math.sqrt(d2);
+      const overlap = (minDist - d) * 0.5 * push;
+      const nx = dx / d, ny = dy / d;
+      sw.px[i] -= nx * overlap; sw.py[i] -= ny * overlap;
+      sw.px[j] += nx * overlap; sw.py[j] += ny * overlap;
+    }
+  }
+}
+
 function frame() {
   const now = performance.now() / 1000;
   const dt = Math.min(now - lastT, 0.05);
@@ -291,6 +332,17 @@ function frame() {
       fd.x += fd.vx * dt + Math.sin(t * 3 + fd.age * 2) * 6 * dt;
       fd.vy = Math.min(fd.vy + 12 * dt, 36);
     }
+  }
+
+  /* Soft lure: pointer controls a field with release inertia, not a hard point pull. */
+  softLure.setTarget(mx, my, pointerDown);
+  const soft = softLure.update(dt);
+  world.lure.x = soft.x; world.lure.y = soft.y;
+  world.lure.power = soft.power; world.lure.active = soft.active;
+  encounterDirector.update(dt, W, H);
+  if (waveCountdownEl) {
+    const seconds = encounterDirector.secondsUntilWave();
+    waveCountdownEl.textContent = '00:00:' + String(seconds).padStart(2, '0');
   }
 
   /* Habitat depth steering & species behavior */
@@ -316,6 +368,14 @@ function frame() {
   /* update fish engine */
   sw.step(dt, world);
 
+  /* Positional declutter pass: boid forces alone cannot GUARANTEE zero
+   * visual overlap once maxForce clamps a crowded, aligned school, so this
+   * runs once per frame using each fish's actual drawn sprite radius (not
+   * the physics point radius) and gently pushes overlapping pairs apart.
+   * It is a tiny position nudge, never a velocity/force change, so it does
+   * not fight or destabilise the boid steering above it. */
+  declutterOverlaps(dt);
+
   frames++; fpsT += dt;
   if (fpsT > 0.5) {
     fpsEl.textContent = Math.round(frames / fpsT);
@@ -334,6 +394,11 @@ function frame() {
   bg.addColorStop(0.75, '#041e3a');
   bg.addColorStop(1, '#020c1e');
   g.fillStyle = bg; g.fillRect(0, 0, W, H);
+  if (aquariumBackground._loaded) {
+    g.save(); g.globalAlpha = 0.24;
+    g.drawImage(aquariumBackground, 0, 0, W, H);
+    g.restore();
+  }
 
   /* 2. God rays */
   g.save();
@@ -540,10 +605,16 @@ function frame() {
     const sheetImg = spDef ? sheetImgs[spDef[0]] : null;
 
     /* Jitter-free Facing Direction: Sprites natively face LEFT */
-    // vx < -5 (swimming left) -> scaleX = 1 (faces left)
-    // vx > 5 (swimming right) -> scaleX = -1 (mirrored horizontally to face right)
-    if (vx < -5) fishFacing[i] = 1;
-    else if (vx > 5) fishFacing[i] = -1;
+    // A wide dead-band plus a short hold timer stops the sprite from
+    // flickering when boid separation makes vx wobble near zero in a
+    // crowd; it only turns once heading has genuinely reversed.
+    const desiredFacing = vx < -9 ? 1 : (vx > 9 ? -1 : fishFacing[i]);
+    if (desiredFacing !== fishFacing[i]) {
+      fishFlipHold[i] += dt;
+      if (fishFlipHold[i] > 0.12) { fishFacing[i] = desiredFacing; fishFlipHold[i] = 0; }
+    } else {
+      fishFlipHold[i] = 0;
+    }
 
     // Smooth turning transition
     fishScaleX[i] += (fishFacing[i] - fishScaleX[i]) * Math.min(1, dt * 10);
@@ -563,14 +634,18 @@ function frame() {
       const visualRadius = Math.max(drawW, drawH) * 0.45;
 
       g.save();
-      g.translate(x, y);
+      // Idle animation is visual-only: it never feeds back into boid physics.
+      // Different phase/frequency per creature prevents a synchronized school.
+      const idleBob = Math.sin(t * (0.85 + (i % 4) * 0.13) + i * 1.71) * (0.8 + (i % 3) * 0.35);
+      const idleSway = Math.sin(t * (0.52 + (i % 5) * 0.08) + i * 2.13) * 0.018;
+      g.translate(x, y + idleBob);
 
-      // Natural swimming wiggle
-      const wiggle = Math.sin(sw.phase[i]) * 0.07;
-      g.rotate(fishPitch[i] + wiggle);
+      // Natural swimming wiggle is deliberately tiny and eased.
+      const wiggle = Math.sin(sw.phase[i]) * 0.035;
+      g.rotate(fishPitch[i] + wiggle + idleSway);
 
-      // Smooth turning scale and subtle swim squash-stretch
-      const squash = 1 + Math.sin(sw.phase[i] * 1.6) * 0.035;
+      // Slow breathing / tail rhythm; no squash during direction changes.
+      const squash = 1 + Math.sin(sw.phase[i] * 0.72 + i) * 0.018;
       g.scale(fishScaleX[i] * squash, (1 / squash));
 
       // Lighting, depth glow and interaction highlight
@@ -618,7 +693,20 @@ function frame() {
     }
   }
 
-  /* 11. Vignette overlay for depth */
+  /* 11. Directed encounter waves: large leader plus an escort formation. */
+  encounterDirector.render(g, t, function (key, x, y, width, direction, alpha) {
+    const def = SPRITE_DATA[key];
+    const image = def ? sheetImgs[def[0]] : null;
+    if (!image || !image._loaded) return;
+    const sx = def[1], sy = def[2], swp = def[3], shp = def[4];
+    const height = width * (shp / swp);
+    g.save(); g.translate(x, y); g.scale(direction > 0 ? -1 : 1, 1);
+    g.globalAlpha = alpha; g.shadowBlur = 5; g.shadowColor = 'rgba(30,160,210,.36)';
+    g.drawImage(image, sx, sy, swp, shp, -width / 2, -height / 2, width, height);
+    g.restore(); g.globalAlpha = 1;
+  });
+
+  /* 12. Vignette overlay for depth */
   const vig = g.createRadialGradient(W * 0.5, H * 0.4, Math.min(W, H) * 0.25, W * 0.5, H * 0.5, Math.max(W, H) * 0.75);
   vig.addColorStop(0, 'rgba(0,0,0,0)');
   vig.addColorStop(0.7, 'rgba(2,8,20,0.08)');

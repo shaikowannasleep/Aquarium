@@ -1,0 +1,25 @@
+AQUARIUM MANIFEST
+Package: Aquarium-lumen-abyssal-svg-180-flip-fix-v1-20260916-071500
+Created: 2026-09-16T07:15:00Z
+Baseline: 23c0af4dc42814eded911e306e6382b6b444ee82
+Repo: https://github.com/shaikowannasleep/Aquarium
+Branch: main
+
+FILES
+path	bytes	sha256
+apps/lumen-playable/src/game.js	26302	c20ce74b708691e1b198112cebab6adff9781659caed1ef376d8451dc82d4b04
+apps/abyssal-dive/src/game.js	35271	3b92ced4acc8a8693b74ad1edff383495f08ac5bb0657c06c871686c437ed16b
+apps/aquarium/tools/bake-svg.js	15971	881acd32b3afd561c91f1493d8eb7f3d9c804aeb66d61ef9f96f50067b871036
+apps/aquarium/docs/aquarium.svg	326577	ab4a1072bb6343a2301754842a630359f13d043da02be2042e196e0af7736658
+docs/aquarium.svg	326577	ab4a1072bb6343a2301754842a630359f13d043da02be2042e196e0af7736658
+docs/apps/aquarium/aquarium.svg	326577	ab4a1072bb6343a2301754842a630359f13d043da02be2042e196e0af7736658
+apps/lumen-playable/dist/index.html	104308	f4f1e9f4937f9a69ec18377d27da67f9c11681de3f53340a49b5a6fe3dc7cedb
+docs/apps/lumen-playable/index.html	104308	f4f1e9f4937f9a69ec18377d27da67f9c11681de3f53340a49b5a6fe3dc7cedb
+apps/abyssal-dive/dist/index.html	135518	8240267a0c754f27e952d999ac7d656c2c34efeb46cfb913e84f333d5a988d96
+apps/abyssal-dive/docs/index.html	135518	8240267a0c754f27e952d999ac7d656c2c34efeb46cfb913e84f333d5a988d96
+docs/apps/abyssal-dive/index.html	135518	8240267a0c754f27e952d999ac7d656c2c34efeb46cfb913e84f333d5a988d96
+
+NOTES
+- ZIP keeps relative paths from the repository root.
+- Extract and overlay onto the repo root.
+- See README-APPLY.txt for backup/apply/build/test/rollback.
