@@ -10,6 +10,12 @@ Small files. Living systems.
 
 </div>
 
+<div align="center">
+  <a href="https://shaikowannasleep.github.io/Aquarium/apps/aquarium/">
+    <img src="docs/aquarium.svg" width="880" alt="Animated chill aquarium with three schools of small fish and a cartoon underwater palace">
+  </a>
+</div>
+
 ---
 
 ## One portfolio, three experiments
