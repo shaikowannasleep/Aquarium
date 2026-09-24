@@ -7,17 +7,21 @@ const root = __dirname;
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const asset = (name, mime) => `data:${mime};base64,` +
   fs.readFileSync(path.join(root, name), 'base64');
+const game = fs.readFileSync(path.join(root, 'src/game.js'), 'utf8')
+  .replace("SHEET_URL='runtime/people-atlas.png'", "SHEET_URL='" + asset('runtime/people-atlas.png', 'image/png') + "'")
+  .replace("FOOD_SHEET_URL='runtime/food-atlas.png'", "FOOD_SHEET_URL='" + asset('runtime/food-atlas.png', 'image/png') + "'")
+  .replace("CHEF_SHEET_URL='runtime/chef-atlas.png'", "CHEF_SHEET_URL='" + asset('runtime/chef-atlas.png', 'image/png') + "'");
+
 const out = html
   .replace('<script src="node_modules/phaser/dist/phaser.min.js"></script>',
     '<script>' + fs.readFileSync(path.join(root, 'node_modules/phaser/dist/phaser.min.js'), 'utf8') + '</script>')
-  .replace("SHEET_URL='generated_image.png'", "SHEET_URL='" + asset('generated_image.png', 'image/png') + "'")
-  .replace("FOOD_SHEET_URL='1.png'", "FOOD_SHEET_URL='" + asset('1.png', 'image/png') + "'");
+  .replace('<script src="src/game.js"></script>', '<script>' + game + '</script>');
 
 const scripts = [...out.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
 if (!scripts.length) throw new Error('BUILD FAILED - no game script found');
 try { scripts.forEach((script, index) => new vm.Script(script, { filename: `bundle-${index}.js` })); }
 catch (error) { throw new Error('BUILD FAILED - game script does not parse: ' + error.message); }
-if (/generated_image\.png|1\.png|assets\//.test(out) || /<(script|link)[^>]+(?:src|href)=/.test(out)) {
+if (/runtime\/|generated_image\.png|1\.png|assets\//.test(out) || /<(script|link)[^>]+(?:src|href)=/.test(out)) {
   throw new Error('BUILD FAILED - an external asset reference survived');
 }
 const dist = path.join(root, 'dist');

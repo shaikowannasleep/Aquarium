@@ -4,11 +4,15 @@
   "private": true,
   "description": "A self-contained restaurant order-tray gameplay prototype.",
   "scripts": {
-    "build": "node build.js",
+    "assets:process": "node tools/process-sprites.js",
+    "build": "npm run assets:process && node build.js",
     "serve": "python3 -m http.server 8090",
     "test": "node build.js"
   },
   "dependencies": {
     "phaser": "3.90.0"
+  },
+  "devDependencies": {
+    "sharp": "^0.34.4"
   }
 }
