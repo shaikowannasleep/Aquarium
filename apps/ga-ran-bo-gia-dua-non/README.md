@@ -15,9 +15,11 @@ npm run test  # build + kiểm tra cú pháp bundle
 
 ## Gameplay loop
 
-`Vào live → chạm món / giữ đồ uống → EXP + food progress → comment + gift → reward → finished panel`
+`Chọn 3 món → đặt vào khay phục vụ → Bắt đầu Mukbang → chạm món / giữ đồ uống → EXP + food progress → comment + gift → reward → finished panel`
 
-`generated_image.png` được cắt thành sprite sheet 11×11, inline cùng Phaser
-vào bản build. Ông đầu bếp và khách dùng pose-switch/tween để có idle, ăn,
-chug, vui và reaction mà không cần Spine runtime. Các manifest atlas và Spine
-trong source vẫn là tài liệu/scaffold, chưa phải asset runtime.
+`generated_image.png` được cắt thành sprite sheet 11×11 cho ông đầu bếp,
+khách và reaction. `1.png` được cắt runtime thành grid 5×3 cho food/drink.
+Cả hai PNG được inline cùng Phaser vào bản build. Ông đầu bếp và khách dùng
+pose-switch/tween để có idle, ăn, chug, vui và reaction mà không cần Spine
+runtime. Các manifest atlas và Spine trong source vẫn là tài liệu/scaffold,
+chưa phải asset runtime.
