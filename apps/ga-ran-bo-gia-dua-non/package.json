@@ -1,0 +1,11 @@
+{
+  "name": "ga-ran-bo-gia-dua-non",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A self-contained restaurant order-tray gameplay prototype.",
+  "scripts": {
+    "build": "node build.js",
+    "serve": "python3 -m http.server 8090",
+    "test": "node build.js"
+  }
+}

@@ -6,6 +6,6 @@
   "scripts": {
     "serve": "python3 -m http.server 8090 -d docs",
     "test:fast": "npm --prefix apps/abyssal-dive run test && npm --prefix apps/lumen-playable run test",
-    "build:all": "npm --prefix apps/abyssal-dive run build && npm --prefix apps/lumen-playable run build"
+    "build:all": "npm --prefix apps/abyssal-dive run build && npm --prefix apps/lumen-playable run build && npm --prefix apps/ga-ran-bo-gia-dua-non run build"
   }
 }
