@@ -1,0 +1,16 @@
+{
+  "project": "Indian Fried Chicken Mukbang ASMR",
+  "canvas": [
+    1080,
+    1080
+  ],
+  "animations": {
+    "idle": "breathing, blinking, steam",
+    "pick_up": "reach and grip drumstick",
+    "bite": "food-to-mouth, bite, crumbs",
+    "chew": "looping jaw and cheek motion",
+    "swallow": "throat bob and satisfied smile",
+    "serve": "present plate, rising steam"
+  },
+  "audio": "Synchronize crunch, sizzle, chewing and swallow audio separately in engine."
+}

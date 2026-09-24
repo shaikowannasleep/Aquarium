@@ -1,0 +1,316 @@
+{
+  "name": "characters_customers",
+  "image": "characters_customers.png",
+  "size": {
+    "w": 2048,
+    "h": 2048
+  },
+  "grid": {
+    "columns": 10,
+    "rows": 6,
+    "count": 60
+  },
+  "regions": {
+    "chef_idle": {
+      "index": 0,
+      "row": 0,
+      "column": 0
+    },
+    "chef_smile": {
+      "index": 1,
+      "row": 0,
+      "column": 1
+    },
+    "chef_serve": {
+      "index": 2,
+      "row": 0,
+      "column": 2
+    },
+    "chef_cook": {
+      "index": 3,
+      "row": 0,
+      "column": 3
+    },
+    "chef_thumbs_up": {
+      "index": 4,
+      "row": 0,
+      "column": 4
+    },
+    "chef_holding_chicken": {
+      "index": 5,
+      "row": 0,
+      "column": 5
+    },
+    "chef_wave": {
+      "index": 6,
+      "row": 0,
+      "column": 6
+    },
+    "chef_turban": {
+      "index": 7,
+      "row": 0,
+      "column": 7
+    },
+    "chef_love": {
+      "index": 8,
+      "row": 0,
+      "column": 8
+    },
+    "chef_proud": {
+      "index": 9,
+      "row": 0,
+      "column": 9
+    },
+    "chef_cheer": {
+      "index": 10,
+      "row": 1,
+      "column": 0
+    },
+    "customer_man_happy": {
+      "index": 11,
+      "row": 1,
+      "column": 1
+    },
+    "customer_woman_happy": {
+      "index": 12,
+      "row": 1,
+      "column": 2
+    },
+    "customer_boy": {
+      "index": 13,
+      "row": 1,
+      "column": 3
+    },
+    "customer_angry": {
+      "index": 14,
+      "row": 1,
+      "column": 4
+    },
+    "customer_elder": {
+      "index": 15,
+      "row": 1,
+      "column": 5
+    },
+    "customer_glasses": {
+      "index": 16,
+      "row": 1,
+      "column": 6
+    },
+    "customer_family": {
+      "index": 17,
+      "row": 1,
+      "column": 7
+    },
+    "customer_sikh": {
+      "index": 18,
+      "row": 1,
+      "column": 8
+    },
+    "customer_bearded": {
+      "index": 19,
+      "row": 1,
+      "column": 9
+    },
+    "customer_waiting": {
+      "index": 20,
+      "row": 2,
+      "column": 0
+    },
+    "chicken_piece": {
+      "index": 21,
+      "row": 2,
+      "column": 1
+    },
+    "wing_piece": {
+      "index": 22,
+      "row": 2,
+      "column": 2
+    },
+    "spicy_wing": {
+      "index": 23,
+      "row": 2,
+      "column": 3
+    },
+    "chicken_bucket": {
+      "index": 24,
+      "row": 2,
+      "column": 4
+    },
+    "chicken_burger": {
+      "index": 25,
+      "row": 2,
+      "column": 5
+    },
+    "chicken_wrap": {
+      "index": 26,
+      "row": 2,
+      "column": 6
+    },
+    "samosa_plate": {
+      "index": 27,
+      "row": 2,
+      "column": 7
+    },
+    "fries_box": {
+      "index": 28,
+      "row": 2,
+      "column": 8
+    },
+    "takeout_meal": {
+      "index": 29,
+      "row": 2,
+      "column": 9
+    },
+    "curry_plate": {
+      "index": 30,
+      "row": 3,
+      "column": 0
+    },
+    "rice_plate": {
+      "index": 31,
+      "row": 3,
+      "column": 1
+    },
+    "naan_plate": {
+      "index": 32,
+      "row": 3,
+      "column": 2
+    },
+    "pakora_bowl": {
+      "index": 33,
+      "row": 3,
+      "column": 3
+    },
+    "soup_bowl": {
+      "index": 34,
+      "row": 3,
+      "column": 4
+    },
+    "chutney_green": {
+      "index": 35,
+      "row": 3,
+      "column": 5
+    },
+    "chutney_red": {
+      "index": 36,
+      "row": 3,
+      "column": 6
+    },
+    "salad_plate": {
+      "index": 37,
+      "row": 3,
+      "column": 7
+    },
+    "mango_lassi_cup": {
+      "index": 38,
+      "row": 3,
+      "column": 8
+    },
+    "raw_chicken": {
+      "index": 39,
+      "row": 3,
+      "column": 9
+    },
+    "rice_sack": {
+      "index": 40,
+      "row": 4,
+      "column": 0
+    },
+    "red_chili_pair": {
+      "index": 41,
+      "row": 4,
+      "column": 1
+    },
+    "garlic_bulb": {
+      "index": 42,
+      "row": 4,
+      "column": 2
+    },
+    "ginger_root": {
+      "index": 43,
+      "row": 4,
+      "column": 3
+    },
+    "onion_red": {
+      "index": 44,
+      "row": 4,
+      "column": 4
+    },
+    "tomato": {
+      "index": 45,
+      "row": 4,
+      "column": 5
+    },
+    "herbs": {
+      "index": 46,
+      "row": 4,
+      "column": 6
+    },
+    "coriander_bunch": {
+      "index": 47,
+      "row": 4,
+      "column": 7
+    },
+    "lemon_pair": {
+      "index": 48,
+      "row": 4,
+      "column": 8
+    },
+    "mortar_spices": {
+      "index": 49,
+      "row": 4,
+      "column": 9
+    },
+    "fryer_station": {
+      "index": 50,
+      "row": 5,
+      "column": 0
+    },
+    "gas_stove": {
+      "index": 51,
+      "row": 5,
+      "column": 1
+    },
+    "grill_pan": {
+      "index": 52,
+      "row": 5,
+      "column": 2
+    },
+    "prep_board": {
+      "index": 53,
+      "row": 5,
+      "column": 3
+    },
+    "sauce_bottles": {
+      "index": 54,
+      "row": 5,
+      "column": 4
+    },
+    "takeout_package": {
+      "index": 55,
+      "row": 5,
+      "column": 5
+    },
+    "order_clipboard": {
+      "index": 56,
+      "row": 5,
+      "column": 6
+    },
+    "restaurant_front": {
+      "index": 57,
+      "row": 5,
+      "column": 7
+    },
+    "restaurant_upgrade": {
+      "index": 58,
+      "row": 5,
+      "column": 8
+    },
+    "coin": {
+      "index": 59,
+      "row": 5,
+      "column": 9
+    }
+  },
+  "note": "Manifest only; populate coordinates after artwork packing."
+}

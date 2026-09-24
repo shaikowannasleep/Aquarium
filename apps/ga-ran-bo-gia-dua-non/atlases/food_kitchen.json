@@ -1,0 +1,316 @@
+{
+  "name": "food_kitchen",
+  "image": "food_kitchen.png",
+  "size": {
+    "w": 2048,
+    "h": 2048
+  },
+  "grid": {
+    "columns": 10,
+    "rows": 6,
+    "count": 60
+  },
+  "regions": {
+    "fried_chicken_drumstick": {
+      "index": 0,
+      "row": 0,
+      "column": 0
+    },
+    "crispy_wing": {
+      "index": 1,
+      "row": 0,
+      "column": 1
+    },
+    "spicy_chicken": {
+      "index": 2,
+      "row": 0,
+      "column": 2
+    },
+    "chicken_bucket": {
+      "index": 3,
+      "row": 0,
+      "column": 3
+    },
+    "avocado": {
+      "index": 4,
+      "row": 0,
+      "column": 4
+    },
+    "red_chili": {
+      "index": 5,
+      "row": 0,
+      "column": 5
+    },
+    "onion": {
+      "index": 6,
+      "row": 0,
+      "column": 6
+    },
+    "tomato": {
+      "index": 7,
+      "row": 0,
+      "column": 7
+    },
+    "lemon": {
+      "index": 8,
+      "row": 0,
+      "column": 8
+    },
+    "garlic": {
+      "index": 9,
+      "row": 0,
+      "column": 9
+    },
+    "ginger": {
+      "index": 10,
+      "row": 1,
+      "column": 0
+    },
+    "cilantro": {
+      "index": 11,
+      "row": 1,
+      "column": 1
+    },
+    "mint": {
+      "index": 12,
+      "row": 1,
+      "column": 2
+    },
+    "samosa": {
+      "index": 13,
+      "row": 1,
+      "column": 3
+    },
+    "curry_powder": {
+      "index": 14,
+      "row": 1,
+      "column": 4
+    },
+    "turmeric": {
+      "index": 15,
+      "row": 1,
+      "column": 5
+    },
+    "peppercorn": {
+      "index": 16,
+      "row": 1,
+      "column": 6
+    },
+    "cumin": {
+      "index": 17,
+      "row": 1,
+      "column": 7
+    },
+    "rice_raw": {
+      "index": 18,
+      "row": 1,
+      "column": 8
+    },
+    "rice_bowl": {
+      "index": 19,
+      "row": 1,
+      "column": 9
+    },
+    "chicken_curry": {
+      "index": 20,
+      "row": 2,
+      "column": 0
+    },
+    "spinach_curry": {
+      "index": 21,
+      "row": 2,
+      "column": 1
+    },
+    "green_chutney": {
+      "index": 22,
+      "row": 2,
+      "column": 2
+    },
+    "tomato_sauce": {
+      "index": 23,
+      "row": 2,
+      "column": 3
+    },
+    "raita": {
+      "index": 24,
+      "row": 2,
+      "column": 4
+    },
+    "salad": {
+      "index": 25,
+      "row": 2,
+      "column": 5
+    },
+    "naan": {
+      "index": 26,
+      "row": 2,
+      "column": 6
+    },
+    "stacked_naan": {
+      "index": 27,
+      "row": 2,
+      "column": 7
+    },
+    "pakora": {
+      "index": 28,
+      "row": 2,
+      "column": 8
+    },
+    "papadum": {
+      "index": 29,
+      "row": 2,
+      "column": 9
+    },
+    "lassi": {
+      "index": 30,
+      "row": 3,
+      "column": 0
+    },
+    "mango_lassi": {
+      "index": 31,
+      "row": 3,
+      "column": 1
+    },
+    "rose_lassi": {
+      "index": 32,
+      "row": 3,
+      "column": 2
+    },
+    "chai": {
+      "index": 33,
+      "row": 3,
+      "column": 3
+    },
+    "masala_pot": {
+      "index": 34,
+      "row": 3,
+      "column": 4
+    },
+    "tandoor": {
+      "index": 35,
+      "row": 3,
+      "column": 5
+    },
+    "fryer": {
+      "index": 36,
+      "row": 3,
+      "column": 6
+    },
+    "frying_basket": {
+      "index": 37,
+      "row": 3,
+      "column": 7
+    },
+    "serving_pan": {
+      "index": 38,
+      "row": 3,
+      "column": 8
+    },
+    "sauce_bowl": {
+      "index": 39,
+      "row": 3,
+      "column": 9
+    },
+    "spice_jar_red": {
+      "index": 40,
+      "row": 4,
+      "column": 0
+    },
+    "spice_jar_brown": {
+      "index": 41,
+      "row": 4,
+      "column": 1
+    },
+    "spice_jar_yellow": {
+      "index": 42,
+      "row": 4,
+      "column": 2
+    },
+    "spice_jar_green": {
+      "index": 43,
+      "row": 4,
+      "column": 3
+    },
+    "rolling_pin": {
+      "index": 44,
+      "row": 4,
+      "column": 4
+    },
+    "spatula": {
+      "index": 45,
+      "row": 4,
+      "column": 5
+    },
+    "ladle": {
+      "index": 46,
+      "row": 4,
+      "column": 6
+    },
+    "knife": {
+      "index": 47,
+      "row": 4,
+      "column": 7
+    },
+    "cutting_board": {
+      "index": 48,
+      "row": 4,
+      "column": 8
+    },
+    "chef_hat": {
+      "index": 49,
+      "row": 4,
+      "column": 9
+    },
+    "apron": {
+      "index": 50,
+      "row": 5,
+      "column": 0
+    },
+    "order_ticket": {
+      "index": 51,
+      "row": 5,
+      "column": 1
+    },
+    "takeout_box": {
+      "index": 52,
+      "row": 5,
+      "column": 2
+    },
+    "delivery_bag": {
+      "index": 53,
+      "row": 5,
+      "column": 3
+    },
+    "coin": {
+      "index": 54,
+      "row": 5,
+      "column": 4
+    },
+    "star": {
+      "index": 55,
+      "row": 5,
+      "column": 5
+    },
+    "heart": {
+      "index": 56,
+      "row": 5,
+      "column": 6
+    },
+    "up_arrow": {
+      "index": 57,
+      "row": 5,
+      "column": 7
+    },
+    "restaurant": {
+      "index": 58,
+      "row": 5,
+      "column": 8
+    },
+    "gift": {
+      "index": 59,
+      "row": 5,
+      "column": 9
+    }
+  },
+  "note": "Manifest only; populate coordinates after artwork packing."
+}

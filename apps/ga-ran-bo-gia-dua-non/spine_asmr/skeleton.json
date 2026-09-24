@@ -1,0 +1,81 @@
+{
+  "skeleton": {
+    "spine": "4.2.00",
+    "width": 1080,
+    "height": 1080,
+    "images": "./images/"
+  },
+  "bones": [
+    {
+      "name": "root"
+    },
+    {
+      "name": "torso",
+      "parent": "root"
+    },
+    {
+      "name": "head",
+      "parent": "torso"
+    },
+    {
+      "name": "jaw",
+      "parent": "head"
+    },
+    {
+      "name": "arm_food",
+      "parent": "torso"
+    },
+    {
+      "name": "hand_food",
+      "parent": "arm_food"
+    },
+    {
+      "name": "drumstick",
+      "parent": "hand_food"
+    },
+    {
+      "name": "plate",
+      "parent": "root"
+    }
+  ],
+  "slots": [
+    {
+      "name": "body",
+      "bone": "torso"
+    },
+    {
+      "name": "face",
+      "bone": "head"
+    },
+    {
+      "name": "jaw",
+      "bone": "jaw"
+    },
+    {
+      "name": "food_arm",
+      "bone": "arm_food"
+    },
+    {
+      "name": "food",
+      "bone": "drumstick"
+    },
+    {
+      "name": "meal_plate",
+      "bone": "plate"
+    }
+  ],
+  "skins": [
+    {
+      "name": "default",
+      "attachments": {}
+    }
+  ],
+  "animations": {
+    "idle": {},
+    "pick_up": {},
+    "bite": {},
+    "chew": {},
+    "swallow": {},
+    "serve": {}
+  }
+}
