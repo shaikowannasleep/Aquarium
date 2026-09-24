@@ -1,6 +1,6 @@
 # Gà Rán & Bơ Già Dừa Non
 
-Prototype phục vụ món chạy bằng HTML, CSS và JavaScript thuần.
+Playable Phaser 3 phong cách live-mukbang, chạy trên Canvas với mục tiêu 60 FPS.
 
 ## Commands
 
@@ -15,7 +15,9 @@ npm run test  # build + kiểm tra cú pháp bundle
 
 ## Gameplay loop
 
-`WaitingForOrder → SelectingItems → ReadyToServe → CheckingOrder → Feedback → NextOrder`
+`Vào live → chạm món / giữ đồ uống → EXP + food progress → comment + gift → reward → finished panel`
 
-Asset menu và khách được inline vào build dưới dạng data URI. Các manifest
-atlas và Spine trong source là tài liệu/scaffold, chưa phải asset runtime.
+`generated_image.png` được cắt thành sprite sheet 11×11, inline cùng Phaser
+vào bản build. Ông đầu bếp và khách dùng pose-switch/tween để có idle, ăn,
+chug, vui và reaction mà không cần Spine runtime. Các manifest atlas và Spine
+trong source vẫn là tài liệu/scaffold, chưa phải asset runtime.

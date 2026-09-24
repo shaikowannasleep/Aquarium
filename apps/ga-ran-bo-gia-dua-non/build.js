@@ -5,17 +5,18 @@ const vm = require('vm');
 
 const root = __dirname;
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-const asset = name => 'data:image/svg+xml;base64,' +
-  fs.readFileSync(path.join(root, 'assets', name), 'base64');
+const asset = (name, mime) => `data:${mime};base64,` +
+  fs.readFileSync(path.join(root, name), 'base64');
 const out = html
-  .replace("assets/menu.svg", asset('menu.svg'))
-  .replace("assets/khach.svg", asset('khach.svg'));
+  .replace('<script src="node_modules/phaser/dist/phaser.min.js"></script>',
+    '<script>' + fs.readFileSync(path.join(root, 'node_modules/phaser/dist/phaser.min.js'), 'utf8') + '</script>')
+  .replace("SHEET_URL='generated_image.png'", "SHEET_URL='" + asset('generated_image.png', 'image/png') + "'");
 
-const script = out.match(/<script>([\s\S]*?)<\/script>/)?.[1];
-if (!script) throw new Error('BUILD FAILED - no game script found');
-try { new vm.Script(script, { filename: 'ga-ran-bo-gia-dua-non.js' }); }
+const scripts = [...out.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1]);
+if (!scripts.length) throw new Error('BUILD FAILED - no game script found');
+try { scripts.forEach((script, index) => new vm.Script(script, { filename: `bundle-${index}.js` })); }
 catch (error) { throw new Error('BUILD FAILED - game script does not parse: ' + error.message); }
-if (/assets\//.test(out) || /<(script|link)[^>]+(?:src|href)=/.test(out)) {
+if (/generated_image\.png|assets\//.test(out) || /<(script|link)[^>]+(?:src|href)=/.test(out)) {
   throw new Error('BUILD FAILED - an external asset reference survived');
 }
 const dist = path.join(root, 'dist');
