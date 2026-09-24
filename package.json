@@ -2,10 +2,12 @@
   "name": "dung-lab",
   "version": "1.0.0",
   "private": false,
-  "description": "A portfolio monorepo for three code-driven interactive experiments.",
+  "description": "A portfolio and four code-driven interactive experiments.",
   "scripts": {
     "serve": "python3 -m http.server 8090 -d docs",
     "test:fast": "npm --prefix apps/abyssal-dive run test && npm --prefix apps/lumen-playable run test",
-    "build:all": "npm --prefix apps/abyssal-dive run build && npm --prefix apps/lumen-playable run build && npm --prefix apps/ga-ran-bo-gia-dua-non run build"
+    "build:all": "npm --prefix apps/abyssal-dive run build && node apps/lumen-playable/build.js && npm ci --prefix apps/ga-ran-bo-gia-dua-non && npm --prefix apps/ga-ran-bo-gia-dua-non run build",
+    "test:portfolio": "node tools/check-portfolio.js",
+    "test:ci": "npm --prefix apps/abyssal-dive run test && node apps/lumen-playable/test/headless.js && npm run test:portfolio"
   }
 }

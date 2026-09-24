@@ -49,9 +49,13 @@ jobs:
       - name: Build Gà Rán & Bơ Già Dừa Non
         working-directory: apps/ga-ran-bo-gia-dua-non
         run: |
+          npm ci
           node build.js
           mkdir -p ../../docs/apps/ga-ran-bo-gia-dua-non
           cp dist/index.html ../../docs/apps/ga-ran-bo-gia-dua-non/index.html
+
+      - name: Validate portfolio and demo builds
+        run: npm run test:ci
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
