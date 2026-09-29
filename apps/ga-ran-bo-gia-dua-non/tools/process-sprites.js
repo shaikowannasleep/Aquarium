@@ -31,7 +31,7 @@ function colourDistanceRgb(data, offset, colour) {
 // Remove only background that is connected to the crop boundary. This keeps
 // white details (chef coat, cream, plate highlights) intact instead of treating
 // every pale pixel as background.
-function edgeCutout(data, width, height, background, tolerance = 58, seedBottom = true) {
+function edgeCutout(data, width, height, background, tolerance = 58, seedBottom = true, seedTop = true) {
   const out = Buffer.from(data);
   const seen = new Uint8Array(width * height);
   const queue = [];
@@ -44,7 +44,7 @@ function edgeCutout(data, width, height, background, tolerance = 58, seedBottom 
   };
 
   for (let x = 0; x < width; x++) {
-    enqueue(x);
+    if (seedTop) enqueue(x);
     if (seedBottom) enqueue((height - 1) * width + x);
   }
   for (let y = 1; y < height - 1; y++) {
@@ -108,6 +108,38 @@ function keepMainComponents(data, width, height) {
   return data;
 }
 
+function checkerCutout(data, width, height) {
+  const out = Buffer.from(data);
+  const seen = new Uint8Array(width * height);
+  const queue = [];
+  const isChecker = index => {
+    const p = index * 4;
+    const r = data[p], g = data[p + 1], b = data[p + 2];
+    return Math.max(r, g, b) - Math.min(r, g, b) <= 16 && r >= 125 && r <= 245;
+  };
+  const enqueue = index => {
+    if (seen[index] || !isChecker(index)) return;
+    seen[index] = 1;
+    queue.push(index);
+  };
+  for (let x = 0; x < width; x++) enqueue(x);
+  for (let y = 0; y < height; y++) {
+    enqueue(y * width);
+    enqueue(y * width + width - 1);
+  }
+  for (let head = 0; head < queue.length; head++) {
+    const index = queue[head];
+    out[index * 4 + 3] = 0;
+    const x = index % width, y = Math.floor(index / width);
+    if (x > 0) enqueue(index - 1);
+    if (x < width - 1) enqueue(index + 1);
+    if (y > 0) enqueue(index - width);
+    if (y < height - 1) enqueue(index + width);
+  }
+  keepMainComponents(out, width, height);
+  return out;
+}
+
 async function cutoutFood(input, rect) {
   const { data, info } = await sharp(path.join(root, input))
     .extract(rect).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
@@ -144,6 +176,21 @@ async function normalizeFoodSprite(buffer, width, height, padding = 8) {
     .resize(width - padding * 2, height - padding * 2, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
     .extend({ top: padding, bottom: padding, left: padding, right: padding, background: { r: 0, g: 0, b: 0, alpha: 0 } })
     .png().toBuffer();
+}
+
+async function normalizeCharacterFrame(buffer, width, height, padding = 12) {
+  const trimmed = await sharp(buffer).trim({ background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .png().toBuffer({ resolveWithObject: true });
+  const maxW = width - padding * 2;
+  const maxH = height - padding * 2;
+  const scale = Math.min(maxW / trimmed.info.width, maxH / trimmed.info.height);
+  const scaledW = Math.max(1, Math.round(trimmed.info.width * scale));
+  const scaledH = Math.max(1, Math.round(trimmed.info.height * scale));
+  const scaled = await sharp(trimmed.data).resize(scaledW, scaledH).png().toBuffer();
+  const left = Math.floor((width - scaledW) / 2);
+  return sharp({ create: { width, height, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
+    .composite([{ input: scaled, left, top: height - scaledH - padding }])
+    .png({ compressionLevel: 9 }).toBuffer();
 }
 
 async function buildFoodAtlas() {
@@ -279,6 +326,67 @@ async function buildChefAtlas() {
   console.log(`runtime/chef-atlas.png ${frames.length * frameW}x${frameH}`);
 }
 
+async function buildComaAtlas() {
+  const source = path.join(root, 'assets', 'Gemini_Generated_Image_255vki255vki255v.png');
+  const boxes = [
+    { left: 30, top: 77, width: 440, height: 335 },
+    { left: 501, top: 77, width: 435, height: 335 },
+    { left: 964, top: 77, width: 435, height: 335 },
+    { left: 1891, top: 77, width: 435, height: 335 },
+    { left: 30, top: 495, width: 440, height: 302 },
+    { left: 501, top: 495, width: 435, height: 302 },
+    { left: 964, top: 495, width: 435, height: 302 },
+    { left: 1891, top: 495, width: 435, height: 302 },
+    { left: 3070, top: 495, width: 435, height: 302 },
+    { left: 3539, top: 495, width: 435, height: 302 },
+    { left: 3995, top: 495, width: 435, height: 302 },
+    { left: 4446, top: 495, width: 435, height: 302 }
+  ];
+  const frameW = 360, frameH = 300;
+  const frames = [];
+
+  for (const box of boxes) {
+    const insetX = 18, insetY = 14;
+    const rect = { left: box.left + insetX, top: box.top + insetY, width: box.width - insetX * 2, height: box.height - insetY * 2 };
+    const { data, info } = await sharp(source).extract(rect).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    const keyed = edgeCutout(data, info.width, info.height, modalBackground(data, info.width, info.height), 32, false, false);
+    keepMainComponents(keyed, info.width, info.height);
+    const raw = await sharp(keyed, { raw: { width: info.width, height: info.height, channels: 4 } }).png().toBuffer();
+    frames.push(await normalizeCharacterFrame(raw, frameW, frameH, 12));
+  }
+
+  await sharp({ create: { width: frames.length * frameW, height: frameH, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
+    .composite(frames.map((input, i) => ({ input, left: i * frameW, top: 0 })))
+    .png({ compressionLevel: 9 }).toFile(path.join(runtime, 'coma-atlas.png'));
+  console.log(`runtime/coma-atlas.png ${frames.length * frameW}x${frameH}`);
+}
+
+async function buildWorkoutAtlas() {
+  const source = path.join(root, 'assets', 'Gemini_Generated_Image_iuwua0iuwua0iuwu.png');
+  const boxes = [
+    { left: 54, top: 102, width: 780, height: 696 },
+    { left: 870, top: 102, width: 780, height: 696 },
+    { left: 1685, top: 102, width: 780, height: 696 },
+    { left: 54, top: 872, width: 780, height: 696 },
+    { left: 870, top: 872, width: 780, height: 696 },
+    { left: 1685, top: 872, width: 780, height: 696 }
+  ];
+  const frameW = 400, frameH = 360;
+  const frames = [];
+
+  for (const box of boxes) {
+    const { data, info } = await sharp(source).extract(box).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    const out = checkerCutout(data, info.width, info.height);
+    const raw = await sharp(out, { raw: { width: info.width, height: info.height, channels: 4 } }).png().toBuffer();
+    frames.push(await normalizeCharacterFrame(raw, frameW, frameH, 14));
+  }
+
+  await sharp({ create: { width: frames.length * frameW, height: frameH, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
+    .composite(frames.map((input, i) => ({ input, left: i * frameW, top: 0 })))
+    .png({ compressionLevel: 9 }).toFile(path.join(runtime, 'workout-atlas.png'));
+  console.log(`runtime/workout-atlas.png ${frames.length * frameW}x${frameH}`);
+}
+
 async function buildPeopleAtlas() {
   const meta = await sharp(path.join(root, 'generated_image.png')).metadata();
   const rowBounds = [[27,225],[225,411],[411,574],[574,737],[737,899],[899,1062],[1062,1222]];
@@ -301,5 +409,5 @@ async function buildPeopleAtlas() {
   console.log(`runtime/people-atlas.png ${columns * frameW}x${rowBounds.length * frameH}`);
 }
 
-Promise.all([buildFoodAtlas(), buildChefAtlas(), buildPeopleAtlas()])
+Promise.all([buildFoodAtlas(), buildChefAtlas(), buildPeopleAtlas(), buildComaAtlas(), buildWorkoutAtlas()])
   .catch(error => { console.error(error); process.exit(1); });

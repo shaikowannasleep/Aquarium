@@ -34,7 +34,9 @@ async function validateAtlas(name, frameWidth, frameHeight, frameCount, minimumP
 
 Promise.all([
   validateAtlas('chef-atlas.png', 240, 220, 8, 6),
-  validateAtlas('food-atlas.png', 240, 220, 15, 12)
+  validateAtlas('food-atlas.png', 240, 220, 15, 12),
+  validateAtlas('coma-atlas.png', 360, 300, 12, 6),
+  validateAtlas('workout-atlas.png', 400, 360, 6, 10)
 ]).catch(error => {
   console.error(error.message);
   process.exit(1);

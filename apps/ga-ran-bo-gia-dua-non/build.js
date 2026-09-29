@@ -10,7 +10,9 @@ const asset = (name, mime) => `data:${mime};base64,` +
 const game = fs.readFileSync(path.join(root, 'src/game.js'), 'utf8')
   .replace(/SHEET_URL\s*=\s*['"]runtime\/people-atlas\.png['"]/, "SHEET_URL='" + asset('runtime/people-atlas.png', 'image/png') + "'")
   .replace(/FOOD_SHEET_URL\s*=\s*['"]runtime\/food-atlas\.png['"]/, "FOOD_SHEET_URL='" + asset('runtime/food-atlas.png', 'image/png') + "'")
-  .replace(/CHEF_SHEET_URL\s*=\s*['"]runtime\/chef-atlas\.png['"]/, "CHEF_SHEET_URL='" + asset('runtime/chef-atlas.png', 'image/png') + "'");
+  .replace(/CHEF_SHEET_URL\s*=\s*['"]runtime\/chef-atlas\.png['"]/, "CHEF_SHEET_URL='" + asset('runtime/chef-atlas.png', 'image/png') + "'")
+  .replace(/COMA_SHEET_URL\s*=\s*['"]runtime\/coma-atlas\.png['"]/, "COMA_SHEET_URL='" + asset('runtime/coma-atlas.png', 'image/png') + "'")
+  .replace(/WORKOUT_SHEET_URL\s*=\s*['"]runtime\/workout-atlas\.png['"]/, "WORKOUT_SHEET_URL='" + asset('runtime/workout-atlas.png', 'image/png') + "'");
 
 const out = html
   .replace('<script src="node_modules/phaser/dist/phaser.min.js"></script>',

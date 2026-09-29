@@ -1,5 +1,14 @@
 'use strict';
-const W = 540, H = 960, SHEET_URL = 'runtime/people-atlas.png', FOOD_SHEET_URL = 'runtime/food-atlas.png', CHEF_SHEET_URL = 'runtime/chef-atlas.png';
+const W = 540, H = 960;
+const SHEET_URL = 'runtime/people-atlas.png';
+const FOOD_SHEET_URL = 'runtime/food-atlas.png';
+const CHEF_SHEET_URL = 'runtime/chef-atlas.png';
+const COMA_SHEET_URL = 'runtime/coma-atlas.png';
+const WORKOUT_SHEET_URL = 'runtime/workout-atlas.png';
+
+const PHASE = Object.freeze({ MUKBANG: 'MUKBANG', FOOD_COMA: 'FOOD_COMA', ALARM: 'ALARM', WORKOUT: 'WORKOUT', RESET: 'RESET' });
+const MAX_PROGRESS = 600;
+const MAX_CALORIES = 600;
 
 const CHEF_FLOW = [
   { frame: 1, label: 'Mở miệng', ms: 220 },
@@ -48,11 +57,16 @@ class Mukbang extends Phaser.Scene {
     this.coin = 0;
     this.busy = false;
     this.dragItem = null;
+    this.phase = PHASE.MUKBANG;
+    this.phaseTimer = null;
+    this.phaseLayer = null;
   }
 
   preload() {
     this.load.spritesheet('people', SHEET_URL, { frameWidth: 128, frameHeight: 160 });
     this.load.spritesheet('chef', CHEF_SHEET_URL, { frameWidth: 240, frameHeight: 220 });
+    this.load.spritesheet('coma', COMA_SHEET_URL, { frameWidth: 360, frameHeight: 300 });
+    this.load.spritesheet('workout', WORKOUT_SHEET_URL, { frameWidth: 400, frameHeight: 360 });
     this.load.image('food', FOOD_SHEET_URL);
   }
 
@@ -62,6 +76,9 @@ class Mukbang extends Phaser.Scene {
     this.coin = 0;
     this.busy = false;
     this.dragItem = null;
+    this.phase = PHASE.MUKBANG;
+    this.phaseTimer = null;
+    this.phaseLayer = null;
 
     this.sliceFood();
     this.drawShell();
@@ -124,7 +141,7 @@ class Mukbang extends Phaser.Scene {
   }
 
   pushComment() {
-    if (this.progress >= 600) return;
+    if (this.phase !== PHASE.MUKBANG || this.progress >= MAX_PROGRESS) return;
     const t = this.add.text(530, Phaser.Math.Between(100, 190), Phaser.Utils.Array.GetRandom(COMMENTS), {
       fontSize: '12px', fontStyle: 'bold', color: '#fff', backgroundColor: '#263342', padding: { x: 10, y: 7 }
     }).setOrigin(0, 0.5).setDepth(20);
@@ -349,7 +366,7 @@ class Mukbang extends Phaser.Scene {
   }
 
   beginDrag(food, pointer) {
-    if (this.busy) return;
+    if (this.phase !== PHASE.MUKBANG || this.busy) return;
     this.dragItem?.destroy();
     this.dragItem = this.add.sprite(pointer.x, pointer.y, food[1], food[2]).setScale(0.48).setDepth(50).setData('food', food);
     this.tweens.add({ targets: this.dragItem, scaleX: '+=0.06', scaleY: '+=0.06', duration: 120, yoyo: true });
@@ -429,10 +446,10 @@ class Mukbang extends Phaser.Scene {
 
   addProgress(gain) {
     const prevProgress = this.progress;
-    this.progress = Math.min(600, this.progress + gain);
+    this.progress = Math.min(MAX_PROGRESS, this.progress + gain);
 
-    const targetWidth = 412 * this.progress / 600;
-    const currentObj = { w: 412 * prevProgress / 600 };
+    const targetWidth = 412 * this.progress / MAX_PROGRESS;
+    const currentObj = { w: 412 * prevProgress / MAX_PROGRESS };
     this.tweens.add({
       targets: currentObj,
       w: targetWidth,
@@ -444,11 +461,11 @@ class Mukbang extends Phaser.Scene {
     this.emotionText.setText(`😋 Hài lòng: ${pct}%`);
     this.pushComment();
 
-    if (this.progress >= 600) this.finish();
+    if (this.progress >= MAX_PROGRESS) this.startFoodComa();
   }
 
   showGift() {
-    if (this.progress >= 600 || this.giftContainer) return;
+    if (this.phase !== PHASE.MUKBANG || this.progress >= MAX_PROGRESS || this.giftContainer) return;
 
     const gx = 440, gy = 140;
     this.giftContainer = this.add.container(gx, gy).setScale(0.2).setAlpha(0).setDepth(30);
@@ -495,20 +512,175 @@ class Mukbang extends Phaser.Scene {
     });
   }
 
-  finish() {
+  clearPhaseTimer() {
+    if (this.phaseTimer) {
+      this.phaseTimer.remove(false);
+      this.phaseTimer = null;
+    }
+  }
+
+  replacePhaseLayer() {
+    this.clearPhaseTimer();
+    if (this.phaseLayer) this.phaseLayer.destroy(true);
+    this.phaseLayer = this.add.container(0, 0).setDepth(80);
+    return this.phaseLayer;
+  }
+
+  startFoodComa() {
+    if (this.phase !== PHASE.MUKBANG) return;
+    this.phase = PHASE.FOOD_COMA;
     this.busy = true;
-    this.chef.setFrame(6);
-    this.updateStateTag('HOÀN THÀNH');
+    this.dragItem?.destroy();
+    this.dragItem = null;
+    this.handFoodSlot.setVisible(false);
+    if (this.giftContainer) {
+      this.giftContainer.destroy(true);
+      this.giftContainer = null;
+    }
 
-    const p = this.add.container(270, 470).setDepth(100).setScale(0.2);
-    const bg = this.add.rectangle(0, 0, 410, 235, 0xfff2cf).setStrokeStyle(7, 0xdd6672);
-    const title = this.add.text(0, -72, 'MUKBANG HOÀN THÀNH!', { fontFamily: 'Arial Black', fontSize: '22px', color: '#8c3f46' }).setOrigin(0.5);
-    const reward = this.add.text(0, -18, `🪙 +${100 + this.coin} COIN`, { fontFamily: 'Arial Black', fontSize: '27px', color: '#d58b28' }).setOrigin(0.5);
-    const again = this.add.text(0, 55, 'CHƠI LẠI', { fontFamily: 'Arial Black', fontSize: '17px', color: '#fff', backgroundColor: '#dc6470', padding: { x: 22, y: 10 } }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    const layer = this.replacePhaseLayer();
+    const bg = this.add.rectangle(270, 480, 540, 960, 0x271b2c);
+    const glow = this.add.circle(270, 430, 260, 0xf2a96b, 0.28);
+    const title = this.add.text(270, 70, 'QUÁ TẢI CALO!', {
+      fontFamily: 'Arial Black', fontSize: '28px', color: '#fff2bf', stroke: '#5b2430', strokeThickness: 7
+    }).setOrigin(0.5);
+    const subtitle = this.add.text(270, 108, 'FOOD COMA', { fontFamily: 'Arial Black', fontSize: '17px', color: '#ff8791' }).setOrigin(0.5);
+    this.comaSprite = this.add.sprite(270, 465, 'coma', 0).setScale(1.42);
+    this.comaCaption = this.add.text(270, 725, 'No căng bụng...', {
+      fontFamily: 'Arial Black', fontSize: '18px', color: '#ffffff', backgroundColor: '#5b2430', padding: { x: 18, y: 9 }
+    }).setOrigin(0.5);
+    layer.add([bg, glow, title, subtitle, this.comaSprite, this.comaCaption]);
 
-    p.add([bg, title, reward, again]);
-    again.on('pointerup', () => this.scene.restart());
-    this.tweens.add({ targets: p, scale: 1, duration: 350, ease: 'Back.easeOut' });
+    const captions = ['Mãn nguyện', 'Bụng bắt đầu phình', 'Căng tròn!', 'BUNG CÚC!', 'Thở dốc', 'Dồn khí...', 'Ợ ỘC!', 'Hoa mắt', 'Lún sâu', 'Gục xuống', 'Ngất ngây', 'FOOD COMA'];
+    let frame = 0;
+    const next = () => {
+      if (this.phase !== PHASE.FOOD_COMA) return;
+      this.comaSprite.setFrame(frame);
+      this.comaCaption.setText(captions[frame]);
+      if (frame === 3 || frame === 6) this.cameras.main.shake(100, frame === 6 ? 0.012 : 0.006);
+      frame++;
+      if (frame < 12) this.phaseTimer = this.time.delayedCall(250, next);
+      else this.phaseTimer = this.time.delayedCall(250, () => this.startAlarm());
+    };
+    next();
+  }
+
+  startAlarm() {
+    if (this.phase !== PHASE.FOOD_COMA) return;
+    this.phase = PHASE.ALARM;
+    this.clearPhaseTimer();
+    this.comaSprite.setFrame(11);
+    const flash = this.add.rectangle(270, 480, 540, 960, 0xff172d, 0.08).setDepth(95);
+    const alarm = this.add.text(270, 250, 'RENG! RENG!', {
+      fontFamily: 'Arial Black', fontSize: '42px', color: '#ffffff', stroke: '#8b0012', strokeThickness: 10
+    }).setOrigin(0.5).setDepth(96).setScale(0.4);
+    this.phaseLayer.add([flash, alarm]);
+    this.tweens.add({ targets: flash, alpha: 0.58, duration: 90, yoyo: true, repeat: 4 });
+    this.tweens.add({ targets: alarm, scale: 1, angle: { from: -4, to: 4 }, duration: 90, yoyo: true, repeat: 4 });
+    this.cameras.main.shake(850, 0.014);
+    this.phaseTimer = this.time.delayedCall(900, () => this.startWorkout());
+  }
+
+  startWorkout() {
+    if (this.phase !== PHASE.ALARM) return;
+    this.phase = PHASE.WORKOUT;
+    this.calories = MAX_CALORIES;
+    this.workoutFrame = 0;
+    this.workoutDelay = 250;
+
+    const layer = this.replacePhaseLayer();
+    const bg = this.add.rectangle(270, 480, 540, 960, 0x153b49);
+    const floor = this.add.rectangle(270, 760, 540, 400, 0x26353b);
+    const sun = this.add.circle(430, 170, 90, 0xffd36b, 0.22);
+    const title = this.add.text(270, 58, 'ĐỐT CALO!', {
+      fontFamily: 'Arial Black', fontSize: '30px', color: '#ffffff', stroke: '#102a34', strokeThickness: 8
+    }).setOrigin(0.5);
+    const hint = this.add.text(270, 102, 'CHẠM LIÊN TỤC ĐỂ NÂNG TẠ', { fontFamily: 'Arial Black', fontSize: '14px', color: '#ffe17a' }).setOrigin(0.5);
+    this.workoutSprite = this.add.sprite(270, 430, 'workout', 0).setScale(1.16);
+    this.calorieBack = this.add.graphics();
+    this.calorieBack.fillStyle(0x0b1b21, 0.88).fillRoundedRect(54, 682, 432, 34, 17);
+    this.calorieBack.lineStyle(3, 0xffffff, 0.45).strokeRoundedRect(54, 682, 432, 34, 17);
+    this.calorieFill = this.add.graphics();
+    this.calorieText = this.add.text(270, 741, '600 CAL', {
+      fontFamily: 'Arial Black', fontSize: '24px', color: '#ffffff', stroke: '#102a34', strokeThickness: 6
+    }).setOrigin(0.5);
+    const tapPad = this.add.rectangle(270, 480, 540, 960, 0xffffff, 0.001).setInteractive({ useHandCursor: true });
+    tapPad.on('pointerdown', pointer => this.workoutTap(pointer));
+    layer.add([bg, floor, sun, title, hint, this.workoutSprite, this.calorieBack, this.calorieFill, this.calorieText, tapPad]);
+    tapPad.setDepth(20);
+    this.renderCalories();
+    this.scheduleWorkoutFrame();
+  }
+
+  scheduleWorkoutFrame() {
+    if (this.phase !== PHASE.WORKOUT) return;
+    this.phaseTimer = this.time.delayedCall(this.workoutDelay, () => {
+      if (this.phase !== PHASE.WORKOUT) return;
+      this.workoutFrame = (this.workoutFrame + 1) % 6;
+      this.workoutSprite.setFrame(this.workoutFrame);
+      if (this.workoutFrame === 2 || this.workoutFrame === 3) this.cameras.main.shake(65, 0.004);
+      this.workoutDelay = Math.min(250, this.workoutDelay + 14);
+      this.scheduleWorkoutFrame();
+    });
+  }
+
+  workoutTap(pointer) {
+    if (this.phase !== PHASE.WORKOUT || this.calories <= 0) return;
+    this.calories = Math.max(0, this.calories - 50);
+    this.coin += 5;
+    this.workoutDelay = Math.max(90, this.workoutDelay - 38);
+    this.renderCalories();
+    const pop = this.add.text(pointer.x, pointer.y, '-50 CAL', {
+      fontFamily: 'Arial Black', fontSize: '20px', color: '#ffe36f', stroke: '#71332d', strokeThickness: 5
+    }).setOrigin(0.5).setDepth(110);
+    this.tweens.add({ targets: pop, y: pointer.y - 75, alpha: 0, scale: 1.25, duration: 520, onComplete: () => pop.destroy() });
+    if (this.workoutFrame === 2 || this.workoutFrame === 3) {
+      const sweat = this.add.text(Phaser.Math.Between(170, 370), 260, '💦', { fontSize: '22px' }).setDepth(110);
+      this.tweens.add({ targets: sweat, y: 330, alpha: 0, duration: 460, onComplete: () => sweat.destroy() });
+    }
+    if (this.calories === 0) this.finishWorkout();
+  }
+
+  renderCalories() {
+    const width = 424 * this.calories / MAX_CALORIES;
+    this.calorieFill.clear();
+    if (width > 0) this.calorieFill.fillStyle(this.calories > 200 ? 0xff9a3c : 0x54d36b).fillRoundedRect(58, 686, width, 26, 13);
+    this.calorieText.setText(`${this.calories} CAL`);
+  }
+
+  finishWorkout() {
+    if (this.phase !== PHASE.WORKOUT) return;
+    this.phase = PHASE.RESET;
+    this.clearPhaseTimer();
+    this.coin += 100;
+    this.workoutSprite.setFrame(0);
+    const badge = this.add.text(270, 235, '💪 HOÀN THÀNH!\n+100 COIN', {
+      align: 'center', fontFamily: 'Arial Black', fontSize: '27px', color: '#ffffff',
+      backgroundColor: '#e35e63', padding: { x: 24, y: 15 }, stroke: '#6b2228', strokeThickness: 5
+    }).setOrigin(0.5).setDepth(110).setScale(0.25);
+    this.phaseLayer.add(badge);
+    this.tweens.add({ targets: badge, scale: 1, duration: 330, ease: 'Back.easeOut' });
+    this.phaseTimer = this.time.delayedCall(1500, () => this.resetMukbangLoop());
+  }
+
+  resetMukbangLoop() {
+    if (this.phase !== PHASE.RESET) return;
+    this.clearPhaseTimer();
+    if (this.phaseLayer) {
+      this.phaseLayer.destroy(true);
+      this.phaseLayer = null;
+    }
+    this.phase = PHASE.MUKBANG;
+    this.progress = 0;
+    this.busy = false;
+    this.dragItem = null;
+    this.chef.setFrame(0).setScale(1.42);
+    this.handFoodSlot.setVisible(false);
+    this.renderEmotionFill(0);
+    this.emotionText.setText('😋 Hài lòng: 0%');
+    this.updateStateTag('SẴN SÀNG');
+    this.cameras.main.resetFX();
+    this.time.delayedCall(1200, () => this.showGift());
   }
 }
 
