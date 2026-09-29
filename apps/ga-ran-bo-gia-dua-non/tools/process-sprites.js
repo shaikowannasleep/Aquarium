@@ -21,6 +21,93 @@ function modalBackground(data, width, height) {
   return [...histogram].sort((a, b) => b[1] - a[1])[0]?.[0].split(',').map(v => Number(v) * 8 + 4) || [254, 248, 238];
 }
 
+function colourDistanceRgb(data, offset, colour) {
+  const dr = data[offset] - colour[0];
+  const dg = data[offset + 1] - colour[1];
+  const db = data[offset + 2] - colour[2];
+  return Math.sqrt(dr * dr + dg * dg + db * db);
+}
+
+// Remove only background that is connected to the crop boundary. This keeps
+// white details (chef coat, cream, plate highlights) intact instead of treating
+// every pale pixel as background.
+function edgeCutout(data, width, height, background, tolerance = 58, seedBottom = true) {
+  const out = Buffer.from(data);
+  const seen = new Uint8Array(width * height);
+  const queue = [];
+  const enqueue = index => {
+    if (seen[index]) return;
+    const distance = colourDistanceRgb(data, index * 4, background);
+    if (distance > tolerance) return;
+    seen[index] = 1;
+    queue.push(index);
+  };
+
+  for (let x = 0; x < width; x++) {
+    enqueue(x);
+    if (seedBottom) enqueue((height - 1) * width + x);
+  }
+  for (let y = 1; y < height - 1; y++) {
+    enqueue(y * width);
+    enqueue(y * width + width - 1);
+  }
+
+  for (let head = 0; head < queue.length; head++) {
+    const index = queue[head];
+    const p = index * 4;
+    const distance = colourDistanceRgb(data, p, background);
+    // A short feather preserves anti-aliased outlines without a pale halo.
+    out[p + 3] = distance <= 18 ? 0 : Math.round(255 * (distance - 18) / (tolerance - 18));
+    const x = index % width;
+    const y = Math.floor(index / width);
+    if (x > 0) enqueue(index - 1);
+    if (x < width - 1) enqueue(index + 1);
+    if (y > 0) enqueue(index - width);
+    if (y < height - 1) enqueue(index + width);
+  }
+
+  return out;
+}
+
+function keepMainComponents(data, width, height) {
+  const visited = new Uint8Array(width * height);
+  const components = [];
+  for (let start = 0; start < width * height; start++) {
+    if (visited[start] || data[start * 4 + 3] < 40) continue;
+    visited[start] = 1;
+    const pixels = [start];
+    for (let head = 0; head < pixels.length; head++) {
+      const index = pixels[head];
+      const x = index % width;
+      const y = Math.floor(index / width);
+      const neighbours = [];
+      if (x > 0) neighbours.push(index - 1);
+      if (x < width - 1) neighbours.push(index + 1);
+      if (y > 0) neighbours.push(index - width);
+      if (y < height - 1) neighbours.push(index + width);
+      for (const next of neighbours) {
+        if (!visited[next] && data[next * 4 + 3] >= 40) {
+          visited[next] = 1;
+          pixels.push(next);
+        }
+      }
+    }
+    components.push(pixels);
+  }
+
+  components.sort((a, b) => b.length - a.length);
+  const minimum = Math.max(20, (components[0]?.length || 0) * 0.08);
+  const keep = new Uint8Array(width * height);
+  for (const component of components) {
+    if (component.length < minimum) continue;
+    component.forEach(index => { keep[index] = 1; });
+  }
+  for (let index = 0; index < width * height; index++) {
+    if (!keep[index]) data[index * 4 + 3] = 0;
+  }
+  return data;
+}
+
 async function cutoutFood(input, rect) {
   const { data, info } = await sharp(path.join(root, input))
     .extract(rect).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
@@ -67,27 +154,41 @@ async function buildFoodAtlas() {
 
   for (let row = 0; row < 3; row++) {
     for (let col = 0; col < 5; col++) {
-      const left = Math.round(col * colW);
-      const right = Math.round((col + 1) * colW);
-      const top = Math.round(row * rowH);
-      const bottom = Math.round((row + 1) * rowH);
-      const raw = await cutoutFood('1.png', { left, top, width: right - left, height: bottom - top });
-      frames.push(await normalizeFoodSprite(raw, frameW, frameH, 8));
+      // Crop inside the decorative card border before keying the warm paper.
+      const cellLeft = Math.round(col * colW);
+      const cellRight = Math.round((col + 1) * colW);
+      const cellTop = Math.round(row * rowH);
+      const cellBottom = Math.round((row + 1) * rowH);
+      const topInset = 30;
+      const bottomInset = 25;
+      const rect = {
+        left: cellLeft + 34,
+        top: cellTop + topInset,
+        width: cellRight - cellLeft - 68,
+        height: cellBottom - cellTop - topInset - bottomInset
+      };
+      const { data, info } = await sharp(path.join(root, '1.png')).extract(rect).ensureAlpha().raw()
+        .toBuffer({ resolveWithObject: true });
+      const keyed = edgeCutout(data, info.width, info.height, modalBackground(data, info.width, info.height), 64);
+      // Remove the rounded card stroke, which lives only in this guard band.
+      for (let y = 0; y < info.height; y++) for (let x = 0; x < info.width; x++) {
+        if (x < 12 || x >= info.width - 12 || y < 28 || y >= info.height - 28) keyed[(y * info.width + x) * 4 + 3] = 0;
+      }
+      keepMainComponents(keyed, info.width, info.height);
+      const raw = await sharp(keyed, { raw: { width: info.width, height: info.height, channels: 4 } }).png().toBuffer();
+      frames.push(await normalizeFoodSprite(raw, frameW, frameH, 14));
     }
   }
 
   await sharp({ create: { width: 5 * frameW, height: 3 * frameH, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
     .composite(frames.map((input, i) => ({ input, left: (i % 5) * frameW, top: Math.floor(i / 5) * frameH })))
-    .png({ compressionLevel: 9, palette: true, colours: 256, dither: 0.7 })
+    .png({ compressionLevel: 9 })
     .toFile(path.join(runtime, 'food-atlas.png'));
   console.log(`runtime/food-atlas.png ${5 * frameW}x${3 * frameH}`);
 }
 
 async function buildChefAtlas() {
-  // Use the 4x2 grid of 8 frames with empty hands in frames 3 & 4
-  const sourcePath = fs.existsSync(path.join(root, 'assets/chef_spritesheet_4x2.png'))
-    ? path.join(root, 'assets/chef_spritesheet_4x2.png')
-    : path.join(root, '12.png');
+  const sourcePath = path.join(root, 'assets/chef_spritesheet_4x2.png');
 
   const boxes = [
     { left: 45, top: 84, width: 187, height: 193 },
@@ -106,71 +207,63 @@ async function buildChefAtlas() {
   for (let i = 0; i < boxes.length; i++) {
     const box = boxes[i];
     const { data, info } = await sharp(sourcePath)
-      .extract({ left: box.left + 2, top: box.top + 2, width: box.width - 4, height: box.height - 4 })
+      .extract({ left: box.left + 3, top: box.top + 3, width: box.width - 6, height: box.height - 6 })
       .ensureAlpha().raw().toBuffer({ resolveWithObject: true });
 
     const { width, height } = info;
     const out = Buffer.from(data);
     const seen = new Uint8Array(width * height);
     const queue = [];
-
-    function isBg(idx) {
-      const p = idx * 4;
-      const r = data[p], g = data[p+1], b = data[p+2];
-      if (Math.abs(r - g) <= 6 && Math.abs(g - b) <= 6 && Math.abs(r - b) <= 6 && r >= 140 && r <= 235) return true;
-      const x = idx % width, y = Math.floor(idx / width);
-      if ((x <= 2 || x >= width - 3 || y <= 2 || y >= height - 3) && r < 60 && g < 60 && b < 60) return true;
-      return false;
-    }
-
+    const isChecker = index => {
+      const p = index * 4;
+      const r = data[p], g = data[p + 1], b = data[p + 2];
+      const grayscale = Math.max(r, g, b) - Math.min(r, g, b) <= 7;
+      return grayscale && r >= 125 && r <= 238;
+    };
     for (let x = 0; x < width; x++) {
-      if (isBg(x)) { queue.push(x); seen[x] = 1; }
-      const bottomIdx = (height - 1) * width + x;
-      if (isBg(bottomIdx)) { queue.push(bottomIdx); seen[bottomIdx] = 1; }
+      queue.push(x, (height - 1) * width + x);
     }
-    for (let y = 1; y < height - 1; y++) {
-      const leftIdx = y * width;
-      if (isBg(leftIdx)) { queue.push(leftIdx); seen[leftIdx] = 1; }
-      const rightIdx = y * width + width - 1;
-      if (isBg(rightIdx)) { queue.push(rightIdx); seen[rightIdx] = 1; }
-    }
-
+    for (let y = 1; y < height - 1; y++) queue.push(y * width, y * width + width - 1);
     for (let head = 0; head < queue.length; head++) {
-      const idx = queue[head];
-      const p = idx * 4;
+      const index = queue[head];
+      if (seen[index]) continue;
+      seen[index] = 1;
+      const p = index * 4;
+      const r = data[p], g = data[p + 1], b = data[p + 2];
+      const boundaryDark = r < 65 && g < 65 && b < 65;
+      if (!isChecker(index) && !boundaryDark) continue;
       out[p + 3] = 0;
-      const x = idx % width, y = Math.floor(idx / width);
-      if (x > 0 && !seen[idx - 1] && isBg(idx - 1)) { seen[idx - 1] = 1; queue.push(idx - 1); }
-      if (x < width - 1 && !seen[idx + 1] && isBg(idx + 1)) { seen[idx + 1] = 1; queue.push(idx + 1); }
-      if (y > 0 && !seen[idx - width] && isBg(idx - width)) { seen[idx - width] = 1; queue.push(idx - width); }
-      if (y < height - 1 && !seen[idx + width] && isBg(idx + width)) { seen[idx + width] = 1; queue.push(idx + width); }
+      const x = index % width, y = Math.floor(index / width);
+      if (x > 0) queue.push(index - 1);
+      if (x < width - 1) queue.push(index + 1);
+      if (y > 0) queue.push(index - width);
+      if (y < height - 1) queue.push(index + width);
     }
-
-    // Clear enclosed gray loop pixels
-    for (let idx = 0; idx < width * height; idx++) {
-      const p = idx * 4;
-      if (out[p + 3] > 0) {
-        const r = out[p], g = out[p+1], b = out[p+2];
-        if (Math.abs(r - g) <= 4 && Math.abs(g - b) <= 4 && Math.abs(r - b) <= 4 && r >= 140 && r <= 235) {
-          out[p + 3] = 0;
-        }
-      }
+    // Checker tiles are separated by the sprite-sheet guide, so clear their
+    // remaining neutral pixels after the boundary flood.
+    for (let index = 0; index < width * height; index++) {
+      if (isChecker(index)) out[index * 4 + 3] = 0;
+    }
+    // The reference grid has a dark guide directly under each torso.
+    for (let y = height - 7; y < height; y++) for (let x = 0; x < width; x++) {
+      out[(y * width + x) * 4 + 3] = 0;
     }
 
     const pngBuf = await sharp(out, { raw: { width, height, channels: 4 } }).png().toBuffer();
     const trimmed = await sharp(pngBuf).trim().png().toBuffer({ resolveWithObject: true });
 
-    const targetH = 212;
-    const scale = targetH / trimmed.info.height;
+    const targetH = 202;
+    const scale = Math.min(targetH / trimmed.info.height, (frameW - 16) / trimmed.info.width);
     const scaledW = Math.round(trimmed.info.width * scale);
+    const scaledH = Math.round(trimmed.info.height * scale);
     const scaledBuf = await sharp(trimmed.data)
-      .resize(scaledW, targetH)
+      .resize(scaledW, scaledH)
       .png().toBuffer();
 
     const leftPad = Math.floor((frameW - scaledW) / 2);
     const rightPad = frameW - scaledW - leftPad;
-    const topPad = frameH - targetH - 4; // 4px padding at bottom
-    const bottomPad = 4;
+    const topPad = frameH - scaledH - 8;
+    const bottomPad = 8;
 
     const frameBuf = await sharp(scaledBuf)
       .extend({ top: topPad, bottom: bottomPad, left: leftPad, right: rightPad, background: { r: 0, g: 0, b: 0, alpha: 0 } })
@@ -181,7 +274,7 @@ async function buildChefAtlas() {
 
   await sharp({ create: { width: frames.length * frameW, height: frameH, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
     .composite(frames.map((input, i) => ({ input, left: i * frameW, top: 0 })))
-    .png({ compressionLevel: 9, palette: true, colours: 256, dither: 0.7 })
+    .png({ compressionLevel: 9 })
     .toFile(path.join(runtime, 'chef-atlas.png'));
   console.log(`runtime/chef-atlas.png ${frames.length * frameW}x${frameH}`);
 }

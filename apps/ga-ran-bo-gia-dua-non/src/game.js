@@ -13,29 +13,22 @@ const CHEF_FLOW = [
 ];
 
 const LIBRARY = {
-  Chicken: [
+  'Gà rán': [
     ['Đùi gà', 'food', 'f0', 120],
     ['Cánh gà', 'food', 'f1', 110],
     ['Gà cay', 'food', 'f2', 135]
   ],
-  Burgers: [
-    ['Burger gà', 'food', 'f3', 125],
-    ['Gà cuộn', 'food', 'f4', 105]
+  'Món phụ': [
+    ['Khoai tây', 'food', 'f3', 85],
+    ['Bơ tươi', 'food', 'f4', 70]
   ],
-  Snacks: [
-    ['Khoai tây', 'food', 'f5', 85],
-    ['Hành vòng', 'food', 'f9', 90],
-    ['Samosa', 'food', 'f10', 100]
+  'Tráng miệng': [
+    ['Sinh tố bơ', 'food', 'f6', 40, true],
+    ['Kem bơ', 'food', 'f7', 45, true]
   ],
-  Drinks: [
-    ['Nước dừa', 'food', 'f6', 35, true],
-    ['Sinh tố bơ', 'food', 'f7', 35, true],
-    ['Kem bơ', 'food', 'f8', 40, true]
-  ],
-  Rice: [
-    ['Cơm trắng', 'food', 'f11', 95],
-    ['Cơm cà ri', 'food', 'f12', 115],
-    ['Cơm gia vị', 'food', 'f13', 105]
+  'Đồ uống': [
+    ['Nước dừa', 'food', 'f5', 35, true],
+    ['Sinh tố bơ', 'food', 'f6', 40, true]
   ]
 };
 
@@ -50,7 +43,7 @@ const COMMENTS = [
 class Mukbang extends Phaser.Scene {
   constructor() {
     super('mukbang');
-    this.category = 'Chicken';
+    this.category = 'Gà rán';
     this.progress = 0;
     this.coin = 0;
     this.busy = false;
@@ -64,7 +57,7 @@ class Mukbang extends Phaser.Scene {
   }
 
   create() {
-    this.category = 'Chicken';
+    this.category = 'Gà rán';
     this.progress = 0;
     this.coin = 0;
     this.busy = false;
@@ -95,8 +88,17 @@ class Mukbang extends Phaser.Scene {
     const g = this.add.graphics();
     g.fillStyle(0x272727).fillRoundedRect(10, 8, 520, 944, 48);
     g.fillStyle(0x415064).fillRoundedRect(24, 24, 492, 912, 34);
-    g.fillStyle(0xf0c18d).fillRect(31, 207, 478, 523);
+    g.fillStyle(0xf4c58e).fillRect(31, 207, 478, 268);
+    g.fillStyle(0xeab47c, 0.7).fillRect(31, 207, 478, 12);
+    for (let x = 52; x < 510; x += 76) {
+      g.fillStyle(0xffffff, 0.12).fillRoundedRect(x, 230, 54, 188, 18);
+      g.lineStyle(2, 0xc98f62, 0.25).strokeRoundedRect(x, 230, 54, 188, 18);
+    }
+    g.fillStyle(0x7a4330, 0.25).fillEllipse(270, 461, 292, 46);
     g.fillStyle(0xb87649).fillRect(31, 475, 478, 255);
+    for (let y = 494; y < 730; y += 36) {
+      g.lineStyle(2, 0x8f5438, 0.22).lineBetween(31, y, 509, y);
+    }
     g.fillStyle(0xfff4d8).fillRoundedRect(31, 730, 478, 196, 20);
     this.add.rectangle(270, 941, 130, 5, 0x666666).setOrigin(0.5);
   }
@@ -213,12 +215,12 @@ class Mukbang extends Phaser.Scene {
 
   drawTable() {
     const foods = [
-      LIBRARY.Chicken[0],
-      LIBRARY.Chicken[2],
-      LIBRARY.Burgers[0],
-      LIBRARY.Snacks[0],
-      LIBRARY.Rice[1],
-      LIBRARY.Drinks[1]
+      LIBRARY['Gà rán'][0],
+      LIBRARY['Gà rán'][2],
+      LIBRARY['Món phụ'][0],
+      LIBRARY['Gà rán'][1],
+      LIBRARY['Đồ uống'][0],
+      LIBRARY['Tráng miệng'][1]
     ];
     const pos = [
       [105, 580],
@@ -274,14 +276,15 @@ class Mukbang extends Phaser.Scene {
     this.add.text(270, 749, 'THỰC ĐƠN CỦA BẠN', { fontFamily: 'Arial Black', fontSize: '19px', color: '#623d32' }).setOrigin(0.5);
     this.tabGroup = this.add.container();
 
-    Object.keys(LIBRARY).forEach((name, i) => {
-      const x = 76 + i * 97;
+    const categoryNames = Object.keys(LIBRARY);
+    categoryNames.forEach((name, i) => {
+      const x = 89 + i * 121;
       const b = this.add.text(x, 781, name, {
         fontFamily: 'Arial Black',
-        fontSize: '11px',
+        fontSize: '10px',
         color: name === this.category ? '#fff' : '#66453b',
         backgroundColor: name === this.category ? '#d86472' : '#ead8b8',
-        padding: { x: 8, y: 7 }
+        padding: { x: 10, y: 7 }
       }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
       b.on('pointerup', () => {
@@ -306,7 +309,10 @@ class Mukbang extends Phaser.Scene {
 
   drawMenuItems() {
     this.menuItems.removeAll(true);
-    LIBRARY[this.category].forEach((food, i) => this.addMenuCard(food, 110 + i * 160, 858));
+    const foods = LIBRARY[this.category];
+    const spacing = 160;
+    const startX = 270 - ((foods.length - 1) * spacing) / 2;
+    foods.forEach((food, i) => this.addMenuCard(food, startX + i * spacing, 858));
   }
 
   addMenuCard(food, x, y) {
