@@ -414,14 +414,45 @@
   }
 
   // =========================================================================
-  // 7. RANDOMIZE MASCOT SPRITE ON REFRESH & COPYRIGHT YEAR
+  // 7. EMAIL CLICK-TO-REVEAL & CLIPBOARD COPY INTERACTION
+  // =========================================================================
+  const emailBtns = document.querySelectorAll('.email-reveal-btn');
+  const targetEmail = 'vandinhdung.work@gmail.com';
+
+  emailBtns.forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      
+      // Copy to clipboard
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(targetEmail).catch(() => {});
+      }
+
+      const textSpan = btn.querySelector('.email-reveal-text') || btn;
+      btn.classList.add('revealed', 'copied');
+      btn.setAttribute('aria-expanded', 'true');
+      textSpan.textContent = `${targetEmail} (Copied! 📋)`;
+
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        textSpan.textContent = targetEmail;
+        btn.setAttribute('title', `Click to launch mail client (${targetEmail})`);
+        btn.onclick = () => {
+          window.location.href = `mailto:${targetEmail}?subject=Inquiry%20from%20Portfolio`;
+        };
+      }, 2200);
+    });
+  });
+
+  // =========================================================================
+  // 8. RANDOMIZE MASCOT SPRITE FOR COMPANION BADGE & COPYRIGHT YEAR
   // =========================================================================
   const mascotSprites = [
     'orange_seahorse.png', 'clownfish.png', 'blue_tang.png',
     'pink_jellyfish.png', 'blue_jellyfish.png', 'nautilus.png',
     'yellow_pufferfish.png', 'spotted_ray.png'
   ];
-  const mascotImg = document.getElementById('mascot-img');
+  const mascotImg = document.getElementById('companion-mascot-img');
   if (mascotImg) {
     const chosen = mascotSprites[Math.floor(Math.random() * mascotSprites.length)];
     mascotImg.src = 'assets/sprites/' + chosen;
@@ -431,3 +462,4 @@
   if (yr) yr.textContent = new Date().getFullYear();
 
 })();
+

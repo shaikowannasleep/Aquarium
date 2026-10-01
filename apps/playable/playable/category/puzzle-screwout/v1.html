@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- SECURITY SHIELD: Anti-Ripping, Domain Lock & DevTools Protection -->
+<script>
+(function() {
+  var isEmbedded = window.top !== window.self;
+  var allowedHosts = ['localhost', '127.0.0.1', 'shaikowannasleep.github.io'];
+  var isLocal = allowedHosts.some(function(h) { return window.location.hostname.indexOf(h) !== -1 || window.location.protocol === 'file:'; });
+
+  if (!isEmbedded && !isLocal) {
+    document.documentElement.innerHTML = '<div style="background:#020c17;color:#00e5ff;font-family:sans-serif;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;"><h2 style="font-size:24px;margin-bottom:12px;">🔒 Playable Ad Protected</h2><p style="color:#88a0b8;max-width:480px;line-height:1.5;">Direct execution outside the authorized DinDun Playable Hub is restricted.</p><a href="../../../" style="color:#020c17;background:#00e5ff;margin-top:20px;text-decoration:none;padding:10px 24px;border-radius:24px;font-weight:bold;">Launch via Playable Hub ↗</a></div>';
+    throw new Error('Unauthorized execution blocked.');
+  }
+
+  // Prevent right-click
+  window.addEventListener('contextmenu', function(e) { e.preventDefault(); return false; }, true);
+
+  // Prevent devtools shortcuts
+  window.addEventListener('keydown', function(e) {
+    if (
+      e.key === 'F12' ||
+      (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) ||
+      (e.ctrlKey && (e.key === 'U' || e.key === 'u' || e.key === 'S' || e.key === 's'))
+    ) {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }
+  }, true);
+})();
+</script>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Screw Out V32 - Playable Ad</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+  body { background: #121820; font-family: -apple-system, BlinkMacSystemFont, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; color: #fff; }
+  .hud { padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.4); border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .title { font-weight: 800; font-size: 15px; color: #ffb703; }
+  .moves { font-size: 13px; color: #8ecae6; }
+  .game-area { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; }
+  .board { width: 300px; height: 380px; background: #212d3d; border-radius: 16px; border: 3px solid #3d5a80; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+  .plate { position: absolute; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: transform 0.4s ease, opacity 0.4s; }
+  .plate-yellow { width: 220px; height: 48px; background: #ffd166; color: #333; top: 70px; left: 40px; z-index: 2; transform-origin: center; }
+  .plate-blue { width: 48px; height: 200px; background: #118ab2; top: 120px; left: 70px; z-index: 3; }
+  .plate-pink { width: 190px; height: 44px; background: #ef476f; top: 220px; left: 60px; z-index: 1; }
+  .screw { width: 34px; height: 34px; border-radius: 50%; background: radial-gradient(circle, #ced4da, #6c757d); border: 2px solid #fff; position: absolute; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10; box-shadow: 0 3px 6px rgba(0,0,0,0.4); transition: transform 0.2s; }
+  .screw::after { content: "+"; font-size: 20px; color: #343a40; font-weight: bold; }
+  .screw:active { transform: scale(1.15) rotate(45deg); }
+  .screw.unscrewed { opacity: 0; pointer-events: none; transform: scale(0.2); }
+  .plate.dropped { transform: translateY(180px) rotate(25deg); opacity: 0; pointer-events: none; }
+  .box-container { height: 75px; background: #0b131e; border-top: 2px solid #2a394d; display: flex; align-items: center; justify-content: center; gap: 14px; padding: 0 16px; }
+  .hole-slot { width: 44px; height: 44px; border-radius: 50%; background: #1c2738; border: 2px dashed #486581; display: flex; align-items: center; justify-content: center; }
+  .cta-bar { padding: 10px; background: #000; text-align: center; }
+  .cta-btn { background: #06d6a0; color: #020c17; border: none; padding: 12px 28px; border-radius: 25px; font-weight: 800; font-size: 15px; cursor: pointer; animation: pulseCta 1.4s infinite; }
+  @keyframes pulseCta { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+  .win-banner { position: absolute; inset: 0; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 50; }
+  .win-banner.active { opacity: 1; pointer-events: auto; }
+</style>
+</head>
+<body>
+  <div class="hud">
+    <div class="title">🔩 SCREW OUT V32</div>
+    <div class="moves">Unscrew all bolts to clear!</div>
+  </div>
+  <div class="game-area">
+    <div class="board" id="board">
+      <div class="plate plate-pink" id="plate3"></div>
+      <div class="plate plate-blue" id="plate2"></div>
+      <div class="plate plate-yellow" id="plate1"></div>
+
+      <div class="screw" id="s1" style="top: 76px; left: 55px;" data-plate="plate1"></div>
+      <div class="screw" id="s2" style="top: 76px; left: 215px;" data-plate="plate1"></div>
+      <div class="screw" id="s3" style="top: 135px; left: 76px;" data-plate="plate2"></div>
+      <div class="screw" id="s4" style="top: 265px; left: 76px;" data-plate="plate2"></div>
+      <div class="screw" id="s5" style="top: 226px; left: 195px;" data-plate="plate3"></div>
+    </div>
+    <div class="win-banner" id="winBanner">
+      <h2 style="font-size: 26px; color: #ffd166;">🎉 STAGE CLEARED!</h2>
+      <p style="color: #8ecae6;">60 FPS · Zero GC hot path · ≤ 5MB LunaX</p>
+      <button class="cta-btn" onclick="window.open('https://github.com/shaikowannasleep/ScrewOut_V32', '_blank')">PLAY FULL GAME ↗</button>
+    </div>
+  </div>
+  <div class="box-container">
+    <div class="hole-slot"><div class="screw" style="position:static;"></div></div>
+    <div class="hole-slot" id="slot1"></div>
+    <div class="hole-slot" id="slot2"></div>
+    <div class="hole-slot" id="slot3"></div>
+  </div>
+  <div class="cta-bar">
+    <button class="cta-btn" onclick="window.open('https://github.com/shaikowannasleep/ScrewOut_V32', '_blank')">INSTALL / VIEW DEMO ↗</button>
+  </div>
+
+  <script>
+    let remainingScrews = 5;
+    const plateScrews = { plate1: 2, plate2: 2, plate3: 1 };
+    document.querySelectorAll('.screw[data-plate]').forEach(function(s) {
+      s.addEventListener('click', function() {
+        if (this.classList.contains('unscrewed')) return;
+        this.classList.add('unscrewed');
+        const pId = this.dataset.plate;
+        plateScrews[pId]--;
+        if (plateScrews[pId] <= 0) {
+          const p = document.getElementById(pId);
+          if (p) p.classList.add('dropped');
+        }
+        remainingScrews--;
+        if (remainingScrews <= 0) {
+          setTimeout(function() {
+            document.getElementById('winBanner').classList.add('active');
+          }, 500);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
