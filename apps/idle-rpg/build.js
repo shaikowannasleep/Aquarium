@@ -5,7 +5,8 @@ const path = require('path');
 const root = __dirname;
 const dist = path.join(root, 'dist');
 const distHtml = path.join(dist, 'index.html');
-const docsAppDir = path.resolve(root, '../../docs/apps/ga-ran-bo-gia-dua-non');
+const docsAppDir = path.resolve(root, '../../docs/apps/idle-rpg');
+const oldDocsAppDir = path.resolve(root, '../../docs/apps/ga-ran-bo-gia-dua-non');
 
 // Preserve and sync Idle RPG Three.js build
 if (fs.existsSync(distHtml)) {
@@ -13,9 +14,16 @@ if (fs.existsSync(distHtml)) {
   if (content.includes('Boss Armory') || content.includes('Idle Army') || content.includes('THREE') || content.includes('three')) {
     fs.mkdirSync(docsAppDir, { recursive: true });
     fs.writeFileSync(path.join(docsAppDir, 'index.html'), content);
+    
+    // Also write a redirect in the old path if it exists
+    if (fs.existsSync(oldDocsAppDir)) {
+      const redirectHtml = '<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=../idle-rpg/"><title>Redirecting...</title></head><body><p>Redirecting to <a href="../idle-rpg/">Idle RPG</a>...</p></body></html>';
+      fs.writeFileSync(path.join(oldDocsAppDir, 'index.html'), redirectHtml);
+    }
+
     const kb = Buffer.byteLength(content) / 1024;
     console.log(`Preserved Idle RPG single html: dist/index.html ${kb.toFixed(1)} KB`);
-    console.log('Synchronized to docs/apps/ga-ran-bo-gia-dua-non/index.html');
+    console.log('Synchronized to docs/apps/idle-rpg/index.html');
     console.log('external requests 0   ·   file:// ready');
     process.exit(0);
   }

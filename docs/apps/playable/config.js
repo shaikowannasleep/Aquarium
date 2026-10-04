@@ -62,8 +62,8 @@ const APP_CONFIG = {
         },
         {
             folder: 'casual-garan',
-            name: 'Gà Rán & Bơ Già Dừa Non',
-            category: 'casual',
+            name: 'Idle RPG (Three.js 3D)',
+            category: 'playable',
             versions: ['v1']
         },
         {

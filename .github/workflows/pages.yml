@@ -47,12 +47,11 @@ jobs:
           cp dist/index.html ../../docs/apps/lumen-playable/index.html
 
       - name: Build Idle RPG
-        working-directory: apps/ga-ran-bo-gia-dua-non
+        working-directory: apps/idle-rpg
         run: |
-          npm ci
           node build.js
-          mkdir -p ../../docs/apps/ga-ran-bo-gia-dua-non
-          cp dist/index.html ../../docs/apps/ga-ran-bo-gia-dua-non/index.html
+          mkdir -p ../../docs/apps/idle-rpg
+          cp dist/index.html ../../docs/apps/idle-rpg/index.html
 
       - name: Validate portfolio and demo builds
         run: npm run test:ci

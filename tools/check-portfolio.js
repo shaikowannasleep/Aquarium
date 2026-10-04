@@ -7,7 +7,7 @@ const assertFile = (relative) => assert.ok(fs.existsSync(path.join('docs', relat
 for (const section of ['main', 'work', 'about', 'skills', 'contact', 'top']) {
   assert.match(html, new RegExp(`id="${section}"`), `Missing #${section}`);
 }
-for (const route of ['aquarium', 'abyssal-dive', 'lumen-playable', 'ga-ran-bo-gia-dua-non']) {
+for (const route of ['aquarium', 'abyssal-dive', 'lumen-playable', 'idle-rpg']) {
   assert.ok(html.includes(`apps/${route}/`), `Missing route ${route}`);
   assertFile(`apps/${route}/index.html`);
 }
