@@ -46,7 +46,7 @@ jobs:
           node build.js
           cp dist/index.html ../../docs/apps/lumen-playable/index.html
 
-      - name: Build Gà Rán & Bơ Già Dừa Non
+      - name: Build Idle RPG
         working-directory: apps/ga-ran-bo-gia-dua-non
         run: |
           npm ci
