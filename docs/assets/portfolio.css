@@ -74,8 +74,7 @@ html {
 
 body {
   font-family: var(--font-main);
-  background: var(--ocean-abyss) url('bg2.png') no-repeat center top fixed;
-  background-size: cover;
+  background-color: var(--ocean-abyss);
   color: var(--text-lum);
   min-height: 100vh;
   line-height: 1.6;
@@ -83,6 +82,12 @@ body {
   position: relative;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Global Focus-Visible Accessibility */
+:focus-visible {
+  outline: 2px solid var(--cyan-glow);
+  outline-offset: 3px;
 }
 
 /* Skip link accessibility */
@@ -99,7 +104,8 @@ body {
   z-index: 10000;
   transition: top var(--transition-fast);
 }
-.skip-link:focus {
+.skip-link:focus,
+.skip-link:focus-visible {
   top: 15px;
 }
 
@@ -129,7 +135,11 @@ button {
 .ocean-bg-img {
   position: absolute;
   inset: 0;
-  background: url('bg2.png') center top / cover no-repeat;
+  background-image: url('bg2.jpg');
+  background-image: image-set(url('bg2.avif') type('image/avif'), url('bg2.jpg') type('image/jpeg'), url('bg2.png') type('image/png'));
+  background-position: center top;
+  background-size: cover;
+  background-repeat: no-repeat;
   opacity: 0.88;
   filter: contrast(1.08) saturate(1.15) brightness(0.92);
 }
@@ -498,6 +508,7 @@ button {
   font-weight: 800;
   letter-spacing: 0.06em;
   color: var(--text-pure);
+  white-space: nowrap;
 }
 
 .brand-callsign span {
@@ -508,9 +519,10 @@ button {
 
 .brand-role {
   font-family: var(--font-mono);
-  font-size: 0.68rem;
-  letter-spacing: 0.12em;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
   color: var(--text-muted);
+  white-space: nowrap;
 }
 
 /* Nav links */
@@ -535,13 +547,14 @@ button {
   color: var(--text-muted);
   border-radius: var(--radius-full);
   transition: all var(--transition-fast);
+  white-space: nowrap;
 }
 
 .nav-depth {
   font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: var(--cyan-glow);
-  opacity: 0.7;
+  opacity: 0.8;
 }
 
 .subsea-nav-link:hover {
@@ -573,6 +586,7 @@ button {
   align-items: center;
   gap: 8px;
   padding: 10px 20px;
+  white-space: nowrap;
   background: linear-gradient(135deg, rgba(0, 229, 255, 0.25) 0%, rgba(0, 136, 255, 0.35) 100%);
   border: 1px solid var(--cyan-glow);
   border-radius: var(--radius-full);
@@ -1439,7 +1453,7 @@ button {
    ========================================================================== */
 .education-deck-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
   gap: 24px;
 }
 
@@ -2355,16 +2369,7 @@ button {
   }
 }
 
-@media (max-width: 768px) {
-  .subsea-hud-bar {
-    padding: 6px 16px;
-  }
-  .hud-hide-sm {
-    display: none;
-  }
-  .subsea-navbar-main {
-    padding: 10px 16px;
-  }
+@media (max-width: 1100px) {
   .subsea-nav {
     display: none;
     position: absolute;
@@ -2383,6 +2388,29 @@ button {
   }
   .subsea-menu-toggle {
     display: flex;
+  }
+  .subsea-navbar-main {
+    padding: 10px 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .subsea-hud-bar {
+    display: none;
+  }
+  .subsea-header {
+    box-shadow: 0 4px 20px rgba(0, 6, 14, 0.85);
+  }
+  .subsea-navbar-main {
+    padding: 8px 16px;
+  }
+  .section-badge-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .hud-hide-sm {
+    display: none;
   }
   .telemetry-bento-grid {
     grid-template-columns: 1fr;
@@ -2417,6 +2445,96 @@ button {
   .station-meta-badge {
     text-align: left;
   }
+}
+
+/* Reduced Motion Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .ocean-fauna-layer,
+  .ocean-caustics-layer,
+  .ocean-god-rays,
+  .ocean-fx-canvas {
+    display: none !important;
+  }
+}
+
+/* Touch Targets & Project Image Utilities */
+.project-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: var(--radius-md);
+  transition: transform var(--transition-med);
+}
+
+.project:hover .project-thumb-img {
+  transform: scale(1.03);
+}
+
+.subsea-nav-link,
+.btn-ocean-glow,
+.filter-btn,
+.hud-btn,
+.project-foot a,
+.contact-pill,
+.btn-action-primary,
+.btn-action-ghost {
+  min-height: 44px;
+}
+
+/* Native Tech Badge Chips (0 External Requests) */
+.tech-badge-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  background: rgba(4, 20, 36, 0.85);
+  border: 1px solid rgba(0, 229, 255, 0.22);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-pure);
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.tech-badge-chip:hover {
+  background: rgba(0, 229, 255, 0.16);
+  border-color: var(--cyan-glow);
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.35);
+  transform: translateY(-2px);
+  color: var(--cyan-glow);
+}
+
+.tech-badge-chip .chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cyan-glow);
+  box-shadow: 0 0 6px var(--cyan-glow);
+}
+
+.tech-badge-chip.chip-accent-green .chip-dot {
+  background: var(--seafoam-neon);
+  box-shadow: 0 0 6px var(--seafoam-neon);
+}
+
+.tech-badge-chip.chip-accent-orange .chip-dot {
+  background: var(--coral-accent);
+  box-shadow: 0 0 6px var(--coral-accent);
+}
+
+.tech-badge-chip.chip-accent-gold .chip-dot {
+  background: var(--gold-accent);
+  box-shadow: 0 0 6px var(--gold-accent);
 }
 
 /* ==========================================================================

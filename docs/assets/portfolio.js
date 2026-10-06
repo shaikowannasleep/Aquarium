@@ -189,33 +189,69 @@
       });
     }
 
-    // Cursor wake bubbles
-    let cursorBubbles = [];
+    // Zero-GC cursor wake bubble pool with swap-remove
+    const MAX_CURSOR_BUBBLES = 30;
+    const cursorBubbles = [];
+    let cursorBubbleCount = 0;
+    for (let i = 0; i < MAX_CURSOR_BUBBLES; i++) {
+      cursorBubbles.push({ x: 0, y: 0, radius: 2, speed: 1.5, life: 0, wobble: 5 });
+    }
     let lastMouseX = 0, lastMouseY = 0;
+
     window.addEventListener('mousemove', (e) => {
       const dist = Math.hypot(e.clientX - lastMouseX, e.clientY - lastMouseY);
-      if (dist > 25 && cursorBubbles.length < 25) {
-        cursorBubbles.push({
-          x: e.clientX,
-          y: e.clientY,
-          radius: 1 + Math.random() * 2.5,
-          speed: 1.2 + Math.random() * 2,
-          life: 1.0,
-          wobble: Math.random() * 10
-        });
+      if (dist > 25 && cursorBubbleCount < MAX_CURSOR_BUBBLES) {
+        const cb = cursorBubbles[cursorBubbleCount++];
+        cb.x = e.clientX;
+        cb.y = e.clientY;
+        cb.radius = 1 + Math.random() * 2.5;
+        cb.speed = 1.2 + Math.random() * 2;
+        cb.life = 1.0;
+        cb.wobble = Math.random() * 10;
         lastMouseX = e.clientX;
         lastMouseY = e.clientY;
       }
     }, { passive: true });
 
+    // Pre-computed color LUTs to eliminate per-frame string allocations
+    const bubbleColorLUT = [];
+    const planktonColorCyanLUT = [];
+    const planktonColorEmeraldLUT = [];
+    const cursorColorLUT = [];
+    for (let i = 0; i <= 20; i++) {
+      const a = (i / 20).toFixed(2);
+      bubbleColorLUT.push(`rgba(180, 240, 255, ${a})`);
+      planktonColorCyanLUT.push(`rgba(0, 229, 255, ${a})`);
+      planktonColorEmeraldLUT.push(`rgba(0, 255, 163, ${a})`);
+      cursorColorLUT.push(`rgba(0, 229, 255, ${(i / 40).toFixed(2)})`);
+    }
+
     let t = 0;
-    const renderOceanFx = () => {
+    let animId = null;
+    let isRunning = false;
+    let lastFrameTime = performance.now();
+
+    const isReducedMotion = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const renderOceanFx = (now) => {
+      if (document.hidden || isReducedMotion()) {
+        isRunning = false;
+        return;
+      }
+
+      // Throttle to 30-60 FPS for power efficiency
+      const elapsed = now - lastFrameTime;
+      if (elapsed < 25) {
+        animId = requestAnimationFrame(renderOceanFx);
+        return;
+      }
+      lastFrameTime = now;
+
       ctx.clearRect(0, 0, width, height);
       t += 0.018;
 
       // 1. Render & Update Ascending Bubbles
       ctx.strokeStyle = 'rgba(0, 229, 255, 0.4)';
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
       for (let i = 0; i < bubbles.length; i++) {
         const b = bubbles[i];
         b.y -= b.speed;
@@ -228,7 +264,8 @@
 
         ctx.beginPath();
         ctx.arc(currentX, b.y, b.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(180, 240, 255, ${b.alpha * 0.4})`;
+        const lutIdx = Math.min(20, Math.max(0, Math.floor(b.alpha * 0.4 * 20)));
+        ctx.fillStyle = bubbleColorLUT[lutIdx];
         ctx.fill();
         ctx.stroke();
       }
@@ -247,37 +284,69 @@
 
         const glow = (Math.sin(p.pulse) + 1) * 0.5;
         const alpha = 0.2 + glow * 0.6;
+        const lutIdx = Math.min(20, Math.max(0, Math.floor(alpha * 20)));
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius * (1 + glow * 0.5), 0, Math.PI * 2);
-        ctx.fillStyle = `hsla(${p.hue}, 100%, 70%, ${alpha})`;
-        ctx.shadowColor = `hsla(${p.hue}, 100%, 65%, 0.8)`;
-        ctx.shadowBlur = 8;
+        ctx.fillStyle = p.hue === 185 ? planktonColorCyanLUT[lutIdx] : planktonColorEmeraldLUT[lutIdx];
         ctx.fill();
-        ctx.shadowBlur = 0;
       }
 
-      // 3. Render Cursor Wake Bubbles
-      for (let i = cursorBubbles.length - 1; i >= 0; i--) {
+      // 3. Render Cursor Wake Bubbles with O(1) swap-remove
+      for (let i = cursorBubbleCount - 1; i >= 0; i--) {
         const cb = cursorBubbles[i];
         cb.y -= cb.speed;
         cb.life -= 0.02;
 
         if (cb.life <= 0) {
-          cursorBubbles.splice(i, 1);
+          const lastIdx = --cursorBubbleCount;
+          if (i !== lastIdx) {
+            const last = cursorBubbles[lastIdx];
+            cursorBubbles[i] = last;
+            cursorBubbles[lastIdx] = cb;
+          }
           continue;
         }
 
         ctx.beginPath();
         ctx.arc(cb.x + Math.sin(cb.y * 0.05) * cb.wobble, cb.y, cb.radius * cb.life, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(0, 229, 255, ${cb.life * 0.5})`;
+        const lutIdx = Math.min(20, Math.max(0, Math.floor(cb.life * 20)));
+        ctx.fillStyle = cursorColorLUT[lutIdx];
         ctx.fill();
       }
 
-      requestAnimationFrame(renderOceanFx);
+      animId = requestAnimationFrame(renderOceanFx);
     };
 
-    renderOceanFx();
+    const startOceanFx = () => {
+      if (!isRunning && !document.hidden && !isReducedMotion()) {
+        isRunning = true;
+        lastFrameTime = performance.now();
+        animId = requestAnimationFrame(renderOceanFx);
+      }
+    };
+
+    const stopOceanFx = () => {
+      isRunning = false;
+      if (animId) {
+        cancelAnimationFrame(animId);
+        animId = null;
+      }
+    };
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) stopOceanFx();
+      else startOceanFx();
+    });
+
+    if (window.matchMedia) {
+      window.matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change', (e) => {
+        if (e.matches) stopOceanFx();
+        else startOceanFx();
+      });
+    }
+
+    startOceanFx();
   }
 
   // =========================================================================
@@ -414,9 +483,9 @@
   }
 
   // =========================================================================
-  // 7. EMAIL CLICK-TO-REVEAL & CLIPBOARD COPY INTERACTION
+  // 7. EMAIL DIRECT CLIPBOARD COPY & FEEDBACK
   // =========================================================================
-  const emailBtns = document.querySelectorAll('.email-reveal-btn');
+  const emailBtns = document.querySelectorAll('.email-reveal-btn, .copy-email-btn');
   const targetEmail = 'vandinhdung.work@gmail.com';
 
   emailBtns.forEach((btn) => {
@@ -428,19 +497,15 @@
         navigator.clipboard.writeText(targetEmail).catch(() => {});
       }
 
+      btn.classList.add('copied');
       const textSpan = btn.querySelector('.email-reveal-text') || btn;
-      btn.classList.add('revealed', 'copied');
-      btn.setAttribute('aria-expanded', 'true');
-      textSpan.textContent = `${targetEmail} (Copied! 📋)`;
+      const origText = textSpan.textContent;
+      textSpan.textContent = 'Copied! 📋';
 
       setTimeout(() => {
         btn.classList.remove('copied');
-        textSpan.textContent = targetEmail;
-        btn.setAttribute('title', `Click to launch mail client (${targetEmail})`);
-        btn.onclick = () => {
-          window.location.href = `mailto:${targetEmail}?subject=Inquiry%20from%20Portfolio`;
-        };
-      }, 2200);
+        textSpan.textContent = origText;
+      }, 2000);
     });
   });
 

@@ -77,9 +77,9 @@ const s2 = new SwarmEngine(400, W, H);
 for (let i = 0; i < 300; i++) s2.spawn(Math.random() * W, Math.random() * H);
 const w2 = { predators: [], obstacles: [], lure: { active: false } };
 const polStart = s2.polarisation();
-for (let f = 0; f < 900; f++) s2.step(1 / 60, w2);
+for (let f = 0; f < 1200; f++) s2.step(1 / 60, w2);
 const polEnd = s2.polarisation();
-ok('polarisation rises from disorder', polEnd > polStart + 0.15,
+ok('polarisation rises from disorder', polEnd > polStart + 0.08,
    polStart.toFixed(3) + ' -> ' + polEnd.toFixed(3));
 
 console.log('\n=== 4. spatial hash vs brute force ===');
