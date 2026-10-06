@@ -2949,3 +2949,35 @@ button {
   text-decoration: underline;
 }
 
+
+/* 2.5D aquarium tank (hero). The SVG stays as a no-JS fallback. */
+.tank-25d-frame {
+  background: #062636;
+}
+
+.tank-25d-frame .aquarium-25d {
+  display: none;
+  width: 100%;
+  height: clamp(340px, 34vw, 440px);
+  cursor: pointer;
+}
+
+.tank-25d-frame.is-live .aquarium-25d {
+  display: block;
+}
+
+.tank-25d-frame.is-live .tank-25d-fallback {
+  display: none;
+}
+
+.tank-25d-frame .radar-interactive-prompt {
+  opacity: 0.82;
+}
+
+@media (max-width: 600px) {
+  .radar-viewport-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+}

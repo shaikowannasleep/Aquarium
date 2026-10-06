@@ -16,6 +16,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/portfolio.css">
   <script src="assets/portfolio.js" defer></script>
+  <script src="assets/aquarium25d.js" defer></script>
 </head>
 <body id="top">
   <a class="skip-link" href="#main">Skip to subsea operations</a>
@@ -208,15 +209,15 @@
             <div class="radar-viewport-header">
               <div class="radar-indicator">
                 <span class="sonar-beacon"></span>
-                <span>SUBSEA RADAR // LIVE SIMULATION</span>
+                <span>LIVE TANK // 2.5D SIMULATION</span>
               </div>
               <div class="radar-coordinates">SECTOR 01 / BOIDS FLOCKING</div>
             </div>
             
-            <div class="radar-screen-frame">
+            <div class="radar-screen-frame tank-25d-frame" data-aquarium-25d>
               <a href="apps/aquarium/" class="radar-screen-link" aria-label="Launch interactive Aquarium simulation">
-                <div class="radar-scan-line" aria-hidden="true"></div>
-                <img src="apps/aquarium/aquarium.svg" alt="Live interactive Aquarium simulation generated from GitHub repositories" class="radar-svg-display" loading="eager">
+                <canvas class="aquarium-25d" aria-hidden="true"></canvas>
+                <img src="apps/aquarium/aquarium.svg" alt="Live interactive Aquarium simulation generated from GitHub repositories" class="radar-svg-display tank-25d-fallback" loading="eager">
                 <div class="radar-interactive-prompt">
                   <span class="prompt-pulse-dot"></span>
                   <span>CLICK TO DIVE INTO LIVE AQUARIUM SIMULATION ↗</span>
@@ -227,7 +228,7 @@
             <div class="radar-viewport-footer">
               <div class="radar-meta-item">
                 <span class="meta-label">ECOSYSTEM:</span>
-                <span class="meta-val">Boids Flocking Algorithm · SVG/SMIL · Canvas</span>
+                <span class="meta-val">3D Boids Flocking · Perspective Canvas · Zero Dependencies</span>
               </div>
               <div class="radar-meta-item">
                 <span class="meta-label">PHILOSOPHY:</span>
