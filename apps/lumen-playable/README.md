@@ -83,7 +83,7 @@ counting sort integrity ........ PASS (5/5 invariants)
 1800-step stability ............ PASS (0 NaN, 700/700 contained)
 emergence (φ 0.061 -> 0.345) ... PASS
 pair-test reduction ............ 98.0%
-step cost @1000 agents ......... 6.25 ms  (60fps budget 16.6)
+step cost @1000 agents ......... 1.71 ms  (60fps budget 16.6ms)
 O(1) swap-remove ............... PASS
 ```
 
@@ -91,34 +91,66 @@ Reproduce: `node test/headless.js`
 
 ---
 
-## 5. Build
+## 5. Project Outputs & Deliverables
 
-```bash
-node build.js      # -> dist/index.html, fully self-contained
-node test/headless.js
-python3 -m http.server 8080 -d src   # live dev
-```
-
-No engine, no framework, no assets, no network calls. Audio is synthesised
-from oscillators at runtime, so there is not a single byte of media in
-the bundle.
+| Artifact | Đường dẫn | Tiêu chuẩn kỹ thuật |
+|---|---|---|
+| **Playable Ad Distribution** | `apps/lumen-playable/dist/index.html` | ~103 KB (gzip ~60 KB), 0 requests, tương thích mạng quảng cáo: Unity, Mintegral, AppLovin, IronSource, Meta Playable Ads. |
+| **Published Hub Route** | `docs/apps/lumen-playable/index.html` | Được đồng bộ để chạy trên GitHub Pages và Device Simulator. |
 
 ---
 
-## 6. Talking points for the interview
+## 6. Chi tiết các hàm và lớp trong từng module
 
-1. **"Why topological instead of metric neighbours?"** — Metric breaks in
-   dense clumps (cost explodes, and real starlings don't do it). Topological
-   keeps cost bounded and density-invariant.
-2. **"Why is separation weighted highest with the smallest radius?"** —
-   Collision avoidance must dominate locally but must not fight cohesion
-   globally, otherwise the flock oscillates.
-3. **"Why does the lure repel at the core?"** — Prevents the singularity
-   collapse; also creates the orbiting halo that reads as "alive".
-4. **"How would this scale to 50k?"** — Same grid, moved to a compute
-   shader: build the hash with a GPU prefix scan, double-buffer positions,
-   one thread per agent. The CPU structure here is already SoA, so the
-   port is mechanical.
-5. **"Would you run this server-authoritative in multiplayer?"** — No.
-   Float divergence desyncs instantly. Flocking stays client-side cosmetic
-   unless you quantise to fixed-point.
+### 6.1 `src/engine.js` (SwarmEngine)
+Lõi mô phỏng boids Reynolds thu nhỏ cho môi trường Playable Ad.
+
+- `clamp(v, a, b)`: Hàm kẹp giá trị số.
+- `lerp(a, b, t)`: Hàm nội suy tuyến tính.
+- `rand(a, b)`: Hàm sinh số thực ngẫu nhiên.
+- `defaultParams()`: Thiết lập các thông số động học của đàn cá:
+  - Bán kính cảm nhận: `rSep: 18`, `rAli: 42`, `rCoh: 52`.
+  - Giới hạn góc nhìn: `fov: -0.35` (tạo vùng điểm mù phía sau đuôi cá $\sim 110^\circ$).
+  - Trọng số lực: `wSep: 2.10`, `wAli: 1.05`, `wCoh: 0.95`, `wFlee: 4.60`, `wAvoid: 5.20`, `wLure: 2.40`, `wBounds: 3.40`.
+  - Tốc độ: `minSpeed: 46`, `maxSpeed: 132`, `maxForce: 260`, `panicSpeedBoost: 1.55`.
+  - Số lân cận tối đa: `maxNeighbours: 7` (Ballerini et al. 2008).
+- **Lớp `SwarmEngine`:**
+  - `constructor(capacity, width, height)`: Khởi tạo các mảng TypedArrays SoA (`px`, `py`, `vx`, `vy`, `ax`, `ay`, `tx`, `ty`, `stress`, `phase`, `speedScale`, `species`, `alive`).
+  - `resize(w, h)`: Cập nhật số hàng, cột của lưới không gian.
+  - `spawn(x, y, speed, speciesId)`: Sinh cá thể mới, gán vận tốc ngẫu nhiên và pha dao động đuôi.
+  - `removeAt(i)`: Loại bỏ phần tử `i` trong $O(1)$ bằng kỹ thuật swap-remove.
+  - `buildGrid()`: Sắp xếp các cá thể vào lưới ô vuông thông qua Counting Sort hoàn toàn không cấp phát bộ nhớ.
+  - `step(dt, world)`: Cập nhật 1 bước mô phỏng: tính toán va chạm, tìm kiếm lân cận trong 9 ô xung quanh, tổng hợp các lực Reynolds, kẹp lực gia tốc `maxForce`, kẹp vận tốc `minSpeed` - `maxSpeed`, đẩy lùi khi chạm biên mềm.
+  - `polarisation()`: Tính toán chỉ số căn chỉnh hướng toàn bầy cá.
+  - `each(fn)`: Hàm tiện ích duyệt qua các cá thể đang sống.
+
+### 6.2 `src/game.js` (Playable Scene & State Machine)
+Quản lý chuỗi 3 màn chơi (3 beats), giao diện, hiệu ứng âm thanh và Call to Action (CTA).
+
+- **Module `Sprites`:**
+  - `draw(g, name, x, y, width, angle, alpha)`: Vẽ sprite xoay góc từ chuỗi Base64.
+  - `drawSideSprite(g, name, x, y, width, vx, vy, facing, alpha)`: Vẽ sprite góc nhìn nghiêng (side-view), tự động lật mặt trái/phải (`facing`) và tính góc nghiêng dốc (`pitch`) theo vận tốc dọc.
+- **Module `Sfx`:**
+  - `ctx()`: Khởi tạo hoặc tiếp tục `AudioContext` khi có tương tác đầu tiên của người dùng.
+  - `tone(freq, dur, type, vol)`: Bộ tổng hợp sóng âm đơn (oscillator) không cần nạp file âm thanh bên ngoài.
+  - `unlock()`: Đánh thức AudioContext.
+  - `pickup(n)`: Âm thanh thu nạp cá.
+  - `win()`: Hợp âm chúc mừng chiến thắng 4 nốt.
+  - `hit()`: Âm thanh va chạm hoặc mất cá (sawtooth wave).
+  - `swell()`: Âm thanh rền vang khi cá mập xuất hiện.
+- **Lớp `Game`:**
+  - `constructor(root)`: Khởi tạo DOM, Canvas 2D context, gắn các event listener (touch/mouse).
+  - `resize()`: Đồng bộ kích thước màn hình điện thoại (portrait & landscape).
+  - `initBeat1()`: Khởi tạo Beat 1 (Cohesion) - gom 9 đàn cá rải rác.
+  - `initBeat2()`: Khởi tạo Beat 2 (Separation) - dắt đàn cá qua hẻm núi đá san hô.
+  - `initBeat3()`: Khởi tạo Beat 3 (Alignment) - duy trì độ trật tự $\phi > 0.72$ khi cá mập đầu búa tấn công.
+  - `onWin()`: Kích hoạt màn hình End Card / CTA dẫn người chơi tới App Store / Google Play.
+  - `renderTechOverlay()`: Vẽ biểu đồ vector phân tích lực tách, căn chỉnh và hút bầy trực tiếp trên cá thể đang theo dõi.
+
+### 6.3 `build.js` (Bộ Đóng Gói Playable Single-File)
+- `squeeze(js)`: Minifier bảo thủ, giữ lại các ký tự ngắt dòng kết thúc câu lệnh để ngăn ngừa lỗi ASI.
+- Đọc `style.css` và nhúng vào thẻ `<style>`.
+- Inlined các ảnh sprite (`cyan_fish.png`, `hammerhead_shark.png`, `sea_anemone.png`) thành base64 data URIs.
+- Gộp mã nguồn `soft-lure.js`, `engine.js`, `game.js`.
+- Sử dụng Node.js `vm.Script` để kiểm tra lỗi cú pháp của bundle trước khi ghi ra file `dist/index.html`.
+- Kiểm tra nghiêm ngặt không cho phép bất kỳ thẻ `<script src>` hoặc `<link href>` nào sống sót.

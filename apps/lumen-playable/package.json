@@ -1,0 +1,13 @@
+{
+  "name": "lumen-playable",
+  "version": "1.0.0",
+  "description": "Lumen playable ad: Reynolds boids flocking as playable ad verbs (cohesion, separation, alignment) with 0 GC and zero external requests.",
+  "scripts": {
+    "build": "node build.js",
+    "test": "node test/headless.js",
+    "serve": "python3 -m http.server 8090 -d src"
+  },
+  "keywords": ["boids", "playable-ads", "canvas", "game", "luna"],
+  "license": "MIT",
+  "private": false
+}
