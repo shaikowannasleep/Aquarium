@@ -79,3 +79,17 @@ Lớp điều khiển chính của toàn bộ Hub.
   - Vô hiệu hóa menu chuột phải (`contextmenu` event).
   - Chặn phím tắt mở DevTools của trình duyệt: `F12`, `Ctrl+Shift+I`, `Ctrl+Shift+J`, `Ctrl+Shift+C`.
   - Chặn phím tắt xem mã nguồn hoặc lưu trang: `Ctrl+U`, `Ctrl+S`.
+
+---
+
+## Roadmap
+
+> Trước đây nằm trong nút "Upgrade Roadmap" trên giao diện, nay chuyển vào README.
+
+| # | Milestone | Trạng thái | Nội dung |
+| --- | --- | --- | --- |
+| 1 | 📱 Multi-Device Matrix & Presets | ✅ Live | Preset nhiều máy thật (iPhone SE/14/15 Pro Max, Pixel 8, Galaxy S24, Galaxy A15, Galaxy Tab, iPad) với tỉ lệ + tai thỏ/đục lỗ đúng máy; chế độ **So sánh máy** chạy cùng 1 ad trên 4 máy song song; xoay dọc/ngang; zoom 40–300% (mặc định 90%). |
+| 2 | 🛡️ Anti-Ripping & Tamper Defense | ✅ Live | Chặn mở tab độc lập, khóa domain `shaikowannasleep.github.io`, chặn F12 / Ctrl+Shift+I / Ctrl+U / Ctrl+S / chuột phải, bẫy debugger. |
+| 3 | ⚡ Real-Time Playable Telemetry HUD | 🚧 Đang làm | Overlay FPS (kèm 1% low), ngân sách CPU WebGL, cảnh báo GC trong vòng lặp, theo dõi dung lượng bundle (≤ 5 MB/network). |
+| 4 | 🎯 Ad Network Simulator Profiles | 🗓️ Dự kiến | Mock vòng đời SDK + MRAID 3.0 (AppLovin/MAX, IronSource, Unity Ads, Mintegral, TikTok), chặn CTA với payload campaign, harness test end-card. |
+| 5 | 🤖 GitHub Actions Automated Deployer | 🗓️ Dự kiến | Thả zip build Luna vào repo → tự sinh mục `config.js` và chèn shield chống rip. |

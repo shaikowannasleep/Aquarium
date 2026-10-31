@@ -35,7 +35,7 @@ const APP_CONFIG = {
     showCategoryCount: true,
 
     // Hide empty tabs
-    hideEmptyCategories: false,
+    hideEmptyCategories: true,
 
     categories: [
         { key: 'all', label: 'All' },
@@ -49,33 +49,27 @@ const APP_CONFIG = {
     // Games directory catalog: files are stored in ./playable/category/<folder>/<version>.html
     games: [
         {
-            folder: 'puzzle-screwout',
-            name: 'ScrewOut V32 (Physics & Screws)',
-            category: 'puzzle',
-            versions: ['v1']
-        },
-        {
-            folder: 'casual-lumen',
-            name: 'Lumen (Luna / WebGL Playable)',
-            category: 'casual',
-            versions: ['v1']
-        },
-        {
             folder: 'casual-garan',
             name: 'Idle RPG (Three.js 3D)',
             category: 'playable',
             versions: ['v1']
         },
         {
-            folder: 'action-abyss',
-            name: 'Abyssal Dive (Flow-field & Boids)',
-            category: 'action',
+            folder: 'comrade-act-normal',
+            name: 'Comrade, Act Normal',
+            category: 'playable',
             versions: ['v1']
         },
         {
-            folder: 'sim-aquarium',
-            name: 'Aquarium Living Simulation',
-            category: 'simulation',
+            folder: 'stage-6-applovin',
+            name: 'Treasure Tycoon Stage 6 (AppLovin)',
+            category: 'playable',
+            versions: ['v1']
+        },
+        {
+            folder: 'sandbus-applovin',
+            name: 'Sandbus (AppLovin)',
+            category: 'playable',
             versions: ['v1']
         }
     ]

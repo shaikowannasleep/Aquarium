@@ -366,6 +366,7 @@ svg {
 }
 
 #control-panel {
+    overflow-x: hidden;
     scrollbar-width: thin;
     scrollbar-color: hsl(var(--border)) transparent;
 }
@@ -1406,6 +1407,16 @@ input[type="range"]::-moz-range-thumb {
         display: none !important;
     }
 
+    /* Phone play: game-card tap sets body.fullscreen-mode (see script.js playVersion),
+       which shows the stage edge-to-edge and the floating exit/mute bar */
+    body.fullscreen-mode .stage {
+        display: block !important;
+    }
+
+    body.fullscreen-mode #fs-controls {
+        display: flex !important;
+    }
+
     .sidebar {
         display: block;
         min-height: 0;
@@ -1417,28 +1428,92 @@ input[type="range"]::-moz-range-thumb {
         top: 0;
         z-index: 20;
         background: hsl(var(--background));
+        padding: 10px 12px;
+    }
+
+    /* 16px stops iOS Safari from zooming in when the search box is focused */
+    .search-input {
+        height: 44px;
+        font-size: 16px;
+    }
+
+    .filter-btn {
+        min-height: 36px;
+        font-size: 13px;
+        padding: 0 12px;
     }
 
     .games-list {
         flex: none;
         min-height: 0;
         overflow: visible;
+        padding: 10px 12px 24px;
+    }
+
+    .game-card {
+        padding: 12px;
     }
 
     .game-versions {
-        grid-template-columns: repeat(auto-fill, minmax(58px, 1fr));
-        gap: 6px;
+        grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+        gap: 8px;
     }
 
+    /* 44px is the minimum comfortable touch target */
     .version-item {
-        padding: 9px 4px;
-        font-size: 12.5px;
+        min-height: 44px;
+        padding: 8px 4px;
+        font-size: 13px;
     }
 
     .topbar {
         position: sticky;
         top: 0;
         z-index: 30;
+    }
+
+    /* Topbar is a fixed 60px row on desktop; on phones let it wrap instead of overflowing */
+    .topbar-inner {
+        height: auto;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 10px max(12px, env(safe-area-inset-right)) 10px max(12px, env(safe-area-inset-left));
+    }
+
+    .brand {
+        flex: 1 1 auto;
+    }
+
+    .brand-title {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .topbar-actions {
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-left: auto;
+    }
+
+    .btn-return-portfolio {
+        min-height: 40px;
+        white-space: nowrap;
+    }
+
+    .btn-topbar-action {
+        min-height: 40px;
+    }
+
+    /* Floating controls on the phone play view: bigger hit areas, always readable */
+    body.fullscreen-mode #fs-controls {
+        top: max(12px, env(safe-area-inset-top));
+    }
+
+    body.fullscreen-mode .exit-fullscreen-btn,
+    body.fullscreen-mode #fs-controls .mute-btn {
+        min-width: 44px;
+        min-height: 44px;
+        opacity: 0.85;
     }
 }
 
@@ -1532,16 +1607,18 @@ input[type="range"]::-moz-range-thumb {
 
 .preset-device-buttons {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    /* minmax(0, ...) so long names shrink instead of widening the panel */
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 6px;
     margin-top: 8px;
 }
 
 .preset-device-btn {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 10px;
+    gap: 6px;
+    min-width: 0;
+    padding: 7px 8px;
     background: hsl(var(--muted));
     border: 1.5px solid hsl(var(--border));
     border-radius: 8px;
@@ -1552,13 +1629,15 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .preset-device-btn .preset-icon {
-    font-size: 20px;
+    flex: none;
+    font-size: 18px;
     line-height: 1;
 }
 
 .preset-device-btn .preset-info {
     display: flex;
     flex-direction: column;
+    min-width: 0;
     overflow: hidden;
 }
 
@@ -1575,6 +1654,8 @@ input[type="range"]::-moz-range-thumb {
     font-size: 9.5px;
     color: hsl(var(--muted-foreground));
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .preset-device-btn:hover {
@@ -1590,6 +1671,29 @@ input[type="range"]::-moz-range-thumb {
 
 .preset-device-btn.active .preset-name {
     color: #00a8ff;
+}
+
+/* Laptop / small desktop (901-1280px): the right panel is only 240px, so the
+   preset cards stack one per row and their text may shrink instead of spilling out.
+   Must stay after the base .preset-device-* rules above so it wins the cascade. */
+@media (min-width: 901px) and (max-width: 1280px) {
+    .preset-device-buttons {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .preset-device-btn,
+    .preset-device-btn .preset-info,
+    .preset-device-btn .preset-name,
+    .preset-device-btn .preset-specs {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    #control-panel {
+        overflow-x: hidden;
+    }
 }
 
 /* Modals */
@@ -1693,90 +1797,6 @@ input[type="range"]::-moz-range-thumb {
     color: #c9d8ea;
 }
 
-/* Roadmap Grid & Timeline */
-.roadmap-timeline {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.roadmap-card {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
-    padding: 16px;
-    transition: border-color 0.2s ease;
-}
-
-.roadmap-card:hover {
-    border-color: rgba(0, 168, 255, 0.4);
-}
-
-.roadmap-card.completed {
-    border-left: 4px solid #00ffc2;
-}
-
-.roadmap-card.in-progress {
-    border-left: 4px solid #00a8ff;
-}
-
-.roadmap-card.planned {
-    border-left: 4px solid #a855f7;
-}
-
-.roadmap-card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 8px;
-}
-
-.roadmap-phase-title {
-    font-size: 15px;
-    font-weight: 700;
-    color: #ffffff;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.roadmap-badge {
-    padding: 3px 9px;
-    border-radius: 20px;
-    font-size: 10.5px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.roadmap-badge.done {
-    background: rgba(0, 255, 194, 0.15);
-    color: #00ffc2;
-    border: 1px solid rgba(0, 255, 194, 0.3);
-}
-
-.roadmap-badge.wip {
-    background: rgba(0, 168, 255, 0.15);
-    color: #00a8ff;
-    border: 1px solid rgba(0, 168, 255, 0.3);
-}
-
-.roadmap-badge.future {
-    background: rgba(168, 85, 247, 0.15);
-    color: #c084fc;
-    border: 1px solid rgba(168, 85, 247, 0.3);
-}
-
-.roadmap-list {
-    margin: 8px 0 0 0;
-    padding-left: 20px;
-    color: #9cb1cb;
-}
-
-.roadmap-list li {
-    margin-bottom: 4px;
-}
-
 /* Security Code Snippet Box */
 .security-alert-box {
     display: flex;
@@ -1828,16 +1848,22 @@ input[type="range"]::-moz-range-thumb {
 }
 
 /* Footer Credit */
-.footer-content {
-    text-align: center;
-    padding: 16px 20px;
-    font-size: 12px;
-    color: hsl(var(--muted-foreground));
+.footer {
+    flex-shrink: 0;
+    background: hsl(var(--background));
     border-top: 1px solid hsl(var(--border) / 0.6);
 }
 
+.footer-content {
+    text-align: center;
+    padding: 6px 16px;
+    font-size: 11px;
+    line-height: 1.4;
+    color: hsl(var(--muted-foreground));
+}
+
 .footer-author {
-    margin-bottom: 4px;
+    margin-bottom: 2px;
     color: hsl(var(--foreground));
 }
 
@@ -1846,7 +1872,7 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .footer-credit {
-    font-size: 11.5px;
+    font-size: 10.5px;
     color: hsl(var(--muted-foreground));
 }
 
@@ -1856,3 +1882,219 @@ input[type="range"]::-moz-range-thumb {
     text-underline-offset: 2px;
 }
 
+
+/* ------------------------- Compare devices ------------------------- */
+.compare-btn {
+    margin-top: 10px;
+}
+
+.compare-btn._active {
+    background: #00a8ff;
+    border-color: #00a8ff;
+    color: #04121f;
+}
+
+.compare-btn._active svg {
+    color: inherit;
+}
+
+#compare-grid {
+    display: none;
+    position: absolute;
+    inset: 0;
+    flex-direction: column;
+    padding: 12px 16px 16px;
+    gap: 10px;
+}
+
+body.compare-mode #compare-grid {
+    display: flex;
+}
+
+body.compare-mode #device-container,
+body.compare-mode .stage-empty {
+    display: none;
+}
+
+.compare-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.compare-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+}
+
+.compare-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.compare-chip {
+    padding: 4px 10px;
+    font: inherit;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: hsl(var(--muted-foreground));
+    background: hsl(var(--muted));
+    border: 1px solid hsl(var(--border));
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.compare-chip:hover {
+    border-color: #00a8ff;
+}
+
+.compare-chip.active {
+    color: #00a8ff;
+    background: rgba(0, 168, 255, 0.14);
+    border-color: #00a8ff;
+}
+
+.compare-cells {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    gap: 18px;
+    align-content: center;
+    justify-content: center;
+    align-items: end;
+    justify-items: center;
+}
+
+.compare-empty {
+    display: none;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    color: hsl(var(--muted-foreground));
+    font-size: 13px;
+}
+
+#compare-grid:not(.has-build) .compare-cells {
+    display: none;
+}
+
+#compare-grid:not(.has-build) .compare-empty {
+    display: flex;
+}
+
+.compare-cell {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.compare-cell figcaption {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.2;
+    height: 28px;
+}
+
+.compare-cell figcaption strong {
+    font-size: 12px;
+    color: hsl(var(--foreground));
+}
+
+.compare-cell figcaption span {
+    font-size: 10.5px;
+    color: hsl(var(--muted-foreground));
+}
+
+.compare-frame {
+    border: calc(8px * var(--cmp-scale, 1)) solid #111114;
+    border-radius: calc(var(--device-radius, 26px) * var(--cmp-scale, 1));
+    background: #111114;
+    box-shadow: var(--shadow-lg);
+}
+
+.dark .compare-frame {
+    box-shadow: 0 0 0 1px hsl(var(--border)), var(--shadow-lg);
+}
+
+.compare-screen {
+    position: relative;
+    overflow: hidden;
+    border-radius: max(0px, calc((var(--device-radius, 26px) - 8px) * var(--cmp-scale, 1)));
+    background: #000;
+    line-height: 0;
+}
+
+.compare-screen iframe {
+    display: block;
+    border: none;
+}
+
+/* Cutouts reuse the --cut-* sizes of .device-style-<key>, scaled to the cell */
+.compare-cutout {
+    display: none;
+    position: absolute;
+    z-index: 5;
+    background: #000;
+    pointer-events: none;
+    width: calc(var(--cut-long) * var(--cmp-scale, 1));
+    height: calc(var(--cut-short) * var(--cmp-scale, 1));
+    top: calc(var(--cut-inset) * var(--cmp-scale, 1));
+    border-radius: var(--cut-radius);
+}
+
+.cmp-cut .compare-cutout {
+    display: block;
+}
+
+.cmp-align-center .compare-cutout {
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.cmp-align-start .compare-cutout {
+    left: calc(var(--cut-side) * var(--cmp-scale, 1));
+}
+
+.cmp-align-end .compare-cutout {
+    right: calc(var(--cut-side) * var(--cmp-scale, 1));
+}
+
+.cmp-landscape .compare-cutout {
+    top: auto;
+    left: calc(var(--cut-inset) * var(--cmp-scale, 1));
+    width: calc(var(--cut-short) * var(--cmp-scale, 1));
+    height: calc(var(--cut-long) * var(--cmp-scale, 1));
+    border-radius: var(--cut-radius-l, var(--cut-radius));
+}
+
+.cmp-landscape .cmp-align-center .compare-cutout {
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.cmp-landscape .cmp-align-start .compare-cutout {
+    bottom: calc(var(--cut-side) * var(--cmp-scale, 1));
+    transform: none;
+}
+
+.cmp-landscape .cmp-align-end .compare-cutout {
+    top: calc(var(--cut-side) * var(--cmp-scale, 1));
+    transform: none;
+}
+
+/* Phones only show the list, the compare grid has no room there */
+@media (max-width: 900px) {
+    #compare-grid,
+    .compare-btn {
+        display: none !important;
+    }
+}

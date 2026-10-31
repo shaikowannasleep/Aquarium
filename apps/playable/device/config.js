@@ -23,10 +23,17 @@ const DEVICE_CONFIG = {
     renderScale: 1,
 
     /**
+     * Default preview zoom in percent (40 - 300). 90 fits a portrait phone
+     * at a readable size on a typical laptop screen.
+     */
+    defaultZoom: 90,
+
+    /**
      * Default corner radius of the phone frame, in pixels.
      * The screen radius follows automatically (frame radius minus the bezel).
+     * 52 matches the iPhone 14 Pro Max preset.
      */
-    cornerRadius: 26,
+    cornerRadius: 52,
 
     /** Show the iPhone-style home indicator bar by default. */
     homeBar: true,

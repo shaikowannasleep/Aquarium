@@ -3,7 +3,6 @@
  * - Fast directory-based build loader
  * - Search & category filtering
  * - Security shield: Anti-ripping & shortcut protection
- * - Roadmap modal controller
  * 
  * Special thanks to minhtq.dev for the playable previewer architecture inspiration.
  */
@@ -29,9 +28,6 @@ class GameListManager {
             noResults: document.getElementById('noResults'),
             searchInput: document.getElementById('searchInput'),
             stageEmpty: document.getElementById('stageEmpty'),
-            roadmapBtn: document.getElementById('roadmapToggleBtn'),
-            roadmapModal: document.getElementById('roadmapModal'),
-            roadmapCloseBtn: document.getElementById('roadmapCloseBtn'),
             securityBtn: document.getElementById('securityShieldBtn'),
             securityModal: document.getElementById('securityModal'),
             securityCloseBtn: document.getElementById('securityCloseBtn'),
@@ -171,22 +167,6 @@ class GameListManager {
             });
         }
 
-        // Roadmap modal
-        if (this.elements.roadmapBtn && this.elements.roadmapModal) {
-            this.elements.roadmapBtn.addEventListener('click', () => {
-                this.elements.roadmapModal.classList.add('active');
-            });
-        }
-        if (this.elements.roadmapCloseBtn && this.elements.roadmapModal) {
-            this.elements.roadmapCloseBtn.addEventListener('click', () => {
-                this.elements.roadmapModal.classList.remove('active');
-            });
-            this.elements.roadmapModal.addEventListener('click', (e) => {
-                if (e.target === this.elements.roadmapModal) {
-                    this.elements.roadmapModal.classList.remove('active');
-                }
-            });
-        }
 
         // Security Shield modal
         if (this.elements.securityBtn && this.elements.securityModal) {
@@ -211,7 +191,7 @@ class GameListManager {
                 const codeBlock = document.querySelector('.security-code-block code');
                 if (codeBlock) {
                     const text = codeBlock.textContent;
-                    navigator.clipboard.writeText(text).then(() => {
+                    const showCopied = () => {
                         const originalText = this.elements.btnCopySecurity.textContent;
                         this.elements.btnCopySecurity.textContent = 'Copied! ✓';
                         this.elements.btnCopySecurity.style.background = '#00ffc2';
@@ -221,36 +201,69 @@ class GameListManager {
                             this.elements.btnCopySecurity.style.background = '';
                             this.elements.btnCopySecurity.style.color = '';
                         }, 2000);
-                    }).catch(() => {
-                        alert('Code copied to clipboard!');
-                    });
+                    };
+                    // navigator.clipboard is undefined on file:// and on insecure origins
+                    if (navigator.clipboard && window.isSecureContext) {
+                        navigator.clipboard.writeText(text).then(showCopied).catch(() => this.copyWithFallback(text, showCopied));
+                    } else {
+                        this.copyWithFallback(text, showCopied);
+                    }
                 }
             });
         }
     }
 
+    /**
+     * Copies text with a hidden textarea + execCommand, for when the async
+     * Clipboard API is not available.
+     */
+    copyWithFallback(text, onCopied) {
+        const area = document.createElement('textarea');
+        area.value = text;
+        area.setAttribute('readonly', '');
+        area.style.position = 'fixed';
+        area.style.opacity = '0';
+        document.body.appendChild(area);
+        area.select();
+        let ok = false;
+        try {
+            ok = document.execCommand('copy');
+        } catch (e) {
+            ok = false;
+        }
+        area.remove();
+        if (ok) {
+            onCopied();
+        } else {
+            alert('Copy failed. Select the code and copy it manually.');
+        }
+    }
+
     /* ------------------------------------------------------------------ *
-     * Security Shield: Anti-Ripping & Anti-Inspection
+     * Security Shield: Disable-Devtool Integration & Crash Protocol
      * ------------------------------------------------------------------ */
     setupSecurityShield() {
-        // Prevent right-click context menu
-        window.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            return false;
-        }, true);
-
-        // Prevent F12 and DevTools shortcuts
-        window.addEventListener('keydown', (e) => {
-            if (
-                e.key === 'F12' ||
-                (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) ||
-                (e.ctrlKey && (e.key === 'U' || e.key === 'u' || e.key === 'S' || e.key === 's'))
-            ) {
-                e.preventDefault();
-                e.stopPropagation();
-                return false;
-            }
-        }, true);
+        if (typeof DisableDevtool !== 'undefined') {
+            DisableDevtool({
+                md5: '625d45c587033e8970af8b4e3fdb575c', // Bypass token: ?ddtk=dung
+                tkName: 'ddtk',
+                // Leave quietly: no page wipe or history loop (those freeze the tab and
+                // misfire on viewport emulation / small screens)
+                ondevtoolopen() {
+                    try { window.location.replace('about:blank'); } catch (e) {}
+                },
+                disableMenu: true,
+                clearLog: true,
+                disableIframeParents: true
+            });
+        } else {
+            window.addEventListener('keydown', (e) => {
+                const key = e.key ? e.key.toUpperCase() : '';
+                if (e.key === 'F12' || (e.ctrlKey && (key === 'U' || key === 'S'))) {
+                    e.preventDefault();
+                }
+            }, true);
+        }
     }
 
     /* ------------------------------------------------------------------ *
@@ -331,28 +344,22 @@ class GameListManager {
     playVersion(path, key) {
         if (!path) return;
 
-        if (this.isMobile()) {
-            const link = document.createElement('a');
-            link.href = path;
-            link.target = '_blank';
-            link.rel = 'noopener';
-            document.body.append(link);
-            link.click();
-            link.remove();
-            return;
+        if (window.deviceApi) {
+            this.currentVersionKey = key;
+            window.deviceApi.load(path);
+            document.body.classList.add('has-game');
+
+            if (this.elements.stageEmpty) {
+                this.elements.stageEmpty.style.display = 'none';
+            }
+
+            // Phones hide the device frame, so play the build full screen instead
+            if (this.isMobile() && window.deviceApi.enterFullscreen) {
+                window.deviceApi.enterFullscreen();
+            }
+
+            this.markActiveVersion();
         }
-
-        if (!window.deviceApi) return;
-
-        this.currentVersionKey = key;
-        window.deviceApi.load(path);
-        document.body.classList.add('has-game');
-
-        if (this.elements.stageEmpty) {
-            this.elements.stageEmpty.style.display = 'none';
-        }
-
-        this.markActiveVersion();
     }
 
     markActiveVersion() {

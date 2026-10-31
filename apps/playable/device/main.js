@@ -163,7 +163,7 @@ class Device {
         // No transform: scaling a rasterised iframe is exactly what made deep zoom
         // blurry. The frame is rebuilt at its real pixel size instead, which is how
         // fullscreen stays crisp.
-        const screenScale = Math.min(300, Math.max(40, parseInt(this.storage.getParameter("screenScale"), 10) || 80));
+        const screenScale = Math.min(300, Math.max(40, parseInt(this.storage.getParameter("screenScale"), 10) || Device.DEFAULT_SCALE));
 
         this.parent.style.transform = "none";
         document.documentElement.style.setProperty("--device-zoom", screenScale / 100);
@@ -202,15 +202,18 @@ class Device {
             height = baseWidth;
         }
 
-        const zoom = Math.min(300, Math.max(40, parseInt(this.storage.getParameter("screenScale"), 10) || 80)) / 100;
+        const zoom = Math.min(300, Math.max(40, parseInt(this.storage.getParameter("screenScale"), 10) || Device.DEFAULT_SCALE)) / 100;
 
         this.iframe.style.width = `${Math.round(width * zoom)}px`;
         this.iframe.style.height = `${Math.round(height * zoom)}px`;
 
         // Engines cache the frame size, so nudge them after the frame changed
-        setTimeout(() => {
+        clearTimeout(this.resizeTimer);
+        this.resizeTimer = setTimeout(() => {
             const win = this.getFrameWindow();
             if (win) {
+                // Frame size changed: allow the engine to be re-tuned once more
+                win.__deviceRatioLifted = null;
                 liftEnginePixelRatioCap(win, Device.renderScale);
             }
         }, 60);
@@ -254,14 +257,15 @@ class Device {
         if (typeof this.onFrameReady !== "function") {
             return;
         }
-        if (this.frameWatcher) {
-            clearInterval(this.frameWatcher);
-        }
+        // Cancel the previous watch completely (interval AND its pending switch
+        // timer), otherwise an old timer can clear the fresh fast poll early
+        clearInterval(this.frameWatcher);
+        clearTimeout(this.watchTimer);
 
         this.onFrameReady();
         // Poll hard for 5s to get in before the game sets up audio/canvas
         this.frameWatcher = setInterval(() => this.onFrameReady(), 16);
-        setTimeout(() => {
+        this.watchTimer = setTimeout(() => {
             clearInterval(this.frameWatcher);
             // Then poll slowly to catch late child frames or audio
             this.frameWatcher = setInterval(() => this.onFrameReady(), 1000);
@@ -758,6 +762,12 @@ function liftEnginePixelRatioCap(win, scale) {
         if (!view || typeof view.setDesignResolutionSize !== "function") {
             return;
         }
+        // Done for this frame size: callers poll this, so do the work only once
+        // (Device.resize clears the flag when the frame changes)
+        if (win.__deviceRatioLifted === scale) {
+            return;
+        }
+        win.__deviceRatioLifted = scale;
 
         const frame = view._frameSize;
         const sameRatio = view._devicePixelRatio >= scale;
@@ -1062,77 +1072,76 @@ class RadiusControl {
 }
 
 /**
- * Device model presets manager (e.g., iPhone 14 Pro Max vs iPad Pro).
+ * Real phone/tablet models: screen ratio + cutout + frame radius.
+ * Ratios are the actual panel ratios (long side / short side).
+ */
+const DEVICE_PRESETS = [
+    { key: "iphone-se", name: "iPhone SE", icon: "📱", screen: "16_9", style: "none", radius: 18, specs: "16:9 · No notch" },
+    { key: "iphone-14", name: "iPhone 14", icon: "📱", screen: "X", style: "notch", radius: 46, specs: "19.5:9 · Notch" },
+    { key: "ip14promax", name: "iPhone 15 Pro Max", icon: "📱", screen: "X", style: "island", radius: 52, specs: "19.5:9 · Island" },
+    { key: "pixel-8", name: "Pixel 8", icon: "🤖", screen: "20_9", style: "punch", radius: 40, specs: "20:9 · Punch hole" },
+    { key: "galaxy-s24", name: "Galaxy S24", icon: "🤖", screen: "X", style: "punch", radius: 34, specs: "19.5:9 · Punch hole" },
+    { key: "galaxy-a15", name: "Galaxy A15", icon: "🤖", screen: "20_9", style: "teardrop", radius: 30, specs: "20:9 · Teardrop" },
+    { key: "pixel-tablet", name: "Galaxy Tab", icon: "📟", screen: "16_10", style: "none", radius: 22, specs: "16:10 · Tablet" },
+    { key: "ipad", name: "iPad", icon: "📟", screen: "4_3", style: "none", radius: 22, specs: "4:3 · Tablet" },
+];
+
+/**
+ * Device model presets: one click sets ratio, cutout and corner radius.
  */
 class DevicePresetControl {
-    constructor(buttons, navigation, deviceStyleControl, radiusControl, storage) {
-        this.buttons = buttons;
+    constructor(container, navigation, deviceStyleControl, radiusControl, storage) {
+        this.container = container;
         this.navigation = navigation;
         this.deviceStyleControl = deviceStyleControl;
         this.radiusControl = radiusControl;
         this.storage = storage;
+        this.presets = DEVICE_PRESETS;
 
-        this.presets = {
-            ip14promax: {
-                screen: "X",      // 19.5:9
-                style: "island",  // Dynamic Island
-                radius: 52
-            },
-            ipad: {
-                screen: "4_3",    // 4:3
-                style: "none",    // Standard Tablet Bezel
-                radius: 22
-            }
-        };
-
-        this.init();
+        this.render();
+        this.syncActive();
     }
 
-    init() {
-        if (!this.buttons || this.buttons.length === 0) return;
-
+    render() {
+        if (!this.container) return;
+        this.container.innerHTML = this.presets.map((p) => `
+            <button type="button" class="preset-device-btn" data-device="${p.key}" title="${p.name} (${p.specs}, ${p.radius}px radius)">
+                <span class="preset-icon">${p.icon}</span>
+                <div class="preset-info">
+                    <span class="preset-name">${p.name}</span>
+                    <span class="preset-specs">${p.specs}</span>
+                </div>
+            </button>`).join("");
+        this.buttons = Array.from(this.container.querySelectorAll(".preset-device-btn"));
         this.buttons.forEach((btn) => {
-            btn.addEventListener("click", () => {
-                const deviceKey = btn.dataset.device;
-                this.applyPreset(deviceKey);
-            });
+            btn.addEventListener("click", () => this.applyPreset(btn.dataset.device));
         });
+    }
 
-        // Set initial button active state
-        const currentScreen = this.storage.getParameter("screen");
-        if (currentScreen === "4_3") {
-            this.setActive("ipad");
-        } else {
-            this.setActive("ip14promax");
-        }
+    /** Highlights the preset matching the current ratio + cutout + radius, if any. */
+    syncActive() {
+        const screen = this.storage.getParameter("screen");
+        const style = this.storage.getParameter("deviceStyle");
+        const radius = parseInt(this.storage.getParameter("cornerRadius"), 10);
+        const match = this.presets.find((p) => p.screen === screen && p.style === style && p.radius === radius)
+            || this.presets.find((p) => p.screen === screen && p.style === style);
+        this.setActive(match ? match.key : null);
     }
 
     setActive(deviceKey) {
-        this.buttons.forEach((btn) => {
+        (this.buttons || []).forEach((btn) => {
             btn.classList.toggle("active", btn.dataset.device === deviceKey);
         });
     }
 
     applyPreset(deviceKey) {
-        const config = this.presets[deviceKey];
+        const config = this.presets.find((p) => p.key === deviceKey);
         if (!config) return;
 
         this.setActive(deviceKey);
-
-        // 1. Change Screen Ratio
-        if (this.navigation) {
-            this.navigation.changeSize(config.screen);
-        }
-
-        // 2. Change Cutout Style
-        if (this.deviceStyleControl) {
-            this.deviceStyleControl.apply(config.style);
-        }
-
-        // 3. Change Corner Radius
-        if (this.radiusControl) {
-            this.radiusControl.apply(config.radius);
-        }
+        if (this.navigation) this.navigation.changeSize(config.screen);
+        if (this.deviceStyleControl) this.deviceStyleControl.apply(config.style);
+        if (this.radiusControl) this.radiusControl.apply(config.radius);
     }
 }
 
@@ -1153,10 +1162,16 @@ class ThemeControl {
     }
 }
 
+// Default preview zoom (percent). Config drives it, 90 if config is missing.
+Device.DEFAULT_SCALE = (typeof DEVICE_CONFIG !== "undefined" && DEVICE_CONFIG.defaultZoom) || 90;
+
 // Rendering scale forced on the game. The frame is already built at its real
 // pixel size, so the only extra resolution worth asking for is the screen's own
 // pixel ratio - anything above that just burns GPU for no visible gain.
-Device.renderScale = Math.min(3, Math.max(1,
+// Phones get capped at 2: a 3x screen would render 2.25x the pixels for no
+// visible gain at phone size and drains the battery.
+const IS_TOUCH_DEVICE = navigator.maxTouchPoints > 0 || window.matchMedia("(pointer: coarse)").matches;
+Device.renderScale = Math.min(IS_TOUCH_DEVICE ? 2 : 3, Math.max(1,
     ((typeof DEVICE_CONFIG !== "undefined" && DEVICE_CONFIG.renderScale) || 1) * (window.devicePixelRatio || 1)));
 AudioControl.RENDER_SCALE = Device.renderScale;
 
@@ -1231,6 +1246,7 @@ window.addEventListener("load", () => {
         "16_9": { title: "16:9", code: "md", ratio: 16 / 9 },
         "16_8": { title: "16:8", code: "lg", ratio: 2 },
         "X": { title: "19.5:9", code: "xlg", ratio: 19.5 / 9 },
+        "20_9": { title: "20:9", code: "xxl", ratio: 20 / 9 },
         "custom": { title: "Custom", code: "cst", ratio: 1, isCustom: true },
     };
 
@@ -1256,16 +1272,24 @@ window.addEventListener("load", () => {
         radiusValue: document.getElementById("radiusValue"),
     };
 
+    // Layout defaults changed (portrait phone, 90% zoom). Returning users still
+    // have the old values saved, so clear those once to pick up the new defaults.
+    const LAYOUT_DEFAULTS_VERSION = "3";
+    if (localStorage.getItem("layoutDefaultsVersion") !== LAYOUT_DEFAULTS_VERSION) {
+        ["screen", "orientation", "screenScale", "deviceStyle", "cornerRadius"].forEach(key => localStorage.removeItem(key));
+        localStorage.setItem("layoutDefaultsVersion", LAYOUT_DEFAULTS_VERSION);
+    }
+
     // Bootstrap the modules
     const storage = new StorageManager({
-        screen: "16_9",
-        orientation: "l",
-        screenScale: 80,
+        screen: "X",
+        orientation: "p",
+        screenScale: Device.DEFAULT_SCALE,
         customRatioW: 16,
         customRatioH: 9,
-        deviceStyle: "none",
+        deviceStyle: "island",
         rotated: false,
-        cornerRadius: (typeof DEVICE_CONFIG !== "undefined" && DEVICE_CONFIG.cornerRadius) || 26,
+        cornerRadius: (typeof DEVICE_CONFIG !== "undefined" && DEVICE_CONFIG.cornerRadius) || 52,
     });
     
     const navigation = new Navigation(screenDefinitions, storage);
@@ -1286,10 +1310,14 @@ window.addEventListener("load", () => {
     domElements.scaleInput.value = storage.getParameter("screenScale");
 
     // Fullscreen + mute + screen cutout controls
-    new FullscreenControl(domElements.fullscreenBtn, domElements.exitFullscreenBtn, domElements.muteBtn);
+    const fullscreenControl = new FullscreenControl(domElements.fullscreenBtn, domElements.exitFullscreenBtn, domElements.muteBtn);
     new AudioControl(domElements.muteBtn, device, storage);
     const deviceStyleControl = new DeviceStyleControl(domElements.deviceStyle, storage);
     new ThemeControl(domElements.themeBtn);
+    if (typeof CompareView !== "undefined") {
+        window.compareView = new CompareView(document.getElementById("compareBtn"), document.getElementById("compare-grid"),
+            screenDefinitions, storage, DEVICE_PRESETS, device);
+    }
     new ClickControl(domElements.ctaBtn, device, storage, (typeof DEVICE_CONFIG !== "undefined" ? DEVICE_CONFIG.ctaToast : null));
     new RotateControl(domElements.rotateBtn, storage);
     const radiusControl = new RadiusControl(domElements.cornerRadius, domElements.radiusValue, storage,
@@ -1297,8 +1325,7 @@ window.addEventListener("load", () => {
     new HomeBarControl(domElements.homeBarBtn, domElements.homeBarPosition, storage,
         (typeof DEVICE_CONFIG !== "undefined" ? DEVICE_CONFIG : {}));
 
-    const presetButtons = document.querySelectorAll(".preset-device-btn");
-    window.devicePresetControl = new DevicePresetControl(presetButtons, navigation, deviceStyleControl, radiusControl, storage);
+    window.devicePresetControl = new DevicePresetControl(document.getElementById("presetDeviceButtons"), navigation, deviceStyleControl, radiusControl, storage);
 
     // Custom ratio: restore saved values, inputs only show on the Custom tab
     const syncCustomPanel = () => {
@@ -1338,8 +1365,20 @@ window.addEventListener("load", () => {
         device.resize();
     });
 
+    // Manual ratio / cutout / radius tweaks: re-highlight the matching preset
+    // and keep the compare grid in the same orientation as the main frame
+    const controlPanel = document.getElementById("control-panel");
+    if (controlPanel) {
+        const resync = () => setTimeout(() => {
+            window.devicePresetControl.syncActive();
+            if (window.compareView) window.compareView.layout();
+        }, 0);
+        controlPanel.addEventListener("click", resync);
+        controlPanel.addEventListener("input", resync);
+    }
+
     const applyScale = () => {
-        const scaleValue = Math.min(300, Math.max(40, parseInt(domElements.scaleInput.value, 10) || 80));
+        const scaleValue = Math.min(300, Math.max(40, parseInt(domElements.scaleInput.value, 10) || Device.DEFAULT_SCALE));
         domElements.scaleInput.value = scaleValue;
         storage.setParameter("screenScale", scaleValue);
         device.setScale();
@@ -1361,9 +1400,15 @@ window.addEventListener("load", () => {
     }
 
     // The app uses this API to load a build when a version is clicked
+    // enterFullscreen lets phones play the build edge-to-edge (the .stage is hidden there)
     window.deviceApi = {
         device,
-        load: (path) => device.loadPage(path)
+        load: (path) => {
+            device.loadPage(path);
+            if (window.compareView) window.compareView.setPath(path);
+        },
+        enterFullscreen: () => fullscreenControl.enter(),
+        exitFullscreen: () => fullscreenControl.exit()
     };
 
 });

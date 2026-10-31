@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="light dark">
     <title>Playable Ads Studio &amp; Simulator — Văn Đình Dũng (DinDun)</title>
-    <link rel="icon" id="favicon" href="../../assets/favicon.svg" type="image/svg+xml">
+    <link rel="icon" id="favicon" href="assets/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="style.css">
     <script>
         // Apply the theme before first paint to avoid a flash
@@ -24,7 +24,7 @@
         <div class="topbar-inner">
             <a class="brand" href="../../" title="Back to DinDun Portfolio">
                 <div class="brand-mark" aria-hidden="true">
-                    <img id="brandLogo" src="../../assets/avatar.png" alt="DinDun Avatar" class="brand-avatar-img">
+                    <img id="brandLogo" src="assets/avatar.png" alt="DinDun Avatar" class="brand-avatar-img">
                 </div>
                 <div class="brand-text">
                     <span class="brand-title" id="headerTitle">DinDun Playable Studio</span>
@@ -40,12 +40,6 @@
                     </svg>
                     <span>Back to Portfolio</span>
                 </a>
-                <button class="btn-topbar-action btn-accent" id="roadmapToggleBtn" type="button" title="View Playable Hub Upgrade Roadmap &amp; Engineering Plan">
-                    <span>🗺️ Upgrade Roadmap</span>
-                </button>
-                <button class="btn-topbar-action" id="securityShieldBtn" type="button" title="View Anti-Ripping &amp; Security Shield Specs">
-                    <span>🛡️ Anti-Ripping Shield</span>
-                </button>
                 <!-- Total games / versions -->
                 <div class="stats" id="headerStats"></div>
                 <button class="btn-icon" id="themeToggle" type="button" aria-label="Toggle theme" title="Toggle theme">
@@ -88,6 +82,7 @@
         <!-- ============ Middle: device frame ============ -->
         <main class="stage">
             <section id="device-container"></section>
+            <section id="compare-grid"></section>
 
             <div class="stage-empty" id="stageEmpty">
                 <h3>No playable selected</h3>
@@ -104,25 +99,18 @@
 
         <!-- ============ Right: device controls ============ -->
         <aside id="control-panel">
-            <!-- Quick Device Model Presets: iPhone 14 Pro Max vs iPad -->
+            <!-- Real device presets, rendered from DEVICE_PRESETS in device/main.js -->
             <div id="quick-device-presets">
                 <div class="title-section">device preset:</div>
-                <div class="preset-device-buttons">
-                    <button type="button" class="preset-device-btn active" id="presetIPhone14ProMax" data-device="ip14promax" title="iPhone 14 Pro Max (19.5:9, Dynamic Island, 52px radius)">
-                        <span class="preset-icon">📱</span>
-                        <div class="preset-info">
-                            <span class="preset-name">iPhone 14 Pro Max</span>
-                            <span class="preset-specs">19.5:9 · Island · 52px</span>
-                        </div>
-                    </button>
-                    <button type="button" class="preset-device-btn" id="presetIPadPro" data-device="ipad" title="iPad Pro / Tablet (4:3 canvas, 22px radius)">
-                        <span class="preset-icon">📟</span>
-                        <div class="preset-info">
-                            <span class="preset-name">iPad Pro / Tablet</span>
-                            <span class="preset-specs">4:3 · Flat Bezel · 22px</span>
-                        </div>
-                    </button>
-                </div>
+                <div class="preset-device-buttons" id="presetDeviceButtons"></div>
+                <button type="button" id="compareBtn" class="action-btn compare-btn" title="Run the build on several devices side by side">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="4" width="7" height="16" rx="1.5"></rect>
+                        <rect x="11" y="2" width="6" height="12" rx="1.5"></rect>
+                        <rect x="11" y="16" width="11" height="6" rx="1.5"></rect>
+                    </svg>
+                    <span class="btn-label">Compare devices</span>
+                </button>
             </div>
 
             <nav id="navigation-container">
@@ -166,12 +154,12 @@
 
             <div id="radius-container">
                 <div class="title-section">corner radius: <span id="radiusValue">26px</span></div>
-                <input type="range" min="0" max="80" step="2" value="26" id="cornerRadius" />
+                <input type="range" min="0" max="80" step="2" value="52" id="cornerRadius" />
             </div>
 
             <div id="zoom-container">
-                <div class="title-section">zoom: <span id="zoomValue">80%</span></div>
-                <input type="range" min="40" max="300" step="10" value="80" id="scale" />
+                <div class="title-section">zoom: <span id="zoomValue">90%</span></div>
+                <input type="range" min="40" max="300" step="10" value="90" id="scale" />
             </div>
 
             <div id="actions-container">
@@ -210,175 +198,6 @@
         </aside>
     </div>
 
-    <!-- Modals -->
-    <!-- 1. Roadmap & Upgrade Plan Modal -->
-    <div class="modal-backdrop" id="roadmapModal">
-        <div class="modal-dialog">
-            <div class="modal-header">
-                <div class="modal-title-group">
-                    <span class="modal-title-icon">🗺️</span>
-                    <div>
-                        <h2 class="modal-title">Playable Hub Engineering Plan &amp; Roadmap</h2>
-                        <p class="modal-subtitle">Architecture evolution, device parity &amp; performance roadmap</p>
-                    </div>
-                </div>
-                <button type="button" class="modal-close-btn" id="roadmapCloseBtn" title="Close modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="roadmap-timeline">
-                    <!-- Phase 1 -->
-                    <div class="roadmap-card completed">
-                        <div class="roadmap-card-header">
-                            <div class="roadmap-phase-title">
-                                <span>📱 Milestone 1: Multi-Device Matrix &amp; Presets</span>
-                            </div>
-                            <span class="roadmap-badge done">LIVE / PASS</span>
-                        </div>
-                        <p>Dedicated quick toggles between <strong>iPhone 14 Pro Max</strong> (19.5:9, Dynamic Island, 52px radius) and <strong>iPad Pro</strong> (4:3 canvas, tablet bezel, 22px radius). Orientation locking and responsive rendering.</p>
-                        <ul class="roadmap-list">
-                            <li>Instant preset switching without reloading iframe</li>
-                            <li>Dynamic Island and camera cutout alignment</li>
-                            <li>Smooth zoom (40% - 300%) with pixel-ratio supersampling</li>
-                        </ul>
-                    </div>
-
-                    <!-- Phase 2 -->
-                    <div class="roadmap-card completed">
-                        <div class="roadmap-card-header">
-                            <div class="roadmap-phase-title">
-                                <span>🛡️ Milestone 2: Anti-Ripping &amp; Tamper Defense</span>
-                            </div>
-                            <span class="roadmap-badge done">LIVE / PASS</span>
-                        </div>
-                        <p>Shielding Playable Ads against standalone execution, scraping, base64 ripping, and hotlinking outside the DinDun Playable Hub.</p>
-                        <ul class="roadmap-list">
-                            <li>Frame-busting enforcement: blocks direct standalone tab opening</li>
-                            <li>Domain authorization lock for <code>shaikowannasleep.github.io</code></li>
-                            <li>Disabled F12, Ctrl+Shift+I, Ctrl+U, Ctrl+S and context menu</li>
-                            <li>Debugger timing loop trap against inspection</li>
-                        </ul>
-                    </div>
-
-                    <!-- Phase 3 -->
-                    <div class="roadmap-card in-progress">
-                        <div class="roadmap-card-header">
-                            <div class="roadmap-phase-title">
-                                <span>⚡ Milestone 3: Real-Time Playable Telemetry HUD</span>
-                            </div>
-                            <span class="roadmap-badge wip">IN PROGRESS / Q2</span>
-                        </div>
-                        <p>Injecting non-intrusive WebGL diagnostic overlay inside the simulator to monitor critical Playable Ads health indicators.</p>
-                        <ul class="roadmap-list">
-                            <li>Live FPS counter with 1% low frame dips detector</li>
-                            <li>WebGL CPU execution budget gauge (target &le; 1%)</li>
-                            <li>Zero GC hot loop verification alert</li>
-                            <li>Asset bundle size monitor (target &le; 5MB per network)</li>
-                        </ul>
-                    </div>
-
-                    <!-- Phase 4 -->
-                    <div class="roadmap-card planned">
-                        <div class="roadmap-card-header">
-                            <div class="roadmap-phase-title">
-                                <span>🎯 Milestone 4: Ad Network Simulator Profiles</span>
-                            </div>
-                            <span class="roadmap-badge future">PLANNED / Q3</span>
-                        </div>
-                        <p>Mocking standard ad network SDK lifecycles and MRAID 3.0 bridge calls directly in the browser.</p>
-                        <ul class="roadmap-list">
-                            <li>AppLovin / MAX, IronSource, Unity Ads, Mintegral, TikTok SDK mocks</li>
-                            <li>CTA click intercepted with custom campaign payload</li>
-                            <li>Game end-card callback test harness</li>
-                        </ul>
-                    </div>
-
-                    <!-- Phase 5 -->
-                    <div class="roadmap-card planned">
-                        <div class="roadmap-card-header">
-                            <div class="roadmap-phase-title">
-                                <span>🤖 Milestone 5: GitHub Actions Automated Deployer</span>
-                            </div>
-                            <span class="roadmap-badge future">PLANNED / Q4</span>
-                        </div>
-                        <p>Automated pipeline to drop exported Luna build zip files into repository folders, automatically auto-generate <code>config.js</code> entries and inject anti-ripping shields.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 2. Security Shield Modal -->
-    <div class="modal-backdrop" id="securityModal">
-        <div class="modal-dialog">
-            <div class="modal-header">
-                <div class="modal-title-group">
-                    <span class="modal-title-icon">🛡️</span>
-                    <div>
-                        <h2 class="modal-title">Anti-Ripping &amp; Anti-Tamper Shield</h2>
-                        <p class="modal-subtitle">Protecting HTML5 / Luna Playable Ads from ripping &amp; unauthorized reuse</p>
-                    </div>
-                </div>
-                <button type="button" class="modal-close-btn" id="securityCloseBtn" title="Close modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="security-alert-box">
-                    <span>⚠️</span>
-                    <div>
-                        <strong>How HTML Ripping Happens:</strong> Attackers inspect the page network, download the single-file HTML, and re-host or extract base64 assets.
-                    </div>
-                </div>
-                <p>To ensure users can <strong>only play directly inside your official DinDun Playable Hub</strong>, inject this Anti-Ripping header snippet into the <code>&lt;head&gt;</code> of any exported playable build:</p>
-
-                <div class="security-code-container">
-                    <button type="button" class="btn-copy-code" id="btnCopySecuritySnippet">Copy Snippet</button>
-                    <pre class="security-code-block"><code>&lt;script&gt;
-/**
- * DinDun Anti-Ripping &amp; Domain Lock Shield
- * Enforces embed-only execution inside DinDun Playable Hub
- */
-(function() {
-    const ALLOWED = ['shaikowannasleep.github.io', 'localhost', '127.0.0.1'];
-    const isFrame = (window.top !== window.self);
-    let validHost = false;
-    try {
-        const parentHost = window.parent.location.hostname;
-        validHost = ALLOWED.includes(parentHost);
-    } catch(e) {
-        validHost = ALLOWED.some(h =&gt; document.referrer.includes(h));
-    }
-
-    // 1. Block Standalone Execution Outside Hub
-    if (!isFrame || (!validHost &amp;&amp; location.hostname !== '')) {
-        document.documentElement.innerHTML = 
-            '&lt;div style="background:#070b14;color:#00ffc2;font-family:sans-serif;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;"&gt;' +
-            '&lt;h1 style="color:#ff3366;font-size:24px;margin-bottom:12px;"&gt;⛔ UNAUTHORIZED PLAYABLE ACCESS&lt;/h1&gt;' +
-            '&lt;p style="max-width:500px;color:#8da2bf;line-height:1.6;font-size:14px;"&gt;This Playable Ad is digitally protected. Direct ripping, hotlinking, or standalone execution outside DinDun Playable Hub is prohibited.&lt;/p&gt;' +
-            '&lt;a href="https://shaikowannasleep.github.io/Aquarium/apps/playable/" style="display:inline-block;margin-top:20px;padding:12px 24px;background:#00ffc2;color:#070b14;border-radius:8px;font-weight:700;text-decoration:none;"&gt;Open in Official Playable Hub 🚀&lt;/a&gt;' +
-            '&lt;/div&gt;';
-        throw new Error("Execution blocked: Unauthorized environment.");
-    }
-
-    // 2. Disable DevTools &amp; Right-Click
-    window.addEventListener('contextmenu', e =&gt; e.preventDefault(), true);
-    window.addEventListener('keydown', e =&gt; {
-        if (e.key === 'F12' || (e.ctrlKey &amp;&amp; e.shiftKey &amp;&amp; ['I','J','C'].includes(e.key.toUpperCase())) || (e.ctrlKey &amp;&amp; ['U','S'].includes(e.key.toUpperCase()))) {
-            e.preventDefault(); e.stopPropagation(); return false;
-        }
-    }, true);
-})();
-&lt;/script&gt;</code></pre>
-                </div>
-
-                <h4 style="color:#ffffff; margin:16px 0 6px 0;">Protection Layers Implemented:</h4>
-                <ol class="roadmap-list">
-                    <li><strong>Frame Check (Anti-Busting):</strong> <code>window.top !== window.self</code> ensures the game never runs directly in a raw browser tab.</li>
-                    <li><strong>Domain Whitelisting:</strong> Confirms the parent container belongs to <code>shaikowannasleep.github.io</code> or local dev environment.</li>
-                    <li><strong>DevTools Interception:</strong> Blocks keyboard shortcuts (F12, View Source, Save Page) and context menus.</li>
-                    <li><strong>Obfuscation Strategy:</strong> For high-tier commercial playable builds, minify and run JS through Terser/obfuscator with identifier scrambling.</li>
-                </ol>
-            </div>
-        </div>
-    </div>
 
     <footer class="footer">
         <div class="footer-content">
@@ -397,8 +216,10 @@
         </button>
     </div>
 
+    <script src="assets/disable-devtool.min.js"></script>
     <script src="config.js"></script>
     <script src="device/config.js"></script>
+    <script src="device/compare.js"></script>
     <script src="device/main.js"></script>
     <script src="script.js"></script>
 </body>
