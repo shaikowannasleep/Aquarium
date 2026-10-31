@@ -3,25 +3,30 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#020c17">
+  <meta name="theme-color" content="#0b1620">
   <meta name="description" content="Văn Đình Dũng (DinDun) — Playable Ads &amp; Unity Engineer specializing in WebGL, Luna, Cocos Creator, and zero-GC interactive game experiences.">
   <link rel="canonical" href="https://shaikowannasleep.github.io/Aquarium/">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Văn Đình Dũng (DinDun) — Playable Ads &amp; Unity Developer">
   <meta property="og:description" content="Deep Ocean Portfolio: High-performance Playable Ads, Unity Luna/WebGL, Cocos Creator, and living interactive simulations.">
   <meta property="og:url" content="https://shaikowannasleep.github.io/Aquarium/">
-  <meta property="og:image" content="https://shaikowannasleep.github.io/Aquarium/assets/projects/abyssal-dive.png">
+  <meta property="og:image" content="https://shaikowannasleep.github.io/Aquarium/assets/projects/idle-rpg.png">
   <meta property="og:image:alt" content="Văn Đình Dũng (DinDun) — Playable Ads &amp; Unity Developer Portfolio">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Văn Đình Dũng (DinDun) — Playable Ads &amp; Unity Developer">
   <meta name="twitter:description" content="Portfolio of Văn Đình Dũng: Playable Ads Developer &amp; Unity Engineer specializing in Luna, Cocos Creator, WebGL and zero-GC engines.">
-  <meta name="twitter:image" content="https://shaikowannasleep.github.io/Aquarium/assets/projects/abyssal-dive.png">
+  <meta name="twitter:image" content="https://shaikowannasleep.github.io/Aquarium/assets/projects/idle-rpg.png">
   <title>Văn Đình Dũng (DinDun) — Playable Ads &amp; Unity Engineer</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/portfolio.css">
+  <link rel="stylesheet" href="assets/portfolio.css?v=20261031b">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./vendor/three.module.js"
+    }
+  }
+  </script>
+  <script type="module" src="assets/ocean-bg.js?v=20261031"></script>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -39,29 +44,15 @@
     "knowsAbout": ["Unity", "Playable Ads", "WebGL", "Cocos Creator", "C#", "TypeScript", "Luna", "Zero-GC Optimization"]
   }
   </script>
-  <script src="assets/portfolio.js" defer></script>
+  <script src="assets/portfolio.js?v=20261031" defer></script>
   <script src="assets/aquarium25d.js" defer></script>
 </head>
 <body id="top">
   <a class="skip-link" href="#main">Skip to subsea operations</a>
 
-  <!-- Ambient Ocean Background Canvas & Environmental FX -->
+  <!-- Three.js deep-sea background (assets/ocean-bg.js). CSS gradient on <html> is the fallback. -->
   <div class="ocean-backdrop-wrapper" aria-hidden="true">
-    <div class="ocean-bg-img"></div>
-    <div class="ocean-caustics-layer"></div>
-    <div class="ocean-god-rays"></div>
-    <div class="ocean-depth-fog"></div>
-    <canvas id="ocean-canvas" class="ocean-fx-canvas"></canvas>
-    
-    <!-- Parallax Ocean Fauna -->
-    <div class="ocean-fauna-layer">
-      <img src="assets/sprites/whale_shark.png" alt="" class="marine-creature creature-whale-shark" loading="lazy">
-      <img src="assets/sprites/pink_jellyfish.png" alt="" class="marine-creature creature-jelly-1" loading="lazy">
-      <img src="assets/sprites/blue_jellyfish.png" alt="" class="marine-creature creature-jelly-2" loading="lazy">
-      <img src="assets/sprites/spotted_eagle_ray.png" alt="" class="marine-creature creature-ray" loading="lazy">
-      <img src="assets/sprites/clownfish.png" alt="" class="marine-creature creature-clown-1" loading="lazy">
-      <img src="assets/sprites/blue_tang.png" alt="" class="marine-creature creature-tang-1" loading="lazy">
-    </div>
+    <canvas id="ocean-bg"></canvas>
   </div>
 
   <!-- Subsea Operations Cockpit Header -->
@@ -109,7 +100,7 @@
       <div class="subsea-header-cta">
         <a class="btn-ocean-glow" href="assets/VanDinhDung_CV.pdf" download="VanDinhDung_PlayableAdsDeveloper_CV.pdf" aria-label="Download Van Dinh Dung CV PDF">
           <span class="btn-spark" aria-hidden="true"></span>
-          DOWNLOAD CV (PDF) ↗
+          <span class="cta-label">DOWNLOAD CV (PDF) ↗</span><span class="cta-short" aria-hidden="true">CV ↗</span>
         </a>
         <button class="subsea-menu-toggle" type="button" aria-label="Open subsea navigation menu" aria-controls="subsea-nav" aria-expanded="false">
           <span></span><span></span><span></span>
@@ -538,7 +529,7 @@
         <span class="section-sonar-num">03 / PROJECTS</span>
         <div class="section-title-wrap">
           <h2 id="work-heading" class="section-main-heading">Built to be <em>Played.</em></h2>
-          <p class="section-subtext">Playable ads, interactive living simulations, and compact game systems.</p>
+          <p class="section-subtext">A playable ad, a living simulation, a 3D web game and a web app.</p>
         </div>
       </div>
 
@@ -551,6 +542,9 @@
         </button>
         <button type="button" class="filter-btn" data-filter="game" aria-pressed="false">
           <span>GAMES</span>
+        </button>
+        <button type="button" class="filter-btn" data-filter="web" aria-pressed="false">
+          <span>WEB APPS</span>
         </button>
         <button type="button" class="filter-btn" data-filter="experiment" aria-pressed="false">
           <span>EXPERIMENTS</span>
@@ -582,48 +576,10 @@
           </div>
         </article>
 
-        <!-- Project 2: Abyssal Dive -->
-        <article class="project" data-category="game">
-          <div class="project-art art-abyss">
-            <span class="art-label">02 / DEEP OCEAN ADVENTURE</span>
-            <img src="assets/projects/abyssal-dive.png" alt="Abyssal Dive interactive canvas game preview" class="project-thumb-img" loading="lazy">
-          </div>
-          <div class="project-info">
-            <div class="project-meta">INTERACTIVE HTML5 GAME <span>↗ 2026</span></div>
-            <h3>Abyssal Dive<span class="project-arrow" aria-hidden="true">↗</span></h3>
-            <p>Guide a school through the deep. Light guides your fish and blinds lurking hunters; a real-time flow field steers the school to safety.</p>
-            <div class="project-foot">
-              <div class="project-tags">
-                <span>CANVAS</span><span>FLOW FIELD</span><span>BOIDS</span><span>60 FPS</span>
-              </div>
-              <a href="apps/abyssal-dive/" aria-label="Play Abyssal Dive">PLAY THE GAME ↗</a>
-            </div>
-          </div>
-        </article>
-
-        <!-- Project 3: Lumen -->
-        <article class="project" data-category="playable">
-          <div class="project-art art-lumen">
-            <span class="art-label">03 / RULES BECOME PLAY</span>
-            <img src="assets/projects/lumen-playable.png" alt="Lumen playable ad preview" class="project-thumb-img" loading="lazy">
-          </div>
-          <div class="project-info">
-            <div class="project-meta">PLAYABLE AD <span>↗ 2026</span></div>
-            <h3>Lumen<span class="project-arrow" aria-hidden="true">↗</span></h3>
-            <p>One compact playable ad built with three simple verbs: cohesion, separation, and alignment. Zero external requests, rapid startup, instant engagement.</p>
-            <div class="project-foot">
-              <div class="project-tags">
-                <span>PLAYABLE AD</span><span>CANVAS</span><span>ZERO GC</span><span>&lt; 5MB</span>
-              </div>
-              <a href="apps/lumen-playable/" aria-label="Play Lumen">PLAY THE GAME ↗</a>
-            </div>
-          </div>
-        </article>
-
-        <!-- Project 4: Idle RPG -->
+        <!-- Project 2: Idle RPG -->
         <article class="project" data-category="game playable">
           <div class="project-art art-rpg">
-            <span class="art-label">04 / 3D WEAPON FORGE &amp; BATTLE</span>
+            <span class="art-label">02 / 3D WEAPON FORGE &amp; BATTLE</span>
             <img src="assets/projects/idle-rpg.png" alt="Idle RPG 3D playable ad preview" class="project-thumb-img" loading="lazy">
           </div>
           <div class="project-info">
@@ -635,6 +591,50 @@
                 <span>THREE.JS</span><span>3D IDLE</span><span>TAP-TO-MOVE</span><span>60 FPS</span>
               </div>
               <a href="apps/idle-rpg/" aria-label="Play Idle RPG">PLAY THE GAME ↗</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Project 3: Sticker Room -->
+        <article class="project" data-category="game">
+          <div class="project-art art-stickerroom">
+            <span class="art-label">03 / 3D UNPACK &amp; DECORATE</span>
+            <img src="assets/projects/sticker-room.png" alt="Sticker Room 3D puzzle game preview" class="project-thumb-img" width="800" height="500" loading="lazy">
+          </div>
+          <div class="project-info">
+            <div class="project-meta">WEB 3D GAME <span>↗ 2026</span></div>
+            <h3>Sticker Room<span class="project-arrow" aria-hidden="true">↗</span></h3>
+            <p>Cute 3D unpack &amp; decorate puzzle game — Three.js + Jolt Physics. 10 rooms × 3 stages, Zen mode, auto graphics tier, ~36 draw calls, render-on-demand.</p>
+            <div class="project-foot">
+              <div class="project-tags">
+                <span>THREE.JS</span><span>JOLT PHYSICS</span><span>ZEN MODE</span><span>~36 DRAW CALLS</span>
+              </div>
+              <div class="project-links">
+                <a href="https://shaikowannasleep.github.io/sticker-room/" target="_blank" rel="noopener noreferrer" aria-label="Open Sticker Room live demo">LIVE DEMO ↗</a>
+                <a href="https://github.com/shaikowannasleep/sticker-room" target="_blank" rel="noopener noreferrer" aria-label="Sticker Room source on GitHub">GITHUB ↗</a>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- Project 4: WebWiki (TGSH Wiki) -->
+        <article class="project" data-category="web">
+          <div class="project-art art-webwiki">
+            <span class="art-label">04 / WIKI &amp; STUDIO TOOLS</span>
+            <img src="assets/projects/webwiki.png" alt="WebWiki (TGSH Wiki) website preview" class="project-thumb-img" width="800" height="500" loading="lazy">
+          </div>
+          <div class="project-info">
+            <div class="project-meta">WEB APP <span>↗ 2026</span></div>
+            <h3>WebWiki (TGSH Wiki)<span class="project-arrow" aria-hidden="true">↗</span></h3>
+            <p>Vietnamese wiki + studio tools for Soul Land: Awakening World — soul rings, soul bones, team builder, OCR crop tool. Node + Vercel serverless + Postgres.</p>
+            <div class="project-foot">
+              <div class="project-tags">
+                <span>NODE.JS</span><span>VERCEL</span><span>POSTGRES</span><span>OCR TOOL</span>
+              </div>
+              <div class="project-links">
+                <a href="https://tgsh-wiki.vercel.app/" target="_blank" rel="noopener noreferrer" aria-label="Open WebWiki live site">LIVE ↗</a>
+                <a href="https://github.com/shaikowannasleep/WebWiki" target="_blank" rel="noopener noreferrer" aria-label="WebWiki source on GitHub">GITHUB ↗</a>
+              </div>
             </div>
           </div>
         </article>
