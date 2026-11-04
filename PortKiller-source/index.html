@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Port Killer</title>
+<style>
+:root{
+  --bg:#f6f7f9;--panel:#fff;--line:#e3e6eb;--text:#16181d;--muted:#6b7280;
+  --accent:#2563eb;--danger:#dc2626;--danger-bg:#fef2f2;--ok:#059669;--warn:#b45309;
+  --chip:#eef1f5;--hover:#f3f5f8;--sel:#eff6ff;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0f1115;--panel:#171a20;--line:#2a2f38;--text:#e7e9ee;--muted:#8b93a1;
+  --accent:#60a5fa;--danger:#f87171;--danger-bg:#2a1517;--ok:#34d399;--warn:#fbbf24;
+  --chip:#232833;--hover:#1d2129;--sel:#172235;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 "Segoe UI",system-ui,sans-serif}
+header{position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line);padding:10px 16px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+h1{font-size:16px;margin:0 12px 0 0;white-space:nowrap}
+h1 span{color:var(--danger)}
+input[type=search],input[type=number]{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font:inherit}
+input[type=search]{min-width:220px;flex:1}
+input[type=number]{width:110px}
+button{font:inherit;border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:8px;padding:6px 12px;cursor:pointer}
+button:hover{background:var(--hover)}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.kill{border-color:transparent;background:var(--danger);color:#fff}
+button.kill:hover{filter:brightness(1.08)}
+button.ghost-kill{color:var(--danger);border-color:var(--danger);background:transparent}
+button.ghost-kill:hover{background:var(--danger-bg)}
+button.sm{padding:3px 10px;font-size:13px}
+label.tg{display:flex;align-items:center;gap:5px;color:var(--muted);font-size:13px;user-select:none;cursor:pointer}
+.meta{color:var(--muted);font-size:12px;margin-left:auto}
+main{padding:16px;max-width:1400px;margin:0 auto;display:grid;gap:16px}
+section{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.sh{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.sh h2{font-size:15px;margin:0}
+.count{background:var(--chip);color:var(--muted);border-radius:999px;padding:1px 8px;font-size:12px}
+.sh .sp{flex:1}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:12px;color:var(--muted);font-weight:600;background:var(--bg)}
+tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--hover)}
+tbody tr.sel{background:var(--sel)}
+td.cmd{font-family:Consolas,ui-monospace,monospace;font-size:12px;color:var(--muted);max-width:0;width:45%}
+td.cmd div{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+td.cmd div.open{white-space:pre-wrap;word-break:break-all}
+.port{font-weight:700;font-variant-numeric:tabular-nums}
+.port a{color:var(--accent);text-decoration:none}
+.chip{display:inline-block;background:var(--chip);border-radius:6px;padding:1px 7px;font-size:12px;margin:1px 2px 1px 0;font-variant-numeric:tabular-nums}
+.chip.lan{color:var(--warn)}
+.chip.local{color:var(--ok)}
+.chip.sys{color:var(--muted)}
+.chip.me{color:var(--accent)}
+.chip.p{color:var(--accent);font-weight:600}
+.num{font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+.name{font-weight:600;white-space:nowrap}
+.empty{padding:18px;color:var(--muted);text-align:center}
+.warn{background:var(--danger-bg);color:var(--danger);padding:8px 14px;border-radius:8px}
+#bulk{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--text);color:var(--bg);border-radius:12px;padding:8px 10px 8px 16px;display:none;gap:10px;align-items:center;box-shadow:0 8px 30px #0004;z-index:9}
+#bulk button{border-color:transparent}
+#toasts{position:fixed;right:16px;top:70px;display:grid;gap:8px;z-index:10;max-width:420px}
+.toast{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--ok);border-radius:8px;padding:8px 12px;box-shadow:0 6px 20px #0002;font-size:13px}
+.toast.err{border-left-color:var(--danger)}
+.groups{display:grid;gap:16px}
+.cb{width:16px;height:16px;cursor:pointer;accent-color:var(--accent)}
+@media (max-width:760px){.hide-m{display:none}td.cmd{width:auto}}
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <h1>⚡ Port <span>Killer</span></h1>
+    <input type="search" id="q" placeholder="Lọc theo cổng, tên, PID, lệnh…  (phím /)">
+    <input type="number" id="qport" placeholder="Cổng…" min="1" max="65535" title="Gõ số cổng rồi Enter để đóng ngay">
+    <button class="kill" id="qkill">Đóng cổng</button>
+    <button id="refresh" title="F5 / R">⟳ Quét lại</button>
+  </div>
+  <div class="bar" style="margin-top:8px">
+    <label class="tg"><input type="checkbox" id="auto" checked> Tự quét mỗi 5s</label>
+    <label class="tg"><input type="checkbox" id="showSys"> Hiện tiến trình hệ thống</label>
+    <label class="tg"><input type="checkbox" id="showUdp"> Hiện UDP</label>
+    <label class="tg"><input type="checkbox" id="allowSys"> Cho phép kill hệ thống</label>
+    <label class="tg"><input type="checkbox" id="confirm" checked> Hỏi trước khi kill</label>
+    <span class="meta" id="meta">Đang quét…</span>
+    <button class="sm" id="quit">Thoát app</button>
+  </div>
+</header>
+
+<main>
+  <div id="warn" class="warn" style="display:none"></div>
+  <section>
+    <div class="sh">
+      <h2>🔌 Cổng đang mở</h2><span class="count" id="pc">0</span>
+      <span class="sp"></span>
+      <button class="sm ghost-kill" id="killDev" title="Ngắt mọi tiến trình không phải hệ thống đang giữ cổng">Đóng tất cả cổng dev</button>
+    </div>
+    <div id="ports"></div>
+  </section>
+  <div class="groups" id="groups"></div>
+</main>
+
+<div id="bulk"><span id="bulkTxt"></span><button class="sm" id="bulkClear">Bỏ chọn</button><button class="sm kill" id="bulkKill">Kill đã chọn</button></div>
+<div id="toasts"></div>
+
+<script>
+const TOKEN = "__TOKEN__";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let data = null, timer = null, busy = false;
+const selected = new Set();
+const opened = new Set();
+
+const prefs = ["auto","showSys","showUdp","allowSys","confirm"];
+try { const s = JSON.parse(localStorage.getItem("pk") || "{}"); prefs.forEach(k => { if (k in s) $("#"+k).checked = s[k]; }); } catch {}
+function savePrefs(){ try{ const o={}; prefs.forEach(k=>o[k]=$("#"+k).checked); localStorage.setItem("pk",JSON.stringify(o)); }catch{} }
+
+async function api(path, body){
+  const r = await fetch(path, {method: body ? "POST":"GET", headers:{"X-Token":TOKEN,"Content-Type":"application/json"}, body: body ? JSON.stringify(body) : undefined});
+  if(!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+async function scan(){
+  if (busy) return; busy = true;
+  $("#refresh").disabled = true;
+  try { data = await api("/api/scan"); render(); }
+  catch(e){ toast("Lỗi quét: "+e.message, true); }
+  finally { busy = false; $("#refresh").disabled = false; }
+}
+
+function match(q, ...fields){
+  if(!q) return true;
+  return fields.some(f => String(f ?? "").toLowerCase().includes(q));
+}
+
+function render(){
+  if(!data) return;
+  const q = $("#q").value.trim().toLowerCase();
+  const showSys = $("#showSys").checked, showUdp = $("#showUdp").checked;
+  $("#meta").textContent = `Quét lúc ${data.time} · ${data.tookMs} ms`;
+  $("#warn").style.display = data.warning ? "" : "none";
+  $("#warn").textContent = data.warning || "";
+
+  // ports
+  const ports = (data.ports||[]).filter(p => (showSys || !p.system) && (showUdp || p.proto==="TCP") && match(q, p.port, p.name, p.pid, p.cmd, p.addrs.join(" ")));
+  $("#pc").textContent = ports.length;
+  if(!ports.length){ $("#ports").innerHTML = `<div class="empty">Không có cổng nào${q?" khớp bộ lọc":""}.</div>`; }
+  else {
+    $("#ports").innerHTML = `<table><thead><tr><th style="width:28px"></th><th>Cổng</th><th class="hide-m">Lắng nghe</th><th>Tiến trình</th><th class="hide-m">PID</th><th class="hide-m">Lệnh</th><th style="width:1%"></th></tr></thead><tbody>${
+      ports.map(p => {
+        const dis = p.protected || (p.system && !$("#allowSys").checked) || p.pid<=4;
+        const scope = p.scope==="lan" ? `<span class="chip lan" title="${esc(p.addrs.join(", "))}">mở LAN</span>` : `<span class="chip local" title="${esc(p.addrs.join(", "))}">localhost</span>`;
+        const tag = p.protected ? `<span class="chip me">app này</span>` : p.system ? `<span class="chip sys">hệ thống</span>` : "";
+        const link = p.proto==="TCP" ? `<a href="http://localhost:${p.port}" target="_blank" title="Mở trong trình duyệt">${p.port}</a>` : p.port;
+        const key = "pp"+p.port+"-"+p.pid;
+        return `<tr class="${selected.has(p.pid)?"sel":""}">
+          <td><input type="checkbox" class="cb" data-pid="${p.pid}" ${selected.has(p.pid)?"checked":""} ${dis?"disabled":""}></td>
+          <td class="port">${link} <span class="chip">${p.proto}</span></td>
+          <td class="hide-m">${scope}</td>
+          <td><span class="name">${esc(p.name)}</span> ${tag}</td>
+          <td class="num hide-m">${p.pid}</td>
+          <td class="cmd hide-m"><div data-k="${key}" class="${opened.has(key)?"open":""}" title="Bấm để xem đầy đủ">${esc(p.cmd||"—")}</div></td>
+          <td><button class="sm kill" data-killport="${p.port}" data-pid="${p.pid}" data-name="${esc(p.name)}" ${dis?"disabled":""}>Đóng</button></td>
+        </tr>`;}).join("")
+    }</tbody></table>`;
+  }
+
+  // groups
+  const gs = (data.groups||[]).map(g => ({...g, procs: g.procs.filter(p => (showSys || !p.system) && match(q, p.name, p.pid, p.cmd, p.ports.join(" "), g.title))})).filter(g => g.procs.length);
+  $("#groups").innerHTML = gs.length ? gs.map(g => {
+    const killable = g.procs.filter(p => !p.protected && (!p.system || $("#allowSys").checked));
+    return `<section>
+      <div class="sh"><h2>${g.icon} ${esc(g.title)}</h2><span class="count">${g.procs.length}</span><span class="sp"></span>
+        <button class="sm ghost-kill" data-killgroup="${g.key}" ${killable.length?"":"disabled"}>Kill cả nhóm (${killable.length})</button></div>
+      <table><thead><tr><th style="width:28px"></th><th>Tiến trình</th><th>Cổng</th><th class="hide-m">PID</th><th class="hide-m">Con</th><th class="hide-m">RAM</th><th class="hide-m">Bắt đầu</th><th class="hide-m">Lệnh</th><th style="width:1%"></th></tr></thead><tbody>${
+      g.procs.map(p => {
+        const dis = p.protected || (p.system && !$("#allowSys").checked);
+        const key = "g"+p.pid;
+        const tag = p.protected ? `<span class="chip me">app này</span>` : "";
+        return `<tr class="${selected.has(p.pid)?"sel":""}">
+          <td><input type="checkbox" class="cb" data-pid="${p.pid}" ${selected.has(p.pid)?"checked":""} ${dis?"disabled":""}></td>
+          <td><span class="name">${esc(p.name)}</span> ${tag}${p.parent?`<div class="num" style="font-size:11px">← ${esc(p.parent)}</div>`:""}</td>
+          <td>${p.ports.length ? p.ports.map(x=>`<span class="chip p">${x}</span>`).join("") : `<span class="num">—</span>`}</td>
+          <td class="num hide-m">${p.pid}</td>
+          <td class="num hide-m">${p.children||""}</td>
+          <td class="num hide-m">${p.memMB?p.memMB.toFixed(0)+" MB":""}</td>
+          <td class="num hide-m">${esc(p.start||"")}</td>
+          <td class="cmd hide-m"><div data-k="${key}" class="${opened.has(key)?"open":""}" title="Bấm để xem đầy đủ">${esc(p.cmd||"—")}</div></td>
+          <td><button class="sm kill" data-pid="${p.pid}" data-name="${esc(p.name)}" data-children="${p.children}" ${dis?"disabled":""}>Kill</button></td>
+        </tr>`;}).join("")
+      }</tbody></table></section>`;
+  }).join("") : `<section><div class="empty">Không có tiến trình shell/dev nào đang chạy${q?" khớp bộ lọc":""}.</div></section>`;
+
+  updateBulk();
+}
+
+function updateBulk(){
+  // drop selections that no longer exist
+  const alive = new Set();
+  (data?.ports||[]).forEach(p=>alive.add(p.pid));
+  (data?.groups||[]).forEach(g=>g.procs.forEach(p=>alive.add(p.pid)));
+  [...selected].forEach(p=>{ if(!alive.has(p)) selected.delete(p); });
+  $("#bulk").style.display = selected.size ? "flex" : "none";
+  $("#bulkTxt").textContent = `Đã chọn ${selected.size} tiến trình`;
+}
+
+function nameOf(pid){
+  for (const p of data?.ports||[]) if(p.pid===pid) return p.name;
+  for (const g of data?.groups||[]) for (const p of g.procs) if(p.pid===pid) return p.name;
+  return "PID";
+}
+
+function ask(msg){ return !$("#confirm").checked || confirm(msg); }
+
+async function killPids(pids, label){
+  if(!pids.length) return;
+  if(!ask(`${label}\n\nTiến trình con cũng sẽ bị ngắt theo. Tiếp tục?`)) return;
+  try{
+    const res = await api("/api/kill", {pids, allowSystem: $("#allowSys").checked});
+    report(res);
+    pids.forEach(p=>selected.delete(p));
+  }catch(e){ toast(e.message, true); }
+  setTimeout(scan, 350);
+}
+
+async function killPort(port){
+  if(!port) return;
+  if(!ask(`Đóng cổng ${port}? (ngắt tiến trình đang giữ cổng này)`)) return;
+  try{ report(await api("/api/killport", {port:+port, allowSystem: $("#allowSys").checked})); }
+  catch(e){ toast(e.message, true); }
+  setTimeout(scan, 350);
+}
+
+function report(res){
+  const ok = res.filter(r=>r.ok), bad = res.filter(r=>!r.ok);
+  if(ok.length) toast(ok.length===1 ? ok[0].msg : `Đã ngắt ${ok.length} tiến trình`);
+  bad.forEach(r => toast(`${r.pid?("PID "+r.pid+": "):""}${r.msg}`, true));
+}
+
+function toast(msg, err){
+  const d = document.createElement("div");
+  d.className = "toast" + (err?" err":"");
+  d.textContent = msg;
+  $("#toasts").appendChild(d);
+  setTimeout(()=>d.remove(), err?7000:3500);
+}
+
+document.addEventListener("click", e => {
+  const t = e.target;
+  if (t.matches("td.cmd div")) { const k=t.dataset.k; opened.has(k)?opened.delete(k):opened.add(k); t.classList.toggle("open"); return; }
+  if (t.matches("button[data-killport]")) return killPort(+t.dataset.killport);
+  if (t.matches("button[data-pid]")) {
+    const n = +t.dataset.children;
+    return killPids([+t.dataset.pid], `Kill ${t.dataset.name} (PID ${t.dataset.pid})${n?` cùng ${n} tiến trình con`:""}?`);
+  }
+  if (t.matches("button[data-killgroup]")) {
+    const g = data.groups.find(x=>x.key===t.dataset.killgroup);
+    const q = $("#q").value.trim().toLowerCase();
+    const list = g.procs.filter(p => !p.protected && (!p.system || $("#allowSys").checked) && ($("#showSys").checked || !p.system) && match(q, p.name, p.pid, p.cmd, p.ports.join(" "), g.title));
+    return killPids(list.map(p=>p.pid), `Kill cả nhóm "${g.title}" — ${list.length} tiến trình:\n${list.slice(0,12).map(p=>`• ${p.name} (${p.pid})`).join("\n")}${list.length>12?"\n…":""}`);
+  }
+});
+document.addEventListener("change", e => {
+  const t = e.target;
+  if (t.matches(".cb")) {
+    const pid = +t.dataset.pid;
+    t.checked ? selected.add(pid) : selected.delete(pid);
+    document.querySelectorAll(`.cb[data-pid="${pid}"]`).forEach(c=>{ c.checked=t.checked; c.closest("tr").classList.toggle("sel", t.checked); });
+    updateBulk();
+  }
+  if (prefs.includes(t.id)) { savePrefs(); if(t.id==="auto") setAuto(); render(); }
+});
+
+$("#q").addEventListener("input", render);
+$("#refresh").onclick = scan;
+$("#qkill").onclick = () => killPort($("#qport").value);
+$("#qport").addEventListener("keydown", e => { if(e.key==="Enter") killPort($("#qport").value); });
+$("#bulkClear").onclick = () => { selected.clear(); render(); };
+$("#bulkKill").onclick = () => { const pids=[...selected]; killPids(pids, `Kill ${pids.length} tiến trình đã chọn:\n${pids.slice(0,12).map(p=>`• ${nameOf(p)} (${p})`).join("\n")}`); };
+$("#killDev").onclick = () => {
+  const list = [...new Map((data?.ports||[]).filter(p=>!p.system && !p.protected && p.pid>4).map(p=>[p.pid,p])).values()];
+  if(!list.length) return toast("Không có cổng dev nào để đóng");
+  killPids(list.map(p=>p.pid), `Đóng tất cả ${list.length} tiến trình dev đang giữ cổng:\n${list.slice(0,12).map(p=>`• ${p.name} (${p.pid}) — cổng ${p.port}`).join("\n")}`);
+};
+$("#quit").onclick = async () => { if(!confirm("Tắt Port Killer?")) return; try{ await api("/api/quit",{}); }catch{} document.body.innerHTML='<div class="empty" style="padding:60px">Đã tắt Port Killer. Bạn có thể đóng tab này.</div>'; };
+document.addEventListener("keydown", e => {
+  if (e.target.matches("input")) { if(e.key==="Escape") e.target.blur(); return; }
+  if (e.key==="/") { e.preventDefault(); $("#q").focus(); }
+  if (e.key==="r" || e.key==="F5") { e.preventDefault(); scan(); }
+});
+
+function setAuto(){ clearInterval(timer); if($("#auto").checked) timer=setInterval(()=>{ if(!document.hidden) scan(); }, 5000); }
+setAuto(); scan();
+</script>
+</body>
+</html>
